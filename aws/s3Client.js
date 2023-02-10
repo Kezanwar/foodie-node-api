@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-require('dotenv').config()
+import dotenv from 'dotenv'
+dotenv.config()
 
 export const bucketName = process.env.BUCKET_NAME
 const bucketRegion = process.env.BUCKET_REGION
