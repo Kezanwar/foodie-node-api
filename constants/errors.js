@@ -1,3 +1,3 @@
-const ERRORS = {
+export const ERRORS = {
   AUTHORIZATION_DENIED: 'No token, authorization denied!',
 }

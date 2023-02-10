@@ -9,6 +9,7 @@
     "client": "npm start --prefix client",
     "sass-watch": "sass --no-source-map --watch sass/main.scss public/main.css"
   },
+  "type": "module",
   "author": "Kez Anwar",
   "license": "MIT",
   "dependencies": {
@@ -33,28 +34,35 @@
   "devDependencies": {
     "concurrently": "^7.0.0",
     "eslint": "^8.33.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-modules": "^1.1.1",
     "nodemon": "^2.0.15"
   },
   "eslintConfig": {
     "env": {
-      "node": true,
-      "commonjs": true,
-      "es6": true
+      "es2021": true,
+      "node": true
     },
+    "plugins": [
+      "modules"
+    ],
     "extends": "eslint:recommended",
     "parserOptions": {
-      "ecmaVersion": "latest"
+      "sourceType": "module"
     },
     "rules": {
       "linebreak-style": [
         "error",
         "unix"
       ],
+      "modules/no-cjs": [
+        "error"
+      ],
       "quotes": [
         "error",
         "single"
+      ],
+      "no-undef": [
+        "error"
       ],
       "semi": [
         "error",

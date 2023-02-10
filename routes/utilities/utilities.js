@@ -1,27 +1,27 @@
-const { STORE_ROLES } = require('../../constants/store')
-const Store = require('../../models/Store')
-const User = require('../../models/User')
-const sharp = require('sharp')
+import sharp from 'sharp'
+import _ from 'lodash'
 
-const _ = require('lodash')
-// utilties
+import Store from '../../models/Store.js'
+import { STORE_ROLES } from '../../constants/store.js'
 
-exports.ArrayIsEmpty = (array) => {
+export function ArrayIsEmpty(array) {
   if (array.length > 0) return false
   else return true
 }
 
-exports.SendError = (res, err, statusCode = 500) => {
+export function SendError(res, err, statusCode = 500) {
   res.status(statusCode).json({ message: err?.message || 'Internal server error' })
 }
 
-exports.capitalizeFirstLetter = (string) => {
+export function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-exports.mapValidationErrorArray = (errors) => errors?.errors.map((err) => err.msg)
+export function mapValidationErrorArray(errors) {
+  return errors?.errors.map((err) => err.msg)
+}
 
-exports.getDocumentValues = (arrayOfRequiredKeys, document) => {
+export function getDocumentValues(arrayOfRequiredKeys, document) {
   if (!arrayOfRequiredKeys || !Array.isArray(arrayOfRequiredKeys || !document))
     throw new Error(
       'getDocumentValues expects an array of values as its first argument and the MGDB/Document to pull from as the second'
@@ -32,7 +32,7 @@ exports.getDocumentValues = (arrayOfRequiredKeys, document) => {
   return _.pick(object, arrayOfRequiredKeys)
 }
 
-exports.removeDocumentValues = (arrayOfUnrequiredKeys, document) => {
+export function removeDocumentValues(arrayOfUnrequiredKeys, document) {
   if (!arrayOfUnrequiredKeys || !Array.isArray(arrayOfUnrequiredKeys || !document))
     throw new Error(
       'removeDocumentValues expects an array of values as its first argument and the MGDB/Document to omit from as the second'
@@ -43,16 +43,16 @@ exports.removeDocumentValues = (arrayOfUnrequiredKeys, document) => {
   return _.omit(object, arrayOfUnrequiredKeys)
 }
 
-exports.isAdmin = (user) => {
+export function isAdmin(user) {
   if (!user) throw new Error('No user')
   if (!user.store) throw new Error('No store associated with this user')
   if (!user.store.role !== STORE_ROLES.admin || !user.store.role !== STORE_ROLES.super_admin) return false
   else return true
 }
 
-exports.getUserStoreAndRole = async (id) => {
+export async function getUserStoreAndRole(id) {
   if (!id) throw new Error('no ID passed')
-  const user = await User.findById(id)
+  const user = await Store.findById(id)
   const store = user?.store?.store_id ? await Store.findById(user?.store?.store_id) : undefined
   const role = user?.store?.role
   return {
@@ -62,22 +62,22 @@ exports.getUserStoreAndRole = async (id) => {
   }
 }
 
-exports.getUser = async (id) => {
+export async function getUser(id) {
   if (!id) throw new Error('no ID passed')
-  const user = await User.findById(id).select('-_id')
+  const user = await Store.findById(id).select('-_id')
   return user
 }
 
-exports.createUrlFromString = (str) => {
+export function createUrlFromString(str) {
   return str.replace(/\s+/g, '-').toLowerCase()
 }
 
-exports.createImageName = (obj, item, image) => {
+export function createImageName(obj, item, image) {
   const type = image.mimetype.split('/')[1]
   return `${obj.id}-${item}.${type}`
 }
 
-exports.resizeProfilePhoto = async (buffer) => {
+export async function resizeProfilePhoto(buffer) {
   try {
     const resizedBuffer = await sharp(buffer).resize({ height: 500, width: 500, fit: 'contain' }).toBuffer()
     return resizedBuffer

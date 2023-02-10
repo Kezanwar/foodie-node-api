@@ -1,29 +1,23 @@
-const yup = require('yup')
+import { object, string } from 'yup'
 
-const loginUserSchema = yup.object({
-  body: yup.object({
-    email: yup.string().email().required(),
-    password: yup.string().min(8).max(32).required(),
+export const loginUserSchema = object({
+  body: object({
+    email: string().email().required(),
+    password: string().min(8).max(32).required(),
   }),
 })
 
-const registerUserSchema = yup.object({
-  body: yup.object({
-    first_name: yup.string().required(),
-    last_name: yup.string().required(),
-    email: yup.string().email().required(),
-    password: yup.string().min(8).max(32).required(),
+export const registerUserSchema = object({
+  body: object({
+    first_name: string().required(),
+    last_name: string().required(),
+    email: string().email().required(),
+    password: string().min(8).max(32).required(),
   }),
 })
 
-const forgotPasswordUserSchema = yup.object({
-  body: yup.object({
-    email: yup.string().email().required(),
+export const forgotPasswordUserSchema = object({
+  body: object({
+    email: string().email().required(),
   }),
 })
-
-module.exports = {
-  loginUserSchema,
-  registerUserSchema,
-  forgotPasswordUserSchema,
-}

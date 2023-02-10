@@ -1,10 +1,17 @@
-const { facebook, instagram, linkedin } = require('../../../constants/icons')
+const facebook = ''
+const linkedin = ''
+const instagram = ''
 
-module.exports.HeaderAndActionButtonEmailTemplate = (
+export const HeaderAndActionButtonEmailTemplate = (
+  // @ts-expect-error TS(7006): Parameter 'userName' implicitly has an 'any' type.
   userName,
+  // @ts-expect-error TS(7006): Parameter 'description' implicitly has an 'any' ty... Remove this comment to see the full error message
   description,
+  // @ts-expect-error TS(7006): Parameter 'href' implicitly has an 'any' type.
   href,
+  // @ts-expect-error TS(7006): Parameter 'btnText' implicitly has an 'any' type.
   btnText,
+  // @ts-expect-error TS(7006): Parameter 'target' implicitly has an 'any' type.
   target
 ) => {
   return `<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">

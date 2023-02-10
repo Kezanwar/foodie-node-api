@@ -1,6 +1,6 @@
-const mongoose = require('mongoose')
+import { Schema, model } from 'mongoose'
 
-const UserSchema = mongoose.Schema(
+const UserSchema = Schema(
   {
     first_name: {
       type: String,
@@ -27,7 +27,7 @@ const UserSchema = mongoose.Schema(
     },
     restaurant: {
       id: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'restaurant',
       },
       role: {
@@ -37,5 +37,6 @@ const UserSchema = mongoose.Schema(
   },
   { timestamps: true }
 )
+const User = model('user', UserSchema)
 
-module.exports = User = mongoose.model('user', UserSchema)
+export default User

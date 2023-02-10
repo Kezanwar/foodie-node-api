@@ -1,6 +1,6 @@
-const mongoose = require('mongoose')
+import { Schema, model } from 'mongoose'
 
-const StoreSchema = mongoose.Schema(
+const StoreSchema = Schema(
   {
     store_name: {
       type: String,
@@ -79,13 +79,13 @@ const StoreSchema = mongoose.Schema(
     },
     reviews: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'review',
       },
     ],
     orders: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'order',
       },
     ],
@@ -124,7 +124,7 @@ const StoreSchema = mongoose.Schema(
       required: true,
     },
     super_admin_id: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'user',
       required: true,
       select: false,
@@ -171,4 +171,6 @@ StoreSchema.methods.setupStep2 = async function ({
   await this.save()
 }
 
-module.exports = Store = mongoose.model('store', StoreSchema)
+const Store = model('store', StoreSchema)
+
+export default Store
