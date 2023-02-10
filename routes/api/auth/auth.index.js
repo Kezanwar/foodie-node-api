@@ -1,28 +1,27 @@
-const express = require('express')
+import { Router } from 'express'
 
-const router = express.Router()
-require('dotenv').config()
+const router = Router()
+import dotenv from 'dotenv'
+dotenv.config()
 
-const jwt = require('jsonwebtoken')
-const bcrypt = require('bcryptjs')
+import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 
-const path = require('path')
+import { join } from 'path'
 
 // models
-const User = require('../../../models/User')
+import User from '../../../models/User.js'
 
 // middlewares
-const auth = require('../../../middleware/auth.middleware')
-const { SendError, capitalizeFirstLetter, removeDocumentValues, getUser } = require('../../utilities/utilities')
+import auth from '../../../middleware/auth.middleware.js'
+import { SendError, capitalizeFirstLetter, removeDocumentValues, getUser } from '../../utilities/utilities.js'
 
-const transporter = require('../../../emails/nodeMailer')
-const { noreply } = require('../../../emails/emailAddresses')
-const {
-  HeaderAndActionButtonEmailTemplate,
-} = require('../../../emails/templates/headerAndActionButton/HeaderAndActionButtonEmailTemplate')
-const { JWT_SECRET } = require('../../../constants/auth')
-const { loginUserSchema, registerUserSchema } = require('../../../validation/auth.validation')
-const validate = require('../../../middleware/validation.middleware')
+import { loginUserSchema, registerUserSchema } from '../../../validation/auth.validation.js'
+
+import { JWT_SECRET } from '../../../constants/auth.js'
+import validate from '../../../middleware/validation.middleware.js'
+import transporter, { getEmailOptions } from '../../../emails/emails.nodemailer.js'
+import { confirm_email_content } from '../../../emails/emails.content.js'
 
 // route GET api/auth
 // @desc GET A LOGGED IN USER WITH JWT
@@ -141,20 +140,17 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 
     jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: 360000 }, async (err, token) => {
       if (err) throw new Error(err)
-
-      const emailHtml = HeaderAndActionButtonEmailTemplate(
-        user.first_name,
-        'Please click the link below to confirm your email',
-        `http://localhost:5006/api/auth/confirm-email/${token}`,
-        'Confirm your email'
-      )
-
-      await transporter.sendMail({
-        from: `"My Local Deli" <${noreply}>`, // sender address
-        to: user.email, // list of receivers
-        subject: 'Confirm your email address!', // Subject line
-        // text: 'Hello world?', // plain text body
-        html: emailHtml, // html body
+      const { title, description } = confirm_email_content
+      const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
+        user_name: user.first_name,
+        title: title,
+        description: description,
+        action_text: 'Confirm email',
+        action_href: `http://localhost:5006/api/auth/confirm-email/${token}`,
+      })
+      transporter.sendMail(emailOptions, (err, info) => {
+        if (err) console.log(err)
+        else console.log('email sent' + ' ' + info.response)
       })
     })
 
@@ -186,15 +182,23 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 router.get('/confirm-email/:token', async (req, res) => {
   try {
     const { token } = req.params
+
     if (!token) throw new Error('Unexpected error')
+
     const decoded = jwt.verify(token, JWT_SECRET)
     const email = decoded.email
+
     if (!email) throw new Error('Email address not recognized')
+
     const user = await User.findOne({ email: email })
+
     if (!user) throw new Error('User doesnt exist')
+
     user.email_confirmed = true
+
     user.save()
-    res.sendFile(path.join(process.cwd(), 'public/email-confirmed.html'))
+
+    res.sendFile(join(process.cwd(), 'public/email-confirmed.html'))
   } catch (error) {
     SendError(res, error)
   }
@@ -214,19 +218,17 @@ router.post('/resend-confirm-email', auth, async (req, res) => {
     jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: 360000 }, async (err, token) => {
       if (err) throw new Error(err)
 
-      const emailHtml = HeaderAndActionButtonEmailTemplate(
-        user.first_name,
-        'Please click the link below to confirm your email',
-        `http://localhost:5006/api/auth/confirm-email/${token}`,
-        'Confirm your email'
-      )
-
-      await transporter.sendMail({
-        from: `"My Local Deli" <${noreply}>`, // sender address
-        to: user.email, // list of receivers
-        subject: 'Confirm your email address!', // Subject line
-        // text: 'Hello world?', // plain text body
-        html: emailHtml, // html body
+      const { title, description } = confirm_email_content
+      const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
+        user_name: user.first_name,
+        title: title,
+        description: description,
+        action_text: 'Confirm email',
+        action_href: `http://localhost:5006/api/auth/confirm-email/${token}`,
+      })
+      transporter.sendMail(emailOptions, (err, info) => {
+        if (err) console.log(err)
+        else console.log('email sent' + ' ' + info.response)
       })
     })
     res.status(200).send({ message: 'success' })
@@ -252,19 +254,17 @@ router.post('/forgot-password', async (req, res) => {
     jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: 360000 }, async (err, token) => {
       if (err) throw new Error(err)
 
-      const emailHtml = HeaderAndActionButtonEmailTemplate(
-        user.first_name,
-        'Please click the link below to reset your password',
-        `http://localhost:5006/api/auth/reset-password/${token}`,
-        'Reset your password'
-      )
-
-      await transporter.sendMail({
-        from: `"My Local Deli" <${noreply}>`, // sender address
-        to: user.email, // list of receivers
-        subject: 'Reset your password', // Subject line
-        // text: 'Hello world?', // plain text body
-        html: emailHtml, // html body
+      const { title, description } = confirm_email_content
+      const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
+        user_name: user.first_name,
+        title: title,
+        description: description,
+        action_text: 'Confirm email',
+        action_href: `http://localhost:5006/api/auth/confirm-email/${token}`,
+      })
+      transporter.sendMail(emailOptions, (err, info) => {
+        if (err) console.log(err)
+        else console.log('email sent' + ' ' + info.response)
       })
     })
   } catch (error) {
@@ -272,4 +272,4 @@ router.post('/forgot-password', async (req, res) => {
   }
 })
 
-module.exports = router
+export default router

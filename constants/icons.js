@@ -1,4 +1,4 @@
-const { baseUrl } = require('../base/base')
+import { baseUrl } from '../base/base'
 
 const icons = {
   facebook: `${baseUrl}/images/facebook-icon.png`,
@@ -6,4 +6,4 @@ const icons = {
   instagram: `${baseUrl}/images/instagram-icon.png`,
 }
 
-module.exports = icons
+export default icons

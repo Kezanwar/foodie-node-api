@@ -1,15 +1,15 @@
-const express = require('express')
-const router = express.Router()
+import { Router } from 'express'
+const router = Router()
 
 // const jwt = require('jsonwebtoken')
 // const bcrypt = require('bcryptjs')
 
 // models
-const User = require('../../../models/User')
+import { find } from '../../../models/User'
 
 // middlewares
 // const auth = require('../../../middleware/auth')
-const { SendError } = require('../../utilities/utilities')
+import { SendError } from '../../utilities/utilities'
 // const transporter = require('../../../emails/nodeMailer')
 // const {
 //   HeaderAndActionButtonEmailTemplate,
@@ -20,11 +20,11 @@ router.get('/test-find-email/:email', async (req, res) => {
   try {
     const { email } = req.params
     if (!email) throw new Error('No email attached')
-    const user = await User.find({ email: email }).explain()
+    const user = await find({ email: email }).explain()
     res.json(user)
   } catch (error) {
     SendError(res, error)
   }
 })
 
-module.exports = router
+export default router

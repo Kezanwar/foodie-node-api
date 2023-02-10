@@ -1,11 +1,12 @@
-const jwt = require('jsonwebtoken')
-require('dotenv').config()
+import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
+dotenv.config()
 
 const JWT_SECRET = process.env.JWT_SECRET
 
 // Custom middleware for PRIVATE AND PROTECTED ROUTES, which will allow us to verify a json webtoken sent in the req headers and log the user in if so
 
-module.exports = function (req, res, next) {
+function auth(req, res, next) {
   // Get token from header
   const token = req.header('x-auth-token')
   // console.log(token)
@@ -26,3 +27,5 @@ module.exports = function (req, res, next) {
     res.status(401).json({ msg: 'token not valid' })
   }
 }
+
+export default auth
