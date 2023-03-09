@@ -1,8 +1,8 @@
 import sharp from 'sharp'
 import _ from 'lodash'
 
-import Store from '../../models/Store.js'
 import { STORE_ROLES } from '../../constants/store.js'
+import User from '../../models/User.js'
 
 export function ArrayIsEmpty(array) {
   if (array.length > 0) return false
@@ -10,6 +10,7 @@ export function ArrayIsEmpty(array) {
 }
 
 export function SendError(res, err, statusCode = 500) {
+  console.error(err)
   res.status(statusCode).json({ message: err?.message || 'Internal server error' })
 }
 
@@ -50,21 +51,10 @@ export function isAdmin(user) {
   else return true
 }
 
-export async function getUserStoreAndRole(id) {
-  if (!id) throw new Error('no ID passed')
-  const user = await Store.findById(id)
-  const store = user?.store?.store_id ? await Store.findById(user?.store?.store_id) : undefined
-  const role = user?.store?.role
-  return {
-    user,
-    store,
-    role,
-  }
-}
-
 export async function getUser(id) {
   if (!id) throw new Error('no ID passed')
-  const user = await Store.findById(id).select('-_id')
+  const user = await User.findById(id)
+  if (!user) throw new Error('Authentication error: user doesnt exist')
   return user
 }
 

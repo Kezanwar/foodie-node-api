@@ -4,7 +4,6 @@ const RestaurantSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
     },
     profile_image: {
       type: String,
@@ -50,11 +49,12 @@ const RestaurantSchema = new mongoose.Schema(
         type: Number,
       },
     },
-    address: {
-      type: String,
-      required: true,
-      unique: true,
-    },
+    locations: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'location',
+      },
+    ],
     contact_details: {
       // select: false,
       email: {
@@ -63,9 +63,6 @@ const RestaurantSchema = new mongoose.Schema(
       contact_number: {
         type: String,
       },
-    },
-    restaurant_address_use_company: {
-      type: Boolean,
     },
     super_admin: {
       type: mongoose.Schema.Types.ObjectId,
@@ -112,6 +109,15 @@ const RestaurantSchema = new mongoose.Schema(
   },
   { timestamps: true }
 )
+
+RestaurantSchema.methods.updateRest = async function (data) {
+  if (!data) throw new Error('no data passed to setup method')
+  const dataArr = Object.entries(data)
+  dataArr.forEach(([key, value]) => {
+    this[key] = value
+  })
+  await this.save()
+}
 
 const Restaurant = mongoose.model('restaurant', RestaurantSchema)
 
