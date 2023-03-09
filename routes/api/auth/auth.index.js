@@ -10,11 +10,10 @@ import bcrypt from 'bcryptjs'
 import { join } from 'path'
 
 // models
-import User from '../../../models/User.js'
 
 // middlewares
 import auth from '../../../middleware/auth.middleware.js'
-import { SendError, capitalizeFirstLetter, removeDocumentValues, getUser } from '../../utilities/utilities.js'
+import { SendError, capitalizeFirstLetter, removeDocumentValues } from '../../utilities/utilities.js'
 
 import { loginUserSchema, registerUserSchema } from '../../../validation/auth.validation.js'
 
@@ -22,13 +21,15 @@ import { JWT_SECRET } from '../../../constants/auth.js'
 import validate from '../../../middleware/validation.middleware.js'
 import transporter, { getEmailOptions } from '../../../emails/emails.nodemailer.js'
 import { confirm_email_content } from '../../../emails/emails.content.js'
+import User from '../../../models/User.js'
 
-// route GET api/auth
-// @desc GET A LOGGED IN USER WITH JWT
-// @access private
-router.get('/', auth, async (req, res) => {
+//* route GET api/auth/initialize
+//? @desc GET A LOGGED IN USER WITH JWT
+// @access auth
+
+router.get('/initialize', auth, async (req, res) => {
   try {
-    const user = await getUser(req.user.id)
+    const user = req.user
     if (!user) throw new Error('User doesnt exist')
     res.json({ user })
   } catch (error) {
@@ -36,19 +37,19 @@ router.get('/', auth, async (req, res) => {
   }
 })
 
-// route POST api/auth
-// @desc Authenticate and log in a user and send token
-// @access public
+//* route POST api/auth/login
+//? @desc Authenticate and log in a user and send token
+//! @access public
 
 router.post(
   '/login',
-  //   middleware validating the req.body using express-validator
+  //   middleware validating the req.body using yup
   validate(loginUserSchema),
   async (req, res) => {
     try {
-      // generating errors from validator and handling them with res
       // destructuring from req.body
       const { email, password } = req.body
+
       // checking if user doesnt exist, if they dont then send err
       let user = await User.findOne({ email: email }).select('+password')
 
@@ -97,9 +98,9 @@ router.post(
   }
 )
 
-// route POST api/users
-// @desc register user - uses express validator middleware to check the userinfo posted to see if there are any errors and handle them, else create new user in the db, returns a token and user
-// @access public
+//* route POST api/users
+//? @desc register user - uses express validator middleware to check the userinfo posted to see if there are any errors and handle them, else create new user in the db, returns a token and user
+//! @access public
 
 router.post('/register', validate(registerUserSchema), async (req, res) => {
   // generating errors from validator and handling them with res
@@ -176,9 +177,10 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
   }
 })
 
-// route GET api/auth/confirm-mail/:token
-// @desc CONFIRM EMAIL ADDRESS
-// @access private
+//* route GET api/auth/confirm-mail/:token
+//? @desc CONFIRM EMAIL ADDRESS
+//! @access auth (requires token from confirm email button)
+
 router.get('/confirm-email/:token', async (req, res) => {
   try {
     const { token } = req.params
@@ -204,12 +206,13 @@ router.get('/confirm-email/:token', async (req, res) => {
   }
 })
 
-// route POST api/auth/resend-confirm-email
-// @desc CONFIRM EMAIL ADDRESS
-// @access private
+//* route POST api/auth/resend-confirm-email
+//? @desc CONFIRM EMAIL ADDRESS
+//! @access auth
+
 router.post('/resend-confirm-email', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
+    const user = req.user
     if (!user) throw new Error('User doesnt exist')
     const confirmEmailPayload = {
       email: user.email,
@@ -237,9 +240,10 @@ router.post('/resend-confirm-email', auth, async (req, res) => {
   }
 })
 
-// route GET api/auth
-// @desc RESET PASSWORD
-// @access private
+//* route GET api/auth
+//? @desc RESET PASSWORD
+//! @access public
+
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body
