@@ -10,7 +10,7 @@ import auth from '../../../middleware/auth.middleware.js'
 import validate from '../../../middleware/validation.middleware.js'
 import { companyInfoSchema } from '../../../validation/create-restaurant.validation.js'
 
-import { SendError } from '../../utilities/utilities.js'
+import { removeDocumentValues, SendError } from '../../utilities/utilities.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -44,13 +44,13 @@ router.post('/company-info', auth, validate(companyInfoSchema), async (req, res)
       user.restaurant = { id: newRest.id, role: RESTAURANT_ROLES.SUPER_ADMIN }
       await user.save()
 
-      res.status(200).json(newRest)
+      res.status(200).json(removeDocumentValues(['_id', 'super_admin', '__v'], newRest))
     } else {
       // user has a restaurant
-      const currentRest = await Restaurant.findById(uRestID).select('-id')
+      const currentRest = await Restaurant.findById(uRestID)
       if (currentRest) currentRest.company_info = company_info
       await currentRest.save()
-      res.status(200).json(currentRest)
+      res.status(200).json(removeDocumentValues(['_id', '__v'], currentRest))
     }
   } catch (error) {
     SendError(res, error)
