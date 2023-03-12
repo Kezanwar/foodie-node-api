@@ -119,6 +119,11 @@ RestaurantSchema.methods.updateRest = async function (data) {
   await this.save()
 }
 
+// Ensure virtual fields are serialised.
+RestaurantSchema.set('toJSON', {
+  virtuals: true,
+})
+
 const Restaurant = mongoose.model('restaurant', RestaurantSchema)
 
 export default Restaurant
