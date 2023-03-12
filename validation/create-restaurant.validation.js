@@ -12,3 +12,10 @@ export const companyInfoSchema = object({
     }),
   }),
 })
+
+export const restaurantDetailsSchema = object({
+  body: object({
+    name: string().required('Restaurant name is required').min(1).max(32),
+    bio: string().required('Restaurant bio is required').min(140).max(500),
+  }),
+})
