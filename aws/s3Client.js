@@ -7,7 +7,7 @@ const bucketRegion = process.env.BUCKET_REGION
 const S3AccessKey = process.env.S3_ACCESS_KEY
 const S3SecretKey = process.env.S3_SECRET_KEY
 
-export const mldS3Client = new S3Client({
+export const foodieS3Client = new S3Client({
   credentials: {
     accessKeyId: S3AccessKey,
     secretAccessKey: S3SecretKey,

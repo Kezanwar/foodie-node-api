@@ -1,11 +1,16 @@
 import mongoose from 'mongoose'
+import { prefixImageWithBaseUrl, removeDocumentValues } from '../routes/utilities/utilities.js'
+import Location from './Location.js'
 
 const RestaurantSchema = new mongoose.Schema(
   {
     name: {
       type: String,
     },
-    profile_image: {
+    bio: {
+      type: String,
+    },
+    avatar: {
       type: String,
     },
     cover_photo: {
@@ -39,14 +44,6 @@ const RestaurantSchema = new mongoose.Schema(
         country: {
           type: String,
         },
-      },
-    },
-    long_lat: {
-      longitude: {
-        type: Number,
-      },
-      latitude: {
-        type: Number,
       },
     },
     locations: [
@@ -117,6 +114,25 @@ RestaurantSchema.methods.updateRest = async function (data) {
     this[key] = value
   })
   await this.save()
+}
+
+RestaurantSchema.methods.getLocations = async function () {
+  if (!this.locations?.length) return []
+  const p = await this.populate('locations')
+  return p.locations
+}
+
+RestaurantSchema.methods.toClient = function () {
+  let returnToClient = this.toJSON()
+  delete returnToClient._id
+  delete returnToClient.__v
+  delete returnToClient.super_admin
+  delete returnToClient.createdAt
+  delete returnToClient.updatedAt
+  delete returnToClient.locations
+  if (returnToClient.avatar) returnToClient.avatar = prefixImageWithBaseUrl(returnToClient.avatar)
+  if (returnToClient.cover_photo) returnToClient.cover_photo = prefixImageWithBaseUrl(returnToClient.cover_photo)
+  return returnToClient
 }
 
 // Ensure virtual fields are serialised.
