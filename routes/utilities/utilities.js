@@ -88,7 +88,18 @@ export function SendError(res, err) {
   res.status(err.code ?? 500).json({ message: err?.message || 'Internal server error' })
 }
 
-export const prefixImageWithBaseUrl = (imageName) => `${process.env.S3_BUCKET_BASE_URL}${imageName}`
+export const prefixImageWithBaseUrl = (imageName) => {
+  const d = new Date()
+  return `${process.env.S3_BUCKET_BASE_URL}${imageName}?${d.toTimeString().split(' ').join('')}`
+}
+
+export const allCapsNoSpace = (str) => {
+  return upperCase(str).split(' ').join('')
+}
+
+export const getID = (doc) => {
+  return doc?._id?.toHexString()
+}
 
 export const getLongLat = async (address) => {
   try {
@@ -149,3 +160,10 @@ export const getLongLat = async (address) => {
     throwErr(error, 500)
   }
 }
+
+export const fakeLongLoadPromise = (duration = 5000) =>
+  new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve()
+    }, duration)
+  })

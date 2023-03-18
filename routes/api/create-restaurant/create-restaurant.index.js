@@ -30,8 +30,6 @@ router.post('/company-info', auth, validate(companyInfoSchema), async (req, res)
     let uRestID = uRest?.id
     let uRole = uRest?.role
 
-    console.log(uRest)
-
     const company_info = {
       company_name,
       company_number,
@@ -63,6 +61,13 @@ router.post('/company-info', auth, validate(companyInfoSchema), async (req, res)
 
       if (!currentRest) throwErr('Restaurant doesnt exist', 400)
 
+      if (currentRest.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+        throwErr(
+          'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
+          400
+        )
+      }
+
       if (currentRest) currentRest.company_info = company_info
       await currentRest.save()
       return res.status(200).json(currentRest.toClient())
@@ -73,7 +78,7 @@ router.post('/company-info', auth, validate(companyInfoSchema), async (req, res)
 })
 
 router.post(
-  '/restaurant-details',
+  '/details',
   auth,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN),
   upload.fields([
@@ -88,11 +93,24 @@ router.post(
       restaurant,
       files,
     } = req
+    console.log(req.body, req.files)
 
     //! route is expecting formdata - any objects that arent files must be stringified and sent as formdata
     //! then destringifyd on the server
 
     try {
+      if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+        throwErr(
+          'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
+          400
+        )
+      }
+
+      if (!restaurant.registration_step) {
+        throwErr('Error: Must complete step 1 first')
+        return
+      }
+
       const rAvatar = restaurant?.avatar
       const rCoverPhoto = restaurant?.cover_photo
 
@@ -104,6 +122,8 @@ router.post(
       }
 
       const filesArr = Object.entries(files)
+
+      console.log(filesArr)
 
       // update existing store
 
@@ -148,6 +168,11 @@ router.post(
 
       await restaurant.updateRest(newData)
 
+      if (restaurant.registration_step === RESTAURANT_REG_STEPS.STEP_1_COMPLETE) {
+        restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_2_COMPLETE
+        await restaurant.save()
+      }
+
       return res.status(200).json(restaurant.toClient())
     } catch (error) {
       console.log(error)
@@ -155,5 +180,70 @@ router.post(
     }
   }
 )
+
+router.post('/locations', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), async (req, res) => {
+  const { restaurant } = req
+
+  try {
+    if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+      throwErr(
+        'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
+        400
+      )
+    }
+
+    if (!restaurant.registration_step || restaurant.registration_step === RESTAURANT_REG_STEPS.STEP_1_COMPLETE) {
+      throwErr('Error: Must complete step 1 & 2 first')
+      return
+    }
+
+    if (!restaurant.locations || restaurant.locations.length === 0) {
+      throwErr('Error: A minimum of 1 locations is required')
+      return
+    }
+
+    if (restaurant.registration_step === RESTAURANT_REG_STEPS.STEP_2_COMPLETE) {
+      restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_3_COMPLETE
+      await restaurant.save()
+    }
+
+    return res.status(200).json(restaurant.toClient())
+  } catch (error) {
+    console.log(error)
+    SendError(res, error)
+  }
+})
+
+router.post('/submit-application', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), async (req, res) => {
+  const { restaurant } = req
+
+  try {
+    if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+      throwErr(
+        'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
+        400
+      )
+    }
+
+    if (restaurant.registration_step !== RESTAURANT_REG_STEPS.STEP_3_COMPLETE) {
+      throwErr('Error: Must complete step 1 & 2 & 3 first')
+      return
+    }
+
+    if (!restaurant.locations || restaurant.locations.length === 0) {
+      throwErr('Error: A minimum of 1 locations is required')
+      return
+    }
+
+    restaurant.status = RESTAURANT_STATUS.APPLICATION_PROCESSING
+
+    await restaurant.save()
+
+    return res.status(200).json(restaurant.toClient())
+  } catch (error) {
+    console.log(error)
+    SendError(res, error)
+  }
+})
 
 export default router

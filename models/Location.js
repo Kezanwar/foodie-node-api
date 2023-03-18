@@ -1,5 +1,4 @@
 import mongoose from 'mongoose'
-import { prefixImageWithBaseUrl } from '../routes/utilities/utilities.js'
 
 const LocationSchema = new mongoose.Schema(
   {
@@ -110,7 +109,6 @@ LocationSchema.methods.toClient = function () {
   delete returnToClient.__v
   delete returnToClient.createdAt
   delete returnToClient.updatedAt
-  if (returnToClient.cover_photo) returnToClient.cover_photo = prefixImageWithBaseUrl(returnToClient.cover_photo)
   return returnToClient
 }
 
