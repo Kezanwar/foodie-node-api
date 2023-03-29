@@ -3,7 +3,10 @@ import { object, string } from 'yup'
 export const loginUserSchema = object({
   body: object({
     email: string().email().required(),
-    password: string().min(8).max(32).required(),
+    password: string()
+      .min(8, 'Password must be minimum 8 characters')
+      .max(32, 'Password must be maximum 32 characters')
+      .required('Password is required'),
   }),
 })
 

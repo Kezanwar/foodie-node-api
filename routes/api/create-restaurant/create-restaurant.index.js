@@ -19,7 +19,7 @@ import { bucketName, foodieS3Client, s3PutCommand } from '../../../aws/s3Client.
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
-//! @access authenticated & no restauaant || restaurant
+//! @access authenticated & no restauant || restaurant
 
 router.post('/company-info', auth, validate(companyInfoSchema), async (req, res) => {
   const { company_name, company_number, company_address } = req.body
@@ -89,11 +89,10 @@ router.post(
 
   async (req, res) => {
     const {
-      body: { name, bio, social_media },
+      body: { name, bio, social_media, dietary_requirements, cuisines },
       restaurant,
       files,
     } = req
-    console.log(req.body, req.files)
 
     //! route is expecting formdata - any objects that arent files must be stringified and sent as formdata
     //! then destringifyd on the server
@@ -122,8 +121,6 @@ router.post(
       }
 
       const filesArr = Object.entries(files)
-
-      console.log(filesArr)
 
       // update existing store
 
@@ -163,6 +160,8 @@ router.post(
         ...(imageNames.cover_photo && { cover_photo: imageNames.cover_photo }),
         name,
         bio,
+        ...(dietary_requirements && { dietary_requirements: JSON.parse(dietary_requirements) }),
+        ...(cuisines && { cuisines: JSON.parse(cuisines) }),
         ...(social_media && { social_media: JSON.parse(social_media) }),
       }
 

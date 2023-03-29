@@ -1,4 +1,6 @@
 import mongoose from 'mongoose'
+import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
+import GeoSchema from './schemas/GeoSchema.js'
 
 const LocationSchema = new mongoose.Schema(
   {
@@ -26,6 +28,8 @@ const LocationSchema = new mongoose.Schema(
         type: String,
       },
     },
+    cuisines: [CategorySchemaWithIndex],
+    dietary_requirements: [CategorySchemaWithIndex],
     phone_number: {
       type: String,
     },
@@ -77,6 +81,7 @@ const LocationSchema = new mongoose.Schema(
         close: { type: String },
       },
     },
+    geometry: GeoSchema,
     long_lat: {
       type: Object,
       longitude: {
@@ -118,5 +123,7 @@ LocationSchema.set('toJSON', {
 })
 
 const Location = mongoose.model('location', LocationSchema)
+
+Location.createIndexes()
 
 export default Location

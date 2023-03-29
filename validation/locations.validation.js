@@ -107,3 +107,9 @@ export const addLocationSchema = object({
     }),
   }),
 })
+
+export const deleteLocationSchema = object({
+  body: object({
+    id: string().required('Location ID is required'),
+  }),
+})

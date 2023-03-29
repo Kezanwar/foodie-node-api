@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { prefixImageWithBaseUrl } from '../routes/utilities/utilities.js'
+import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import User from './User.js'
 
 const RestaurantSchema = new mongoose.Schema(
@@ -81,6 +82,8 @@ const RestaurantSchema = new mongoose.Schema(
         type: String,
       },
     },
+    cuisines: [CategorySchemaWithIndex],
+    dietary_requirements: [CategorySchemaWithIndex],
     reviews: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -149,5 +152,7 @@ RestaurantSchema.set('toJSON', {
 })
 
 const Restaurant = mongoose.model('restaurant', RestaurantSchema)
+
+Restaurant.createIndexes()
 
 export default Restaurant

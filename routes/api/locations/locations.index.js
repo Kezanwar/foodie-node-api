@@ -25,7 +25,7 @@ router.post(
   async (req, res) => {
     const {
       restaurant,
-      body: { nickname, address, phone_number, email, opening_times },
+      body: { address },
     } = req
     try {
       const locations = await restaurant.getLocations()
@@ -33,7 +33,7 @@ router.post(
         (l) => allCapsNoSpace(l.address.postcode) === allCapsNoSpace(address.postcode)
       )
 
-      if (alreadyExists) throwErr('Error: Location already exists', 401)
+      if (alreadyExists) throwErr(`Error: A Location already exists for ${address.postcode} `, 401)
 
       const long_lat = await getLongLat(address)
       if (!long_lat)
@@ -42,7 +42,7 @@ router.post(
           422
         )
 
-      res.status(200).json({ nickname, address, phone_number, email, opening_times, long_lat })
+      res.status(200).json({ long_lat })
     } catch (error) {
       SendError(res, error)
     }
@@ -65,7 +65,9 @@ router.post(
         (l) => allCapsNoSpace(l.address.postcode) === allCapsNoSpace(address.postcode)
       )
 
-      if (alreadyExists) throwErr('Error: Location already exists', 401)
+      if (alreadyExists) throwErr(`Error: A Location already exists for ${address.postcode} `, 401)
+
+      const { dietary_requirements, cuisines } = restaurant
 
       const newLocation = new Location({
         nickname,
@@ -73,7 +75,9 @@ router.post(
         phone_number,
         email,
         opening_times,
-        long_lat,
+        dietary_requirements,
+        cuisines,
+        geometry: { coordinates: [long_lat.long, long_lat.lat] },
         restaurant: restaurant._id,
       })
 
@@ -83,12 +87,43 @@ router.post(
 
       await restaurant.save()
 
-      res.status(200).json(newLocation.toClient())
+      const resLocations = await restaurant.getLocations()
+
+      res.status(200).json(resLocations)
     } catch (error) {
       SendError(res, error)
     }
   }
 )
+
+router.post('/delete/:id', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), async (req, res) => {
+  const {
+    restaurant,
+    params: { id },
+  } = req
+  try {
+    if (!id) throwErr('Location ID is required', 401)
+    const rLocToDelete = restaurant.locations.find((rl) => getID(rl) === id)
+
+    if (!rLocToDelete) throwErr('Location not found', 401)
+
+    const locToDelete = await Location.findById(id)
+
+    if (!locToDelete) throwErr('Location not found', 401)
+
+    await locToDelete.remove()
+
+    restaurant.locations = restaurant.locations.filter((rl) => getID(rl) !== id)
+
+    await restaurant.save()
+
+    const locRes = await restaurant.getLocations()
+
+    res.status(200).json(locRes)
+  } catch (error) {
+    SendError(res, error)
+  }
+})
 
 router.patch(
   '/edit/:id',
