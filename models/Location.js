@@ -99,7 +99,7 @@ const LocationSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-LocationSchema.methods.updateRest = async function (data) {
+LocationSchema.methods.updateLocation = async function (data) {
   if (!data) throw new Error('no data passed to setup method')
   const dataArr = Object.entries(data)
   dataArr.forEach(([key, value]) => {

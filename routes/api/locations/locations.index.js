@@ -125,6 +125,39 @@ router.post('/delete/:id', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), as
   }
 })
 
+router.post(
+  '/edit/check/:id',
+  auth,
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN),
+  validate(checkLocationSchema),
+  async (req, res) => {
+    const {
+      body: { address },
+      params: { id },
+    } = req
+    try {
+      const editLocation = await Location.findById(id)
+
+      if (!editLocation) {
+        throwErr('Error: No location found')
+        return
+      }
+
+      const long_lat = await getLongLat(address)
+
+      if (!long_lat)
+        throwErr(
+          'Error: Cannot find a geolocation for the location provided, please check the address and try again',
+          422
+        )
+
+      res.status(200).json({ long_lat })
+    } catch (error) {
+      SendError(res, error)
+    }
+  }
+)
+
 router.patch(
   '/edit/:id',
   auth,
@@ -156,38 +189,11 @@ router.patch(
         return
       }
 
+      await editLocation.updateLocation({ nickname, address, phone_number, email, opening_times, long_lat })
+
       const locations = await restaurant.getLocations()
 
-      const alreadyExists = locations
-        .filter((f) => getID(f._id) !== getID(editLocation))
-        .some((l) => allCapsNoSpace(l.address.postcode) === allCapsNoSpace(address.postcode))
-
-      if (alreadyExists) {
-        throwErr('Error: Location already exists', 401)
-        return
-      }
-
       res.status(200).json(locations)
-
-      //   if (alreadyExists) throwErr('Error: Location already exists', 401)
-
-      //   const newLocation = new Location({
-      //     nickname,
-      //     address,
-      //     phone_number,
-      //     email,
-      //     opening_times,
-      //     long_lat,
-      //     restaurant: restaurant._id,
-      //   })
-
-      //   await newLocation.save()
-
-      //   restaurant.locations.push(newLocation._id)
-
-      //   await restaurant.save()
-
-      //   res.status(200).json(newLocation.toClient())
     } catch (error) {
       SendError(res, error)
     }
