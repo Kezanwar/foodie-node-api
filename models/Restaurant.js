@@ -1,11 +1,17 @@
 import mongoose from 'mongoose'
+import { prefixImageWithBaseUrl } from '../routes/utilities/utilities.js'
+import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
+import User from './User.js'
 
 const RestaurantSchema = new mongoose.Schema(
   {
     name: {
       type: String,
     },
-    profile_image: {
+    bio: {
+      type: String,
+    },
+    avatar: {
       type: String,
     },
     cover_photo: {
@@ -39,14 +45,6 @@ const RestaurantSchema = new mongoose.Schema(
         country: {
           type: String,
         },
-      },
-    },
-    long_lat: {
-      longitude: {
-        type: Number,
-      },
-      latitude: {
-        type: Number,
       },
     },
     locations: [
@@ -84,6 +82,8 @@ const RestaurantSchema = new mongoose.Schema(
         type: String,
       },
     },
+    cuisines: [CategorySchemaWithIndex],
+    dietary_requirements: [CategorySchemaWithIndex],
     reviews: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -119,11 +119,40 @@ RestaurantSchema.methods.updateRest = async function (data) {
   await this.save()
 }
 
+RestaurantSchema.methods.updateRegStep = async function (step) {
+  if (!step) throw new Error('no step passed to update step method')
+  this.registration_step = step
+  const sAdmin = await User.findById(this.super_admin)
+  sAdmin.restaurant
+  await this.save()
+}
+
+RestaurantSchema.methods.getLocations = async function () {
+  if (!this.locations?.length) return []
+  const p = await this.populate('locations')
+  return p.locations
+}
+
+RestaurantSchema.methods.toClient = function () {
+  let returnToClient = this.toJSON()
+  delete returnToClient._id
+  delete returnToClient.__v
+  delete returnToClient.super_admin
+  delete returnToClient.createdAt
+  delete returnToClient.updatedAt
+  delete returnToClient.locations
+  if (returnToClient.avatar) returnToClient.avatar = prefixImageWithBaseUrl(returnToClient.avatar)
+  if (returnToClient.cover_photo) returnToClient.cover_photo = prefixImageWithBaseUrl(returnToClient.cover_photo)
+  return returnToClient
+}
+
 // Ensure virtual fields are serialised.
 RestaurantSchema.set('toJSON', {
   virtuals: true,
 })
 
 const Restaurant = mongoose.model('restaurant', RestaurantSchema)
+
+Restaurant.createIndexes()
 
 export default Restaurant

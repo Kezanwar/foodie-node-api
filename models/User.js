@@ -18,6 +18,7 @@ const UserSchema = Schema(
     email_confirmed: {
       type: Boolean,
       default: false,
+
       required: true,
     },
     password: {
@@ -38,5 +39,7 @@ const UserSchema = Schema(
   { timestamps: true }
 )
 const User = model('user', UserSchema)
+
+User.createIndexes()
 
 export default User

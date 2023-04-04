@@ -1,11 +1,16 @@
+import axios from 'axios'
 import { Router } from 'express'
 import { parse } from 'node-html-parser' // package for parsing html
+import dotenv from 'dotenv'
+dotenv.config()
 
 import { RUGBY_TABLE_DATA, RUGBY_FULL_LABELS } from './tests.rugbydata.js' // html table data of teams and html data of the long labels above the table
 
 const router = Router()
 
 router.get('/test-rugby', async (req, res) => {
+  let i = 1
+  console.log(i)
   const totalRows = 7 // how many rows there are (6 teams plus the header / labels row)
   const itemsPerRow = 28 // how many items per row - theres the team name and then 27 stats for each team on each row
 
@@ -76,6 +81,32 @@ router.get('/test-rugby', async (req, res) => {
     const finalCleanedDataToReturn = Object.fromEntries(filteredStats) // then i convert the array back to an object
 
     res.json(finalCleanedDataToReturn) // returning the data back to whover requested it from my api
+  } catch (error) {
+    console.log(error)
+    res.status(500).send(error?.response || 'Unexpected error')
+  }
+})
+
+router.get('/test-address', async (req, res) => {
+  try {
+    const options = {
+      method: 'GET',
+      url: 'https://uk-postcode-api.p.rapidapi.com/addresses/autocomplete',
+      params: { query: 'M20 2FL' },
+      headers: {
+        'X-RapidAPI-Key': '6e71bd2062mshbd33f99006c53fbp13b536jsnd8f3b4a140b5',
+        'X-RapidAPI-Host': 'uk-postcode-api.p.rapidapi.com',
+      },
+    }
+
+    axios
+      .request(options)
+      .then(function (response) {
+        res.json(response.data)
+      })
+      .catch(function (error) {
+        console.error(error)
+      })
   } catch (error) {
     console.log(error)
     res.status(500).send(error?.response || 'Unexpected error')

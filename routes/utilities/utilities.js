@@ -1,17 +1,17 @@
+import dotenv from 'dotenv'
+dotenv.config()
+
 import sharp from 'sharp'
 import _ from 'lodash'
+const { capitalize, upperCase } = _
 
 import { STORE_ROLES } from '../../constants/store.js'
 import User from '../../models/User.js'
+import axios from 'axios'
 
 export function ArrayIsEmpty(array) {
   if (array.length > 0) return false
   else return true
-}
-
-export function SendError(res, err, statusCode = 500) {
-  console.error(err)
-  res.status(statusCode).json({ message: err?.message || 'Internal server error' })
 }
 
 export function capitalizeFirstLetter(string) {
@@ -76,3 +76,94 @@ export async function resizeProfilePhoto(buffer) {
     throw new Error(error)
   }
 }
+
+export const throwErr = (msg, code) => {
+  const exception = new Error(msg)
+  exception.code = code ?? 500
+  throw exception
+}
+
+export function SendError(res, err) {
+  console.error(err)
+  res.status(err.code ?? 500).json({ message: err?.message || 'Internal server error' })
+}
+
+export const prefixImageWithBaseUrl = (imageName) => {
+  const d = new Date()
+  return `${process.env.S3_BUCKET_BASE_URL}${imageName}?${d.toTimeString().split(' ').join('')}`
+}
+
+export const allCapsNoSpace = (str) => {
+  return upperCase(str).split(' ').join('')
+}
+
+export const getID = (doc) => {
+  return doc?._id?.toHexString()
+}
+
+export const getLongLat = async (address) => {
+  try {
+    if (!address.postcode || !address.address_line_1)
+      throwErr('Need postcode and address line 1 to get geographical data', 500)
+
+    const sPostcode = upperCase(address.postcode)
+    const sAddresLine1 = capitalize(address.address_line_1)
+
+    const response = await axios.get('https://address-from-to-latitude-longitude.p.rapidapi.com/geolocationapi', {
+      params: { address: `${sAddresLine1} ${sPostcode}` },
+      headers: {
+        'X-RapidAPI-Key': process.env.RAPID_KEY,
+        'X-RapidAPI-Host': 'address-from-to-latitude-longitude.p.rapidapi.com',
+      },
+    })
+
+    const results = response?.data?.Results
+
+    let tryJustPost = false
+
+    if (!results?.length) tryJustPost = true
+
+    if (results.length) {
+      const firstResultsMatchingPostcode = results.find(
+        (r) => r.postalcode.split(' ').join('') === sPostcode.split(' ').join('')
+      )
+      if (!firstResultsMatchingPostcode) tryJustPost = true
+      else return { long: firstResultsMatchingPostcode.longitude, lat: firstResultsMatchingPostcode.latitude }
+    }
+
+    if (tryJustPost) {
+      const justPostResponse = await axios.get(
+        'https://address-from-to-latitude-longitude.p.rapidapi.com/geolocationapi',
+        {
+          params: { address: sPostcode },
+          headers: {
+            'X-RapidAPI-Key': process.env.RAPID_KEY,
+            'X-RapidAPI-Host': 'address-from-to-latitude-longitude.p.rapidapi.com',
+          },
+        }
+      )
+
+      const justPostResults = justPostResponse?.data?.Results
+
+      if (!justPostResults?.length) return undefined
+
+      const justPostResultsMatchingPostcode = justPostResults.find(
+        (r) => r.postalcode.split(' ').join('') === sPostcode.split(' ').join('')
+      )
+
+      if (!justPostResultsMatchingPostcode) return undefined
+      else return { long: justPostResultsMatchingPostcode.longitude, lat: justPostResultsMatchingPostcode.latitude }
+    }
+
+    return undefined
+  } catch (error) {
+    throwErr(error, 500)
+  }
+}
+
+export const fakeLongLoadPromise = (duration = 5000) =>
+  new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve()
+    }, duration)
+  })
