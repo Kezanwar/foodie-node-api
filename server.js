@@ -10,6 +10,7 @@ const PORT = process.env.PORT
 // const APP_ENV = process.env.APP_ENV
 import cors from 'cors'
 import RouterIndex from './routes/api/routes.index.js'
+import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
 
 const app = express()
 
@@ -20,10 +21,9 @@ connectDB()
 app.use(json({ extended: false }))
 app.use(express.static(__dirname + '/public'))
 app.use(cors())
+app.use(rateLimiterMiddlware)
 
-app.get('/', (req, res) => res.send('MorePaws API Running'))
-
-// // define routes
+app.get('/', (req, res) => res.send('Foodie API Running'))
 
 app.use('/api', RouterIndex)
 
