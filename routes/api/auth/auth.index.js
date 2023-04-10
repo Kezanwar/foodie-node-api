@@ -6,22 +6,22 @@ dotenv.config()
 
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
-
+import pkg from 'lodash'
+const { lowerCase } = pkg
 import { join } from 'path'
 
 // models
+import User from '../../../models/User.js'
 
 // middlewares
 import auth from '../../../middleware/auth.middleware.js'
 import { SendError, capitalizeFirstLetter, removeDocumentValues } from '../../utilities/utilities.js'
-
 import { loginUserSchema, registerUserSchema } from '../../../validation/auth.validation.js'
+import validate from '../../../middleware/validation.middleware.js'
 
 import { JWT_SECRET } from '../../../constants/auth.js'
-import validate from '../../../middleware/validation.middleware.js'
 import transporter, { getEmailOptions } from '../../../emails/emails.nodemailer.js'
 import { confirm_email_content } from '../../../emails/emails.content.js'
-import User from '../../../models/User.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -51,7 +51,7 @@ router.post(
       const { email, password } = req.body
 
       // checking if user doesnt exist, if they dont then send err
-      let user = await User.findOne({ email: email }).select('+password')
+      let user = await User.findOne({ email: lowerCase(email) }).select('+password')
 
       if (!user) {
         throw new Error('Invalid credentials')
@@ -110,7 +110,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
     const { first_name, last_name, email, password } = req.body
 
     // checking if user exists, if they do then send err
-    let user = await User.findOne({ email: email })
+    let user = await User.findOne({ email: lowerCase(email) })
 
     if (user) throw new Error('User already exists')
 
@@ -192,7 +192,7 @@ router.get('/confirm-email/:token', async (req, res) => {
 
     if (!email) throw new Error('Email address not recognized')
 
-    const user = await User.findOne({ email: email })
+    const user = await User.findOne({ email: lowerCase(email) })
 
     if (!user) throw new Error('User doesnt exist')
 
@@ -222,7 +222,7 @@ router.post('/resend-confirm-email', auth, async (req, res) => {
       if (err) throw new Error(err)
 
       const { title, description } = confirm_email_content
-      const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
+      const emailOptions = getEmailOptions(lowerCase(user.email), 'Confirm your email address!', 'action-email', {
         user_name: user.first_name,
         title: title,
         description: description,
@@ -248,7 +248,7 @@ router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body
     if (!email) throw new Error('No email attached')
-    const user = await User.findOne({ email: email })
+    const user = await User.findOne({ email: lowerCase(email) })
     if (!user) throw new Error('Email address doesnt exist')
 
     const confirmEmailPayload = {
