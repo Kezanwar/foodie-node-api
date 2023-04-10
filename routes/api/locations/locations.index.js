@@ -3,7 +3,7 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import { RESTAURANT_ROLES } from '../../../constants/restaurant.js'
+import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES } from '../../../constants/restaurant.js'
 
 import auth from '../../../middleware/auth.middleware.js'
 import validate from '../../../middleware/validation.middleware.js'
@@ -114,6 +114,12 @@ router.post('/delete/:id', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), as
     await locToDelete.remove()
 
     restaurant.locations = restaurant.locations.filter((rl) => getID(rl) !== id)
+
+    if (restaurant.locations.length < 1) {
+      if (restaurant?.registration_step === RESTAURANT_REG_STEPS.STEP_3_COMPLETE) {
+        restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_2_COMPLETE
+      }
+    }
 
     await restaurant.save()
 

@@ -1,4 +1,4 @@
-import { object, string } from 'yup'
+import { object, string, boolean } from 'yup'
 
 export const companyInfoSchema = object({
   body: object({
@@ -17,5 +17,16 @@ export const restaurantDetailsSchema = object({
   body: object({
     name: string().required('Restaurant name is required').min(1).max(32),
     bio: string().required('Restaurant bio is required').min(140).max(500),
+  }),
+})
+
+export const restaurantSubmitApplicationSchema = object({
+  body: object({
+    terms_and_conditions: boolean()
+      .required('The terms and conditions must be accepted.')
+      .oneOf([true], 'The terms and conditions must be accepted.'),
+    privacy_policy: boolean()
+      .required('The privacy policy must be accepted.')
+      .oneOf([true], 'The privacy policy must be accepted.'),
   }),
 })
