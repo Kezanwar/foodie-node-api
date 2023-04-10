@@ -106,7 +106,14 @@ const RestaurantSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    terms_and_conditions: {
+      type: Boolean,
+    },
+    privacy_policy: {
+      type: Boolean,
+    },
   },
+
   { timestamps: true }
 )
 

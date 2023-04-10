@@ -139,7 +139,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       email: user.email,
     }
 
-    jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: 360000 }, async (err, token) => {
+    jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
       if (err) throw new Error(err)
       const { title, description } = confirm_email_content
       const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
@@ -147,7 +147,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
         title: title,
         description: description,
         action_text: 'Confirm email',
-        action_href: `http://localhost:5006/api/auth/confirm-email/${token}`,
+        action_href: `${process.env.BASE_URL}/auth/confirm-email/${token}`,
       })
       transporter.sendMail(emailOptions, (err, info) => {
         if (err) console.log(err)
@@ -162,7 +162,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       },
     }
 
-    jwt.sign(authIdPayload, JWT_SECRET, { expiresIn: 360000 }, async (err, token) => {
+    jwt.sign(authIdPayload, JWT_SECRET, { expiresIn: '14d' }, async (err, token) => {
       if (err) throw new Error(err)
 
       const userResponse = removeDocumentValues(['_id', 'password'], user)
@@ -213,12 +213,12 @@ router.get('/confirm-email/:token', async (req, res) => {
 router.post('/resend-confirm-email', auth, async (req, res) => {
   try {
     const user = req.user
-    if (!user) throw new Error('User doesnt exist')
+
     const confirmEmailPayload = {
       email: user.email,
     }
 
-    jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: 360000 }, async (err, token) => {
+    jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
       if (err) throw new Error(err)
 
       const { title, description } = confirm_email_content
@@ -227,7 +227,7 @@ router.post('/resend-confirm-email', auth, async (req, res) => {
         title: title,
         description: description,
         action_text: 'Confirm email',
-        action_href: `http://localhost:5006/api/auth/confirm-email/${token}`,
+        action_href: `${process.env.BASE_URL}/auth/confirm-email/${token}`,
       })
       transporter.sendMail(emailOptions, (err, info) => {
         if (err) console.log(err)
@@ -264,7 +264,7 @@ router.post('/forgot-password', async (req, res) => {
         title: title,
         description: description,
         action_text: 'Confirm email',
-        action_href: `http://localhost:5006/api/auth/confirm-email/${token}`,
+        action_href: `${process.env.BASE_URL}/auth/confirm-email/${token}`,
       })
       transporter.sendMail(emailOptions, (err, info) => {
         if (err) console.log(err)
