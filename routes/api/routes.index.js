@@ -5,12 +5,9 @@ import RestaurantRouter from './restaurant/restaurant.index.js'
 import LocationsRouter from './locations/locations.index.js'
 import OptionsRouter from './options/options.index.js'
 
-import TestRouter from './test/test.js'
-
 const router = Router()
 
 // define routes
-router.use('/test', TestRouter)
 
 router.use('/auth', AuthRouter)
 router.use('/locations', LocationsRouter)
