@@ -63,14 +63,14 @@ export async function findUserByEmail(email) {
   if (!email) throw new Error('no email found')
   const reg = matchAllCases(email)
   const user = await User.findOne({ email: reg })
-  if (!user) throw new Error(`User: ${email} doesn't exist`)
+  return user
 }
 
 export async function findUserByEmailWithPassword(email) {
   if (!email) throw new Error('no email found')
   const reg = matchAllCases(email)
   const user = await User.findOne({ email: reg }).select('+password')
-  if (!user) throw new Error(`User: ${email} doesn't exist`)
+  return user
 }
 
 export function createUrlFromString(str) {

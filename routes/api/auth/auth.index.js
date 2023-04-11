@@ -57,7 +57,7 @@ router.post(
       const { email, password } = req.body
 
       // checking if user doesnt exist, if they dont then send err
-      let user = await findUserByEmailWithPassword(email).select('+password')
+      let user = await findUserByEmailWithPassword(email)
 
       if (!user) {
         throw new Error('Invalid credentials')
