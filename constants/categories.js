@@ -6,7 +6,6 @@ export const CUISINES_DATA = [
   'Alsatian',
   'American',
   'Waffles',
-
   'Armenian',
   'Argentine',
   'Asian',
@@ -74,7 +73,6 @@ export const CUISINES_DATA = [
   'Grill',
   'Gyros',
   'Haitian',
-
   'Hawaiian',
   'Healthy',
   'Hot Dogs',
@@ -90,7 +88,6 @@ export const CUISINES_DATA = [
   'Juices',
   'Korean',
   'Korean Barbeque',
-
   'Latin',
   'Latin American',
   'Lebanese',

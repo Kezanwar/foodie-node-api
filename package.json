@@ -7,7 +7,8 @@
     "start": "node server",
     "server": "nodemon  --inspect server",
     "client": "npm start --prefix client",
-    "sass-watch": "sass --no-source-map --watch sass/main.scss public/main.css"
+    "sass-watch": "sass --no-source-map --watch sass/main.scss public/main.css",
+    "test": "node --experimental-vm-modules ./node_modules/.bin/jest"
   },
   "type": "module",
   "author": "Kez Anwar",
@@ -38,6 +39,7 @@
     "concurrently": "^7.0.0",
     "eslint": "^8.33.0",
     "eslint-plugin-modules": "^1.1.1",
+    "jest": "^29.5.0",
     "nodemon": "^2.0.15"
   },
   "eslintConfig": {

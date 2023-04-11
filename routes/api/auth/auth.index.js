@@ -126,7 +126,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
     user = new User({
       first_name,
       last_name,
-      email,
+      email: email.toLowerCase(),
       password,
       display_name,
     })

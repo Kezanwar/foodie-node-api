@@ -61,20 +61,16 @@ export async function getUser(id) {
 
 export async function findUserByEmail(email) {
   if (!email) throw new Error('no email found')
-  const reg = matchAllCases(email)
-  const user = await User.findOne({ email: reg })
+  const sEmail = email.toLowerCase()
+  const user = await User.findOne({ email: sEmail })
   return user
 }
 
 export async function findUserByEmailWithPassword(email) {
   if (!email) throw new Error('no email found')
-  const reg = matchAllCases(email)
-  const user = await User.findOne({ email: reg }).select('+password')
+  const sEmail = email.toLowerCase()
+  const user = await User.findOne({ email: sEmail }).select('+password')
   return user
-}
-
-export function createUrlFromString(str) {
-  return str.replace(/\s+/g, '-').toLowerCase()
 }
 
 export function createImageName(obj, item, image) {
