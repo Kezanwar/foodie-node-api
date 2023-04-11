@@ -12,6 +12,12 @@ import { SendError } from '../../utilities/utilities.js'
 import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '../../../constants/categories.js'
 import Cuisine from '../../../models/Cuisine.js'
 import DietaryRequirement from '../../../models/DietaryRequirement.js'
+import {
+  cacheGetCuisines,
+  cacheGetDietaryRequirements,
+  cachePutCuisines,
+  cachePutDietaryRequirements,
+} from '../../../cache/cache.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -19,17 +25,28 @@ import DietaryRequirement from '../../../models/DietaryRequirement.js'
 
 router.get('/', auth, async (req, res) => {
   try {
-    const allCuisines = await Cuisine.find().lean()
-    const resAllCuisines = allCuisines.map(({ name, slug, ...rest }) => ({
-      name,
-      slug,
-    }))
+    let resAllCuisines = cacheGetCuisines()
+    let resAllDietaries = cacheGetDietaryRequirements()
 
-    const allDietaries = await DietaryRequirement.find().lean()
-    const resAllDietaries = allDietaries.map(({ name, slug, ...rest }) => ({
-      name,
-      slug,
-    }))
+    console.log(resAllCuisines, resAllDietaries)
+
+    if (!resAllCuisines) {
+      const allCuisines = await Cuisine.find().lean()
+      resAllCuisines = allCuisines.map(({ name, slug, ...rest }) => ({
+        name,
+        slug,
+      }))
+      cachePutCuisines(resAllCuisines)
+    }
+
+    if (!resAllDietaries) {
+      const allDietaries = await DietaryRequirement.find().lean()
+      resAllDietaries = allDietaries.map(({ name, slug, ...rest }) => ({
+        name,
+        slug,
+      }))
+      cachePutDietaryRequirements(resAllDietaries)
+    }
 
     res.status(200).json({ cuisines: resAllCuisines, dietary_requirements: resAllDietaries })
   } catch (error) {
