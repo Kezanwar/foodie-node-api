@@ -58,6 +58,13 @@ export async function getUser(id) {
   return user
 }
 
+export async function findUserByEmail(email) {
+  if (!email) throw new Error('no email found')
+  const reg = new RegExp(`^${email}$`, 'i')
+  const user = await User.findOne({ email: reg })
+  if (!user) throw new Error(`User: ${email} doesn't exist`)
+}
+
 export function createUrlFromString(str) {
   return str.replace(/\s+/g, '-').toLowerCase()
 }
