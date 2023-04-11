@@ -6,8 +6,7 @@ dotenv.config()
 
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
-import pkg from 'lodash'
-const { lowerCase } = pkg
+
 import { join } from 'path'
 
 // models
@@ -228,7 +227,7 @@ router.post('/resend-confirm-email', auth, async (req, res) => {
       if (err) throw new Error(err)
 
       const { title, description } = confirm_email_content
-      const emailOptions = getEmailOptions(lowerCase(user.email), 'Confirm your email address!', 'action-email', {
+      const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
         user_name: user.first_name,
         title: title,
         description: description,
