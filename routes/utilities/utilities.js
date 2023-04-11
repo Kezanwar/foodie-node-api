@@ -8,7 +8,6 @@ const { capitalize, upperCase } = _
 import { STORE_ROLES } from '../../constants/store.js'
 import User from '../../models/User.js'
 import axios from 'axios'
-import { matchAllCases } from './regex.js'
 
 export function ArrayIsEmpty(array) {
   if (array.length > 0) return false
@@ -39,9 +38,7 @@ export function removeDocumentValues(arrayOfUnrequiredKeys, document) {
     throw new Error(
       'removeDocumentValues expects an array of values as its first argument and the MGDB/Document to omit from as the second'
     )
-
   const object = document.toObject()
-
   return _.omit(object, arrayOfUnrequiredKeys)
 }
 

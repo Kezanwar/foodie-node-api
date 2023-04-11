@@ -278,13 +278,13 @@ router.post(
           user_name: 'Admin',
           title: `New restaurant application: ${restaurant.name}`,
           description: `New restaurant application 
-          </br> 
+             |||   
           - Company name: ${restaurant.company_info.company_name}
-          </br> 
+             |||   
           - Bio: ${restaurant.bio}
-          </br> 
+             |||   
           - Cuisines: ${cuisinesText}
-          </br> 
+             |||   
           - Dietary requirements: ${dietText}
           `,
           action_text: 'No action',

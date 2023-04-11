@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import { matchAllCases, matchEmail } from '../regex'
+import { matchAllCases } from '../regex'
 
 describe('matchAllCases with uppercase', () => {
   const stringToTest = 'kezanwAr@gmail.com'
