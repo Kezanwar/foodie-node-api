@@ -28,8 +28,6 @@ router.get('/', auth, async (req, res) => {
     let resAllCuisines = cacheGetCuisines()
     let resAllDietaries = cacheGetDietaryRequirements()
 
-    console.log(resAllCuisines, resAllDietaries)
-
     if (!resAllCuisines) {
       const allCuisines = await Cuisine.find().lean()
       resAllCuisines = allCuisines.map(({ name, slug, ...rest }) => ({
