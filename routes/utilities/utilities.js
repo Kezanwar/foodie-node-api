@@ -8,6 +8,7 @@ const { capitalize, upperCase } = _
 import { STORE_ROLES } from '../../constants/store.js'
 import User from '../../models/User.js'
 import axios from 'axios'
+import { matchAllCases } from './regex.js'
 
 export function ArrayIsEmpty(array) {
   if (array.length > 0) return false
@@ -60,8 +61,15 @@ export async function getUser(id) {
 
 export async function findUserByEmail(email) {
   if (!email) throw new Error('no email found')
-  const reg = new RegExp(`^${email}$`, 'i')
+  const reg = matchAllCases(email)
   const user = await User.findOne({ email: reg })
+  if (!user) throw new Error(`User: ${email} doesn't exist`)
+}
+
+export async function findUserByEmailWithPassword(email) {
+  if (!email) throw new Error('no email found')
+  const reg = matchAllCases(email)
+  const user = await User.findOne({ email: reg }).select('+password')
   if (!user) throw new Error(`User: ${email} doesn't exist`)
 }
 
