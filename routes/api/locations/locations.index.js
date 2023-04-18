@@ -10,8 +10,9 @@ import validate from '../../../middleware/validation.middleware.js'
 import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
 import { addLocationSchema, checkLocationSchema } from '../../../validation/locations.validation.js'
 
-import { allCapsNoSpace, getID, getLongLat, SendError, throwErr } from '../../utilities/utilities.js'
+import { allCapsNoSpace, getID, SendError, throwErr } from '../../utilities/utilities.js'
 import Location from '../../../models/Location.js'
+import { getLongLat } from '../../../services/geolocation.services.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check
