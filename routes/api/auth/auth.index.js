@@ -7,8 +7,6 @@ dotenv.config()
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 
-import { join } from 'path'
-
 // models
 import User from '../../../models/User.js'
 
@@ -27,6 +25,7 @@ import validate from '../../../middleware/validation.middleware.js'
 import { JWT_SECRET } from '../../../constants/auth.js'
 import transporter, { getEmailOptions } from '../../../emails/emails.nodemailer.js'
 import { confirm_email_content } from '../../../emails/emails.content.js'
+import { feUrl } from '../../../base/base.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -203,9 +202,9 @@ router.get('/confirm-email/:token', async (req, res) => {
 
     user.email_confirmed = true
 
-    user.save()
+    await user.save()
 
-    res.sendFile(join(process.cwd(), 'public/email-confirmed.html'))
+    return res.render('pages/email-confirmed', { loginUrl: feUrl })
   } catch (error) {
     SendError(res, error)
   }

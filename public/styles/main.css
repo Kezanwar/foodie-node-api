@@ -20,6 +20,7 @@
 html,
 body {
   height: 100%;
+  font-family: 'Poppins', sans-serif;
 }
 
 /*
@@ -54,6 +55,17 @@ select {
   font: inherit;
 }
 
+:root {
+  --primary-main: #f0692a;
+  --primary-light: #f27b44;
+  --success-main: #36B37E;
+  --success-light: #86E8AB;
+  --black: #000;
+  --white: #fff;
+
+
+}
+
 /*
   8. Avoid text overflows
 */
@@ -66,9 +78,10 @@ h5,
 h6,
 a {
   overflow-wrap: break-word;
-  font-family: helvetica-mld;
-  letter-spacing: -0.8px;
+
 }
+
+
 
 a {
   color: #282828;
@@ -77,42 +90,29 @@ a {
 }
 
 a.button {
-  padding: 1rem 2rem;
-  border-radius: 50px;
-  border: 3px solid;
+  color: var(--white);
+  padding: 0.7rem 2rem;
+  border-radius: 12px;
+  width: max-content;
+  background-color: var(--primary-main);
+  transition: all 150ms ease;
 }
 
-.page-wrapper .container {
+a.button:hover {
+
+  background-color: var(--primary-light);
+}
+
+.page-wrapper {
   padding: 2rem;
+  min-height: 100vh;
 }
-.page-wrapper .grey-bg {
-  background-color: #ededed;
-}
-.page-wrapper .mld-red-text {
-  color: #800000;
-}
+
 .page-wrapper .centered-text {
   text-align: center;
-}
-
-.email-confirmed .container {
-  height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
-}
-.email-confirmed .container h1 {
-  color: #800000;
-  font-weight: 500;
-  font-size: 6rem;
-}
-.email-confirmed .container p {
-  font-weight: 500;
-  font-size: 3rem;
-  color: #7a7a7a;
-}
-.email-confirmed .container a {
-  margin-top: 3rem;
-  font-size: 2rem;
+  gap: 2rem;
+  justify-content: center;
+  align-items: center;
 }

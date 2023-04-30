@@ -4,6 +4,8 @@ import CreateRestaurantRouter from './create-restaurant/create-restaurant.index.
 import RestaurantRouter from './restaurant/restaurant.index.js'
 import LocationsRouter from './locations/locations.index.js'
 import OptionsRouter from './options/options.index.js'
+import PrototypeRouter from './prototype.router.js'
+import { appEnv } from '../../base/base.js'
 
 const router = Router()
 
@@ -13,7 +15,10 @@ router.use('/auth', AuthRouter)
 router.use('/locations', LocationsRouter)
 router.use('/create-restaurant', CreateRestaurantRouter)
 router.use('/restaurant', RestaurantRouter)
-
 router.use('/options', OptionsRouter)
+
+if (appEnv === 'development') {
+  router.use('/prototype', PrototypeRouter)
+}
 
 export default router
