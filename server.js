@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const PORT = process.env.PORT
-// const APP_ENV = process.env.APP_ENV
+
 import cors from 'cors'
 import RouterIndex from './routes/api/routes.index.js'
 import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
@@ -17,7 +17,7 @@ const app = express()
 connectDB()
 
 // init middleware
-
+app.set('view engine', 'ejs')
 app.use(json({ extended: false }))
 app.use(express.static(__dirname + '/public'))
 app.use(cors())
