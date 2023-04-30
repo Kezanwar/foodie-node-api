@@ -10,7 +10,7 @@ dotenv.config()
 // import auth from '../../middleware/auth.middleware.js'
 // import validate from '../../middleware/validation.middleware.js'
 // import restRoleGuard from '../../middleware/rest-role-guard.middleware.js'÷
-import { SendError } from '../utilities/utilities.js'
+import { SendError, capitalizeFirstLetter } from '../utilities/utilities.js'
 import { feUrl } from '../../base/base.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
@@ -20,7 +20,7 @@ import { feUrl } from '../../base/base.js'
 router.get('/', async (req, res) => {
   try {
     // return res.sendFile(join(process.cwd(), 'public/email-confirmed.html'))
-    return res.render('pages/email-confirmed', { loginUrl: feUrl })
+    return res.render('pages/email-confirmed', { loginUrl: feUrl, first_name: capitalizeFirstLetter('kez') })
   } catch (error) {
     SendError(res, error)
   }

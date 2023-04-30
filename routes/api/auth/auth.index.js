@@ -170,7 +170,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       if (err) throw new Error(err)
 
       const userResponse = removeDocumentValues(['_id', 'password'], user)
-      res.json({
+      return res.json({
         accessToken: token,
         user: userResponse,
       })
@@ -204,7 +204,7 @@ router.get('/confirm-email/:token', async (req, res) => {
 
     await user.save()
 
-    return res.render('pages/email-confirmed', { loginUrl: feUrl })
+    return res.render('pages/email-confirmed', { loginUrl: feUrl, first_name: capitalizeFirstLetter(user.first_name) })
   } catch (error) {
     SendError(res, error)
   }
