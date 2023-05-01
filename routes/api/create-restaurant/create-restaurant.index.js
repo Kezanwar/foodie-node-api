@@ -278,9 +278,10 @@ router.post(
       renderFile(
         process.cwd() + '/views/emails/action-email.ejs',
         {
-          content: `Bio: ${restaurant.bio}`,
+          content: 'Review the application and accept / decline using the actions below.',
           title: `New restaurant application: ${restaurant.name}`,
           list: [
+            `Bio: ${restaurant.bio}`,
             `Cuisines: ${cuisinesText}`,
             `Dietary requirements: ${dietText}`,
             `Company name: ${restaurant.company_info.company_name}`,
