@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <title>Email template</title>
+
+    <style type="text/css">
+      /* desktop styles */
+      html {
+        font-family: 'Poppins', sans-serif;
+        color: #000;
+      }
+
+      h1 {
+        line-height: 1;
+        color: #f0692a;
+        font-size: 3rem;
+      }
+
+      h2 {
+        font-size: 2rem;
+      }
+
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 p {
+        line-height: 1.35;
+      }
+
+      p,
+      li {
+        line-height: 1.4;
+        color: #404040;
+        font-size: 0.9rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      p {
+        margin: 0;
+        margin-block-start: 0;
+        margin-block-end: 0;
+        margin-bottom: 24px;
+      }
+
+      ul {
+        padding: 16px;
+      }
+
+      #logo {
+        width: 31%;
+      }
+
+      table {
+        border-spacing: 0;
+      }
+
+      table tr td {
+        padding: 32px;
+      }
+
+      #button-table-wrapper td {
+        padding: 0px;
+      }
+
+      #footer-td {
+        background-position: 40px 0px;
+      }
+
+      /* tablet styles */
+      @media only screen and (max-width: 860px) {
+        #desktop-smile-icon {
+          display: none;
+        }
+
+        #mobile-smile-icon {
+          display: initial;
+          padding-bottom: 32px;
+          width: 70px;
+        }
+      }
+
+      /* mobile styles */
+      @media only screen and (max-width: 480px) {
+        table tr td {
+          padding: 16px;
+        }
+
+        #button-table-wrapper td {
+          padding: 0px;
+        }
+
+        #footer-td {
+          background-position: 0px 0px;
+        }
+      }
+    </style>
+  </head>
+
+  <body style="padding: 0; margin: 0">
+    <table
+      border="0"
+      cellpadding="0"
+      cellspacing="0"
+      height="100%"
+      width="100%"
+      style="background-color: #ffffff; padding: 0px"
+    >
+      <tr>
+        <td style="padding: 0" align="center" valign="top">
+          <table border="0" role="main" style="max-width: 640px; min-height: 100vh; background-color: #ffffff">
+            <tr>
+              <td style="padding: 0">
+                <!-- Header start -->
+                <table role="presentation" border="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td valign="top"><h1>Foodie</h1></td>
+                  </tr>
+                </table>
+                <!-- Header end -->
+                <!-- Body start -->
+                <table role="presentation" border="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td valign="top">
+                      <h2>Hi <%= locals?.receiver %>,</h2>
+                      <h3><%= locals?.title %></h3>
+                      <p><%= locals?.content %></p>
+                      <% if(locals?.list) { %>
+                      <ul style="margin-top: 16px">
+                        <% for (item of list) { %>
+                        <li style="margin-bottom: 8px"><%= item %></li>
+                        <% } %>
+                      </ul>
+                      <% } %>
+                      <!-- BUTTON START -->
+                      <table
+                        style="padding: 24px 0px"
+                        id="button-table-wrapper"
+                        border="0"
+                        cellspacing="0"
+                        cellpadding="0"
+                      >
+                        <tr>
+                          <td align="center">
+                            <% if(locals?.action_primary) { %>
+                            <a
+                              rel="noopener"
+                              href="<%= action_primary.url %>"
+                              target="_blank"
+                              style="
+                                color: #fff;
+                                text-decoration: none;
+                                background-color: #f0692a;
+                                padding: 10px 16px;
+                                border-radius: 7px;
+                              "
+                            >
+                              <%= action_primary.text %>
+                            </a>
+                            <% } %> <% if(locals?.action_secondary) { %>
+                            <a
+                              rel="noopener"
+                              href="<%= action_secondary.url %>"
+                              target="_blank"
+                              style="
+                                color: #000000;
+                                text-decoration: none;
+                                border: 2px solid #000000;
+                                padding: 10px 16px;
+                                border-radius: 7px;
+                                margin-left: 16px;
+                              "
+                            >
+                              <%= action_secondary.text %>
+                            </a>
+                            <% } %>
+                          </td>
+                        </tr>
+                      </table>
+                      <!-- BUTTON END -->
+                    </td>
+                  </tr>
+                </table>
+                <!-- Body end -->
+                <!-- Footer start -->
+                <table role="presentation" border="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td id="footer-td" height="220px" align="right" valign="bottom"></td>
+                  </tr>
+                </table>
+                <!-- Footer end -->
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

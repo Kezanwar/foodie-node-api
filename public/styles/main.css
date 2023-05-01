@@ -108,11 +108,26 @@ a.button:hover {
   min-height: 100vh;
 }
 
+.page-wrapper .svg {
+  max-width: 300px;
+  margin: auto;
+  margin-bottom: 3rem;
+}
+
 .page-wrapper .centered-text {
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
   justify-content: center;
   align-items: center;
+}
+
+.centered-text h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.centered-text p {
+  font-size: 1rem;
+  margin-bottom: 1rem;
 }

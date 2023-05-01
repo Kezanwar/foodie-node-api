@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { renderFile } from 'ejs'
 const router = Router()
 import dotenv from 'dotenv'
 import multer from 'multer'
@@ -9,7 +10,6 @@ const upload = multer({ storage: storage })
 import Restaurant from '../../../models/Restaurant.js'
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '../../../constants/restaurant.js'
 
-import transporter, { getEmailOptions } from '../../../emails/emails.nodemailer.js'
 import auth from '../../../middleware/auth.middleware.js'
 import validate from '../../../middleware/validation.middleware.js'
 import {
@@ -18,9 +18,12 @@ import {
   restaurantSubmitApplicationSchema,
 } from '../../../validation/create-restaurant.validation.js'
 
-import { createImageName, SendError, throwErr } from '../../utilities/utilities.js'
+import { createImageName, getID, SendError, throwErr } from '../../utilities/utilities.js'
 import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
 import { bucketName, foodieS3Client, s3PutCommand } from '../../../aws/s3Client.js'
+import { appEnv } from '../../../base/base.js'
+import { email_addresses } from '../../../constants/email.js'
+import transporter from '../../../services/email.services.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -269,32 +272,50 @@ router.post(
 
       const cuisinesText = restaurant.cuisines.map((c) => c.name).join(', ')
       const dietText = restaurant.dietary_requirements.map((c) => c.name).join(', ')
+      const locations = await restaurant.getLocations()
+      const locationsText = locations.map((c) => `${c.address.address_line_1}, ${c.address.postcode}`).join(' - ')
 
-      const emailOptions = getEmailOptions(
-        ['kezanwar@gmail.com', 'shak@thefoodie.app'],
-        `New restaurant application: ${restaurant.name}`,
-        'action-email',
+      renderFile(
+        process.cwd() + '/views/emails/action-email.ejs',
         {
-          user_name: 'Admin',
+          content: `Bio: ${restaurant.bio}`,
           title: `New restaurant application: ${restaurant.name}`,
-          description: `New restaurant application 
-             |||   
-          - Company name: ${restaurant.company_info.company_name}
-             |||   
-          - Bio: ${restaurant.bio}
-             |||   
-          - Cuisines: ${cuisinesText}
-             |||   
-          - Dietary requirements: ${dietText}
-          `,
-          action_text: 'No action',
-          action_href: '...',
+          list: [
+            `Cuisines: ${cuisinesText}`,
+            `Dietary requirements: ${dietText}`,
+            `Company name: ${restaurant.company_info.company_name}`,
+            `Locations: ${locationsText}`,
+          ],
+          action_primary: {
+            text: 'Accept',
+            url: `${process.env.BASE_URL}/create-restaurant/accept-application/${getID(restaurant)}`,
+          },
+          action_secondary: {
+            text: 'Decline',
+            url: `${process.env.BASE_URL}/create-restaurant/decline-application/${getID(restaurant)}`,
+          },
+          receiver: 'Admin',
+        },
+        function (err, data) {
+          if (err) {
+            console.log(err)
+          } else {
+            const mainOptions = {
+              from: email_addresses.noreply,
+              to: ['kezanwar@gmail.com', 'shak@thefoodie.app'],
+              subject: `New restaurant application: ${restaurant.name}`,
+              html: data,
+            }
+            transporter.sendMail(mainOptions, function (err, info) {
+              if (err) {
+                console.log(err)
+              } else {
+                console.log('email sent: ' + info.response)
+              }
+            })
+          }
         }
       )
-      transporter.sendMail(emailOptions, (err, info) => {
-        if (err) console.log(err)
-        else console.log('email sent' + ' ' + info.response)
-      })
 
       return res.status(200).json(restaurant.toClient())
     } catch (error) {
@@ -303,5 +324,49 @@ router.post(
     }
   }
 )
+
+if (appEnv === 'development' || appEnv === 'staging') {
+  router.get('/accept-application/:id', async (req, res) => {
+    const {
+      params: { id },
+    } = req
+
+    try {
+      if (!id) return throwErr('No ID', 401)
+      const restaurant = await Restaurant.findById(id)
+      if (!restaurant) return throwErr('No restaurant', 401)
+      if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+        restaurant.status = RESTAURANT_STATUS.APPLICATION_ACCEPTED
+        await restaurant.save()
+      }
+      return res.json(`Restaurant: ${restaurant.name} status is ${restaurant.status}`)
+    } catch (error) {
+      console.log(error)
+      SendError(res, error)
+    }
+  })
+}
+
+if (appEnv === 'development' || appEnv === 'staging') {
+  router.get('/reject-application/:id', async (req, res) => {
+    const {
+      params: { id },
+    } = req
+
+    try {
+      if (!id) return throwErr('No ID', 401)
+      const restaurant = await Restaurant.findById(id)
+      if (!restaurant) return throwErr('No restaurant', 401)
+      if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+        restaurant.status = RESTAURANT_STATUS.APPLICATION_REJECTED
+        await restaurant.save()
+      }
+      return res.json(`Restaurant: ${restaurant.name} status is ${restaurant.status}`)
+    } catch (error) {
+      console.log(error)
+      SendError(res, error)
+    }
+  })
+}
 
 export default router
