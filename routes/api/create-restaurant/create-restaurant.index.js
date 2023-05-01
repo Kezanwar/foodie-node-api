@@ -20,7 +20,7 @@ import {
 
 import { createImageName, getID, SendError, throwErr } from '../../utilities/utilities.js'
 import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
-import { bucketName, foodieS3Client, s3PutCommand } from '../../../aws/s3Client.js'
+import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/aws.services.js'
 import { appEnv } from '../../../base/base.js'
 import { email_addresses } from '../../../constants/email.js'
 import transporter from '../../../services/email.services.js'

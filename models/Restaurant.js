@@ -53,6 +53,12 @@ const RestaurantSchema = new mongoose.Schema(
         ref: 'location',
       },
     ],
+    vouchers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'voucher',
+      },
+    ],
     contact_details: {
       // select: false,
       email: {

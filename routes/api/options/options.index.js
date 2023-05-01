@@ -17,7 +17,7 @@ import {
   cacheGetDietaryRequirements,
   cachePutCuisines,
   cachePutDietaryRequirements,
-} from '../../../cache/cache.js'
+} from '../../../services/cache/cache.services.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
