@@ -1,5 +1,5 @@
 import { Router } from 'express'
-
+import { renderFile } from 'ejs'
 const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
@@ -23,9 +23,11 @@ import { loginUserSchema, registerUserSchema } from '../../../validation/auth.va
 import validate from '../../../middleware/validation.middleware.js'
 
 import { JWT_SECRET } from '../../../constants/auth.js'
-import transporter, { getEmailOptions } from '../../../emails/emails.nodemailer.js'
-import { confirm_email_content } from '../../../emails/emails.content.js'
+
 import { feUrl } from '../../../base/base.js'
+
+import { confirm_email_content, email_addresses } from '../../../constants/email.js'
+import transporter from '../../../services/email.services.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -145,18 +147,45 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 
     jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
       if (err) throw new Error(err)
-      const { title, description } = confirm_email_content
-      const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
-        user_name: user.first_name,
-        title: title,
-        description: description,
-        action_text: 'Confirm email',
-        action_href: `${process.env.BASE_URL}/auth/confirm-email/${token}`,
-      })
-      transporter.sendMail(emailOptions, (err, info) => {
-        if (err) console.log(err)
-        else console.log('email sent' + ' ' + info.response)
-      })
+      renderFile(
+        process.cwd() + '/views/emails/action-email.ejs',
+        {
+          content: confirm_email_content.description,
+          title: confirm_email_content.title,
+          action_primary: { text: 'Confirm email', url: `${process.env.BASE_URL}/auth/confirm-email/${token}` },
+          receiver: capitalizeFirstLetter(user.first_name),
+        },
+        function (err, data) {
+          if (err) {
+            console.log(err)
+          } else {
+            const mainOptions = {
+              from: email_addresses.noreply,
+              to: user.email,
+              subject: confirm_email_content.title,
+              html: data,
+            }
+            transporter.sendMail(mainOptions, function (err, info) {
+              if (err) {
+                console.log(err)
+              } else {
+                console.log('email sent: ' + info.response)
+              }
+            })
+          }
+        }
+      )
+      // const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
+      //   user_name: user.first_name,
+      //   title: title,
+      //   description: description,
+      //   action_text: 'Confirm email',
+      //   action_href: `${process.env.BASE_URL}/auth/confirm-email/${token}`,
+      // })
+      // transporter.sendMail(emailOptions, (err, info) => {
+      //   if (err) console.log(err)
+      //   else console.log('email sent' + ' ' + info.response)
+      // })
     })
 
     //  call jwt sign method, poss in the payload, the jwtsecret from our config we created, an argument for optional extra parameters such as expiry, a call back function which allows us to handle any errors that occur or send the response back to user.
@@ -225,18 +254,34 @@ router.post('/resend-confirm-email', auth, async (req, res) => {
     jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
       if (err) throw new Error(err)
 
-      const { title, description } = confirm_email_content
-      const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
-        user_name: user.first_name,
-        title: title,
-        description: description,
-        action_text: 'Confirm email',
-        action_href: `${process.env.BASE_URL}/auth/confirm-email/${token}`,
-      })
-      transporter.sendMail(emailOptions, (err, info) => {
-        if (err) console.log(err)
-        else console.log('email sent' + ' ' + info.response)
-      })
+      renderFile(
+        process.cwd() + '/views/emails/action-email.ejs',
+        {
+          content: confirm_email_content.description,
+          title: confirm_email_content.title,
+          action_primary: { text: 'Confirm email', url: `${process.env.BASE_URL}/auth/confirm-email/${token}` },
+          receiver: capitalizeFirstLetter(user.first_name),
+        },
+        function (err, data) {
+          if (err) {
+            console.log(err)
+          } else {
+            const mainOptions = {
+              from: email_addresses.noreply,
+              to: user.email,
+              subject: confirm_email_content.title,
+              html: data,
+            }
+            transporter.sendMail(mainOptions, function (err, info) {
+              if (err) {
+                console.log(err)
+              } else {
+                console.log('email sent: ' + info.response)
+              }
+            })
+          }
+        }
+      )
     })
     res.status(200).send({ message: 'success' })
   } catch (error) {
@@ -255,26 +300,26 @@ router.post('/forgot-password', async (req, res) => {
     const user = await findUserByEmail(email)
     if (!user) throw new Error('Email address doesnt exist')
 
-    const confirmEmailPayload = {
-      email: user.email,
-    }
+    // const confirmEmailPayload = {
+    //   email: user.email,
+    // }
 
-    jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: 360000 }, async (err, token) => {
-      if (err) throw new Error(err)
+    // jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: 360000 }, async (err, token) => {
+    //   if (err) throw new Error(err)
 
-      const { title, description } = confirm_email_content
-      const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
-        user_name: user.first_name,
-        title: title,
-        description: description,
-        action_text: 'Confirm email',
-        action_href: `${process.env.BASE_URL}/auth/confirm-email/${token}`,
-      })
-      transporter.sendMail(emailOptions, (err, info) => {
-        if (err) console.log(err)
-        else console.log('email sent' + ' ' + info.response)
-      })
-    })
+    //   const { title, description } = confirm_email_content
+    //   const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
+    //     user_name: user.first_name,
+    //     title: title,
+    //     description: description,
+    //     action_text: 'Confirm email',
+    //     action_href: `${process.env.BASE_URL}/auth/confirm-email/${token}`,
+    //   })
+    //   transporter.sendMail(emailOptions, (err, info) => {
+    //     if (err) console.log(err)
+    //     else console.log('email sent' + ' ' + info.response)
+    //   })
+    // })
   } catch (error) {
     SendError(res, error)
   }

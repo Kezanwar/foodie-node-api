@@ -1,0 +1,9 @@
+
+inteface actionEmail{
+    title: string,
+    content: string
+    list?: string[],
+    action_primary?: { text: string, url: string },
+    action_secondary?: { text: string, url: string },
+    receiver: string,
+}
