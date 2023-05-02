@@ -11,7 +11,7 @@ import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
 import { addLocationSchema, checkLocationSchema } from '../../../validation/locations.validation.js'
 
 import { allCapsNoSpace, getID, SendError, throwErr } from '../../utilities/utilities.js'
-import Location from '../../../models/Location.js'
+
 import { getLongLat } from '../../../services/geolocation.services.js'
 
 //* route POST api/locations/check
@@ -29,8 +29,7 @@ router.post(
       body: { address },
     } = req
     try {
-      const locations = await restaurant.getLocations()
-      const alreadyExists = locations.some(
+      const alreadyExists = restaurant?.locations.some(
         (l) => allCapsNoSpace(l.address.postcode) === allCapsNoSpace(address.postcode)
       )
 
@@ -61,36 +60,26 @@ router.post(
       body: { nickname, address, phone_number, email, opening_times, long_lat },
     } = req
     try {
-      const locations = await restaurant.getLocations()
-      const alreadyExists = locations.some(
+      const alreadyExists = restaurant?.locations?.some(
         (l) => allCapsNoSpace(l.address.postcode) === allCapsNoSpace(address.postcode)
       )
 
       if (alreadyExists) throwErr(`Error: A Location already exists for ${address.postcode} `, 401)
 
-      const { dietary_requirements, cuisines } = restaurant
-
-      const newLocation = new Location({
+      const newLocation = {
         nickname,
         address,
         phone_number,
         email,
         opening_times,
-        dietary_requirements,
-        cuisines,
         geometry: { coordinates: [long_lat.long, long_lat.lat] },
-        restaurant: restaurant._id,
-      })
+      }
 
-      await newLocation.save()
-
-      restaurant.locations.push(newLocation._id)
+      restaurant.locations.push(newLocation)
 
       await restaurant.save()
 
-      const resLocations = await restaurant.getLocations()
-
-      res.status(200).json(resLocations)
+      res.status(200).json(restaurant.locations)
     } catch (error) {
       SendError(res, error)
     }
@@ -108,12 +97,6 @@ router.post('/delete/:id', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), as
 
     if (!rLocToDelete) throwErr('Location not found', 401)
 
-    const locToDelete = await Location.findById(id)
-
-    if (!locToDelete) throwErr('Location not found', 401)
-
-    await locToDelete.remove()
-
     restaurant.locations = restaurant.locations.filter((rl) => getID(rl) !== id)
 
     if (restaurant.locations.length < 1) {
@@ -124,9 +107,7 @@ router.post('/delete/:id', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), as
 
     await restaurant.save()
 
-    const locRes = await restaurant.getLocations()
-
-    res.status(200).json(locRes)
+    res.status(200).json(restaurant.locations)
   } catch (error) {
     SendError(res, error)
   }
@@ -139,11 +120,12 @@ router.post(
   validate(checkLocationSchema),
   async (req, res) => {
     const {
+      restaurant,
       body: { address },
       params: { id },
     } = req
     try {
-      const editLocation = await Location.findById(id)
+      const editLocation = restaurant?.locations?.find((l) => getID(l) === id)
 
       if (!editLocation) {
         throwErr('Error: No location found')
@@ -182,25 +164,34 @@ router.patch(
         return
       }
 
-      const editLocation = await Location.findById(id)
+      if (!restaurant?.locations?.length) {
+        throwErr('Error: No location found')
+        return
+      }
+
+      const editLocationIndex = restaurant?.locations?.findIndex((l) => getID(l) === id)
+
+      if (editLocationIndex === -1) {
+        throwErr('Error: No location found')
+        return
+      }
+      const editLocation = restaurant?.locations[editLocationIndex]
 
       if (!editLocation) {
         throwErr('Error: No location found')
         return
       }
 
-      const isRestaurantsLocation = getID(editLocation.restaurant) === getID(restaurant._id)
+      restaurant.locations[editLocationIndex].nickname = nickname
+      restaurant.locations[editLocationIndex].address = address
+      restaurant.locations[editLocationIndex].phone_number = phone_number
+      restaurant.locations[editLocationIndex].email = email
+      restaurant.locations[editLocationIndex].opening_times = opening_times
+      restaurant.locations[editLocationIndex].geometry = { coordinates: [long_lat.long, long_lat.lat] }
 
-      if (!isRestaurantsLocation) {
-        throwErr('Error: Location not owned by restaurant')
-        return
-      }
+      await restaurant.save()
 
-      await editLocation.updateLocation({ nickname, address, phone_number, email, opening_times, long_lat })
-
-      const locations = await restaurant.getLocations()
-
-      res.status(200).json(locations)
+      res.status(200).json(restaurant.locations)
     } catch (error) {
       SendError(res, error)
     }
@@ -210,8 +201,7 @@ router.patch(
 router.get('/all', auth, restRoleGuard(RESTAURANT_ROLES.USER), async (req, res) => {
   const { restaurant } = req
   try {
-    const response = await restaurant.getLocations()
-    res.status(200).json(response)
+    res.status(200).json(restaurant.locations)
   } catch (error) {
     SendError(res, error)
   }

@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 import { prefixImageWithBaseUrl } from '../routes/utilities/utilities.js'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import User from './User.js'
+import LocationSchema from './schemas/LocationSchema.js'
 
 const RestaurantSchema = new mongoose.Schema(
   {
@@ -49,8 +50,7 @@ const RestaurantSchema = new mongoose.Schema(
     },
     locations: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'location',
+        type: LocationSchema,
       },
     ],
     vouchers: [
@@ -142,8 +142,7 @@ RestaurantSchema.methods.updateRegStep = async function (step) {
 
 RestaurantSchema.methods.getLocations = async function () {
   if (!this.locations?.length) return []
-  const p = await this.populate('locations')
-  return p.locations
+  return this.locations
 }
 
 RestaurantSchema.methods.toClient = function () {

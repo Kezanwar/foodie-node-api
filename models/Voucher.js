@@ -32,10 +32,7 @@ const VoucherSchema = new mongoose.Schema(
     dietary_requirements: [CategorySchemaWithIndex],
     locations: [
       {
-        id: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'location',
-        },
+        name: String,
         geometry: GeoSchema,
       },
     ],
