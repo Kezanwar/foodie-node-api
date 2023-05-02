@@ -18,7 +18,6 @@ const UserSchema = Schema(
     email_confirmed: {
       type: Boolean,
       default: false,
-
       required: true,
     },
     password: {
@@ -26,6 +25,26 @@ const UserSchema = Schema(
       required: true,
       select: false,
     },
+    vouchers: {
+      downloaded: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: 'voucher',
+        },
+      ],
+      redeemed: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: 'voucher',
+        },
+      ],
+    },
+    favourites: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'restaurant',
+      },
+    ],
     restaurant: {
       id: {
         type: Schema.Types.ObjectId,
