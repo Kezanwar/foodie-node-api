@@ -23,7 +23,7 @@ import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
 import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/aws.services.js'
 import { appEnv } from '../../../base/base.js'
 import { email_addresses } from '../../../constants/email.js'
-import transporter from '../../../services/email.services.js'
+import transporter from '../../../services/email/email.services.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged

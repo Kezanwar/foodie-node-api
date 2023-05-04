@@ -13,6 +13,10 @@ const VoucherSchema = new mongoose.Schema(
     start_date: {
       type: Date,
     },
+    is_expired: {
+      type: Boolean,
+      index: true,
+    },
     end_date: {
       type: Date,
     },
@@ -32,13 +36,18 @@ const VoucherSchema = new mongoose.Schema(
     dietary_requirements: [CategorySchemaWithIndex],
     locations: [
       {
-        name: String,
+        location_id: String,
+        nickname: String,
         geometry: GeoSchema,
       },
     ],
     restaurant: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'restaurant',
+      id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'restaurant',
+        index: true,
+      },
+      name: String,
     },
   },
   { timestamps: true }

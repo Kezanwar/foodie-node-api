@@ -12,7 +12,7 @@ import { addLocationSchema, checkLocationSchema } from '../../../validation/loca
 
 import { allCapsNoSpace, getID, SendError, throwErr } from '../../utilities/utilities.js'
 
-import { getLongLat } from '../../../services/geolocation.services.js'
+import { getLongLat } from '../../../services/geolocation/geolocation.services.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check

@@ -105,7 +105,7 @@ export const allCapsNoSpace = (str) => {
 }
 
 export const getID = (doc) => {
-  return doc?._id?.toHexString()
+  return doc?._id?.toHexString ? doc?._id?.toHexString() : doc?.id?.toHexString()
 }
 
 export const fakeLongLoadPromise = (duration = 5000) =>

@@ -11,6 +11,8 @@ const PORT = process.env.PORT
 import cors from 'cors'
 import RouterIndex from './routes/api/routes.index.js'
 import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
+import { isAfter } from 'date-fns'
+import { todayDateString } from './services/date/date.services.js'
 
 const app = express()
 
@@ -26,5 +28,7 @@ app.use(rateLimiterMiddlware)
 app.get('/', (req, res) => res.send('Foodie API Running'))
 
 app.use('/api', RouterIndex)
+
+console.log(todayDateString())
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`))

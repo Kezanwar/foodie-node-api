@@ -27,7 +27,7 @@ import { JWT_SECRET } from '../../../constants/auth.js'
 import { feUrl } from '../../../base/base.js'
 
 import { confirm_email_content, email_addresses } from '../../../constants/email.js'
-import transporter from '../../../services/email.services.js'
+import transporter from '../../../services/email/email.services.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT

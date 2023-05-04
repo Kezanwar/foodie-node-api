@@ -2,7 +2,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 import _ from 'lodash'
 const { capitalize } = _
-import { throwErr } from '../routes/utilities/utilities.js'
+import { throwErr } from '../../routes/utilities/utilities.js'
 import axios from 'axios'
 
 export const getLongLat = async (address) => {
