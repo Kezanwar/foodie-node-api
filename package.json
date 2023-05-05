@@ -30,6 +30,8 @@
     "memory-cache": "^0.2.0",
     "mongoose": "^6.2.1",
     "multer": "^1.4.5-lts.1",
+    "nanolith": "^0.4.6",
+    "node-cron": "^3.0.2",
     "nodemailer": "^6.8.0",
     "request": "^2.88.2",
     "sharp": "^0.31.1",
@@ -45,7 +47,7 @@
   },
   "eslintConfig": {
     "env": {
-      "es2021": true,
+      "es2022": true,
       "node": true
     },
     "plugins": [
