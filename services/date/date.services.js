@@ -1,4 +1,4 @@
-import { format, isPast, parseISO } from 'date-fns'
+import { format, isAfter, isPast, parseISO } from 'date-fns'
 // A date string format is yyyy-mm-dd
 
 export const todayDateString = () => {
@@ -15,4 +15,10 @@ export const isoToDateText = (iso) => {
 
 export const isDatePast = (iso) => {
   return isPast(parseISO(iso))
+}
+
+export const isInPastWithinTimezone = (date = '2023-05-05', tz = 'Etc/Greenwich') => {
+  const todayString = new Date().toLocaleDateString([], { timeZone: tz })
+  const today = new Date(format(new Date(todayString), 'yyyy-MM-dd'))
+  return isAfter(today, new Date(date))
 }

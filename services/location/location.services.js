@@ -11,7 +11,6 @@ export const getLongLat = async (address) => {
       throwErr('Need postcode and address line 1 to get geographical data', 500)
 
     const sPostcode = address.postcode.toUpperCase()
-    console.log(sPostcode)
     const sAddresLine1 = capitalize(address.address_line_1)
 
     const response = await axios.get('https://address-from-to-latitude-longitude.p.rapidapi.com/geolocationapi', {
@@ -50,10 +49,9 @@ export const getLongLat = async (address) => {
       )
 
       const justPostResults = justPostResponse?.data?.Results
+      console.log(justPostResults)
 
       if (!justPostResults?.length) return undefined
-
-      console.log(justPostResults)
 
       const justPostResultsMatchingPostcode = justPostResults.find(
         (r) => r.postalcode && r.postalcode.split(' ').join('') === sPostcode.split(' ').join('')
@@ -66,5 +64,29 @@ export const getLongLat = async (address) => {
     return undefined
   } catch (error) {
     throwErr(error, 500)
+  }
+}
+
+export const getTimezone = async ({ lat, long }) => {
+  if (!lat || !long) return undefined
+  try {
+    const response = await axios.get('https://timezone-by-location.p.rapidapi.com/timezone', {
+      params: {
+        lat: lat,
+        lon: long,
+        c: '1',
+        s: '0',
+      },
+      headers: {
+        'X-RapidAPI-Key': process.env.RAPID_KEY,
+        'X-RapidAPI-Host': 'timezone-by-location.p.rapidapi.com',
+      },
+    })
+    const Zones = response?.data?.Zones
+    if (!Zones || !Zones?.length) return undefined
+    else return Zones[0]?.TimezoneId
+  } catch (error) {
+    console.error(error)
+    throwErr('Unable to find timezone for this location', 401)
   }
 }

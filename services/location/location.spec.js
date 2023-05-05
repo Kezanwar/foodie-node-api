@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import { getLongLat } from './geolocation.services.js'
+import { getLongLat } from './location.services.js'
 
 // --- GET LONG LAT TESTS
 

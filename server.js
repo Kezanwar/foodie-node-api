@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const PORT = process.env.PORT
-import { worker } from './workers/worker.js'
+// import { worker } from './workers/worker.js'
 
 import cors from 'cors'
 import RouterIndex from './routes/api/routes.index.js'
@@ -30,15 +30,16 @@ app.use('/api', RouterIndex)
 
 // Run the "add" function on a separate thread and wait
 // for it to complete before moving forward.
-const result = await worker({
-  // Provide the name of the task.
-  name: 'add',
-  // Provide the parameters of the function.
-  params: [2, 3],
-})
+// const result = await worker({
+// Provide the name of the task.
+// name: 'add',
+// Provide the parameters of the function.
+// params: [2, 3],
+// })
 
 // The result is sent back to the parent thread
 // and resolved by the task function call.
-console.log(result) // -> 5
+// console.log(result)
+// -> 5
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`))

@@ -5,20 +5,14 @@ import sharp from 'sharp'
 import _ from 'lodash'
 const { upperCase } = _
 
-import { STORE_ROLES } from '../../constants/store.js'
 import User from '../../models/User.js'
 
 export function ArrayIsEmpty(array) {
-  if (array.length > 0) return false
-  else return true
+  return !array.length > 0
 }
 
 export function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
-}
-
-export function mapValidationErrorArray(errors) {
-  return errors?.errors.map((err) => err.msg)
 }
 
 export function getDocumentValues(arrayOfRequiredKeys, document) {
@@ -39,13 +33,6 @@ export function removeDocumentValues(arrayOfUnrequiredKeys, document) {
     )
   const object = document.toObject()
   return _.omit(object, arrayOfUnrequiredKeys)
-}
-
-export function isAdmin(user) {
-  if (!user) throw new Error('No user')
-  if (!user.store) throw new Error('No store associated with this user')
-  if (!user.store.role !== STORE_ROLES.admin || !user.store.role !== STORE_ROLES.super_admin) return false
-  else return true
 }
 
 export async function getUser(id) {
@@ -114,3 +101,11 @@ export const fakeLongLoadPromise = (duration = 5000) =>
       resolve()
     }, duration)
   })
+
+export function hasMultipleLocations(arrToTest) {
+  const sum = arrToTest.reduce((arr, el) => {
+    if (!arr.includes(el.country)) arr.push(el.country)
+    return arr
+  }, [])
+  return sum.length > 1
+}

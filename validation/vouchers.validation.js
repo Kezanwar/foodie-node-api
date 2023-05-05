@@ -1,19 +1,22 @@
 import { isBefore, isPast } from 'date-fns'
 import { object, string, array } from 'yup'
+import { matchesDateString } from '../routes/utilities/regex.js'
 
 export const addVoucherSchema = object({
   body: object({
     start_date: string()
       .required('Start date is required')
-      .test('start_date', 'Start Date: Must not be in the past', (val) => {
+      .test('start_date', 'Start Date: Must be in yyyy-mm-dd format and must not be in the past', (val) => {
+        if (!matchesDateString(val)) return false
         const date = new Date(val)
         if (!date) return false
         else return !isPast(new Date(val))
       }),
     end_date: string().test(
       'end_date',
-      'End Date: Must not be in the past and must be after the start date',
+      'End Date: Must be in yyyy-mm-dd format, must not be in the past and must be after the start date',
       function (val) {
+        if (!matchesDateString(val)) return false
         const endDate = new Date(val)
         const startDate = new Date(this.parent.start_date)
         if (!endDate || !startDate) return false

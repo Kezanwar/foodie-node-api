@@ -12,7 +12,7 @@ import { addLocationSchema, checkLocationSchema } from '../../../validation/loca
 
 import { allCapsNoSpace, getID, SendError, throwErr } from '../../utilities/utilities.js'
 
-import { getLongLat } from '../../../services/geolocation/geolocation.services.js'
+import { getLongLat, getTimezone } from '../../../services/location/location.services.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check
@@ -66,6 +66,8 @@ router.post(
 
       if (alreadyExists) throwErr(`Error: A Location already exists for ${address.postcode} `, 401)
 
+      const timezone = await getTimezone(long_lat)
+
       const newLocation = {
         nickname,
         address,
@@ -73,6 +75,7 @@ router.post(
         email,
         opening_times,
         geometry: { coordinates: [long_lat.long, long_lat.lat] },
+        timezone,
       }
 
       restaurant.locations.push(newLocation)
