@@ -15,6 +15,9 @@ const RestaurantSchema = new mongoose.Schema(
     avatar: {
       type: String,
     },
+    image_uuid: {
+      type: String,
+    },
     cover_photo: {
       type: String,
     },
@@ -153,6 +156,7 @@ RestaurantSchema.methods.toClient = function () {
   delete returnToClient.createdAt
   delete returnToClient.updatedAt
   delete returnToClient.locations
+  delete returnToClient.image_uuid
   if (returnToClient.avatar) returnToClient.avatar = prefixImageWithBaseUrl(returnToClient.avatar)
   if (returnToClient.cover_photo) returnToClient.cover_photo = prefixImageWithBaseUrl(returnToClient.cover_photo)
   return returnToClient

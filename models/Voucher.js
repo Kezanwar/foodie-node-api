@@ -41,6 +41,9 @@ const VoucherSchema = new mongoose.Schema(
         geometry: GeoSchema,
       },
     ],
+    timezone: {
+      type: String,
+    },
     restaurant: {
       id: {
         type: mongoose.Schema.Types.ObjectId,

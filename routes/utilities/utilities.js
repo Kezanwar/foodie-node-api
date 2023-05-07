@@ -1,5 +1,6 @@
 import dotenv from 'dotenv'
 dotenv.config()
+import { mongo } from 'mongoose'
 
 import sharp from 'sharp'
 import _ from 'lodash'
@@ -58,7 +59,7 @@ export async function findUserByEmailWithPassword(email) {
 
 export function createImageName(obj, item, image) {
   const type = image.mimetype.split('/')[1]
-  return `${obj.id}-${item}.${type}`
+  return `${obj.image_uuid}-${item}.${type}`
 }
 
 export async function resizeProfilePhoto(buffer) {
@@ -84,7 +85,7 @@ export function SendError(res, err) {
 
 export const prefixImageWithBaseUrl = (imageName) => {
   const d = new Date()
-  return `${process.env.S3_BUCKET_BASE_URL}${imageName}?${d.toTimeString().split(' ').join('')}`
+  return `${process.env.S3_BUCKET_BASE_URL}${imageName}?${d.toTimeString().split(' ').join('').split('GMT')[0]}`
 }
 
 export const allCapsNoSpace = (str) => {
@@ -102,10 +103,6 @@ export const fakeLongLoadPromise = (duration = 5000) =>
     }, duration)
   })
 
-export function hasMultipleLocations(arrToTest) {
-  const sum = arrToTest.reduce((arr, el) => {
-    if (!arr.includes(el.country)) arr.push(el.country)
-    return arr
-  }, [])
-  return sum.length > 1
+export const createImgUUID = () => {
+  return new mongo.ObjectId().toHexString()
 }

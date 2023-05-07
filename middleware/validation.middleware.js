@@ -34,6 +34,7 @@ const validate = (schema) => async (req, res, next) => {
     //   (msg: string, index: number) =>
     //     (errors = errors + (index === 0 ? '' : ', ') + msg.split('.')[1])
     // )
+    console.error(err)
     res.status(500).json({ type: err.name, message: err.errors })
     return
   }

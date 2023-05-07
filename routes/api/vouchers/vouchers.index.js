@@ -18,7 +18,7 @@ import Voucher from '../../../models/Voucher.js'
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
 //! @access authenticated & no restauant || restaurant
 
-router.get('/', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), async (req, res) => {
+router.get('/', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }), async (req, res) => {
   const { user, restaurant } = req
   try {
     const vouchers = await Voucher.find({ 'restaurant.id': getID(restaurant) })
@@ -28,51 +28,65 @@ router.get('/', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), async (req, r
   }
 })
 
-router.post('/add', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), validate(addVoucherSchema), async (req, res) => {
-  const {
-    restaurant,
-    body: { start_date, end_date, name, description, locations },
-  } = req
+router.post(
+  '/add',
+  auth,
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
+  validate(addVoucherSchema),
+  async (req, res) => {
+    const {
+      restaurant,
+      body: { start_date, end_date, name, description, locations, timezone },
+    } = req
 
-  try {
-    const locationsMap = locations
-      .map((id) => {
-        const mappedLoc = restaurant.locations.find((rL) => getID(rL) === id)
-        return mappedLoc ? { id: id, geometry: mappedLoc.geometry, nickname: mappedLoc.nickname } : false
+    try {
+      const locationsMap = locations
+        .map((id) => {
+          const mappedLoc = restaurant.locations.find((rL) => getID(rL) === id && rL.timezone === timezone)
+          return mappedLoc ? { id: id, geometry: mappedLoc.geometry, nickname: mappedLoc.nickname } : false
+        })
+        .filter(Boolean)
+
+      if (!locationsMap?.length) throwErr('Error: No matching locations found', 400)
+
+      const voucher = new Voucher({
+        start_date,
+        end_date,
+        name,
+        description,
+        locations: locationsMap,
+        restaurant: { id: restaurant._id, name: restaurant.name },
+        is_expired: false,
+        timezone,
       })
-      .filter(Boolean)
-
-    const voucher = new Voucher({
-      start_date,
-      end_date,
-      name,
-      description,
-      locations: locationsMap,
-      restaurant: { id: restaurant._id, name: restaurant.name },
-      is_expired: false,
-    })
-    await voucher.save()
-    return res.status(200).json(voucher)
-  } catch (error) {
-    SendError(res, error)
+      await voucher.save()
+      return res.status(200).json(voucher)
+    } catch (error) {
+      SendError(res, error)
+    }
   }
-})
+)
 
-router.post('/delete/:id', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), async (req, res) => {
-  const {
-    restaurant,
-    params: { id },
-  } = req
+router.post(
+  '/delete/:id',
+  auth,
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
+  async (req, res) => {
+    const {
+      restaurant,
+      params: { id },
+    } = req
 
-  try {
-    const voucher = await Voucher.findById(id)
-    if (!voucher) throwErr('Voucher not found', 400)
-    if (getID(voucher.restaurant) !== getID(restaurant)) throwErr('Unauthorized to delete this voucher', 400)
-    await voucher.delete()
-    return res.status(200).json('Success')
-  } catch (error) {
-    SendError(res, error)
+    try {
+      const voucher = await Voucher.findById(id)
+      if (!voucher) throwErr('Voucher not found', 400)
+      if (getID(voucher.restaurant) !== getID(restaurant)) throwErr('Unauthorized to delete this voucher', 400)
+      await voucher.delete()
+      return res.status(200).json('Success')
+    } catch (error) {
+      SendError(res, error)
+    }
   }
-})
+)
 
 export default router

@@ -1,9 +1,8 @@
 import { define } from 'nanolith'
+import { hasMultipleTimezones } from '../services/location/location.services'
 
 export const worker = await define({
-  add(x, y) {
-    return x + y
-  },
+  hasMultipleTimezones,
 
   // Functions don't have to be directly defined within the
   // object, they can be defined elsewhere outside, or even

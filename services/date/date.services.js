@@ -17,8 +17,14 @@ export const isDatePast = (iso) => {
   return isPast(parseISO(iso))
 }
 
-export const isInPastWithinTimezone = (date = '2023-05-05', tz = 'Etc/Greenwich') => {
-  const todayString = new Date().toLocaleDateString([], { timeZone: tz })
+export const isInPastWithinTimezone = (date, timezone) => {
+  // date needs to be in yyyy-MM-dd
+  const todayString = new Date().toLocaleDateString([], { timeZone: timezone })
   const today = new Date(format(new Date(todayString), 'yyyy-MM-dd'))
-  return isAfter(today, new Date(date))
+  try {
+    const result = isAfter(today, new Date(date))
+    return result
+  } catch (error) {
+    console.error(error)
+  }
 }
