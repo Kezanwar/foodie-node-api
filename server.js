@@ -12,6 +12,10 @@ import cors from 'cors'
 import RouterIndex from './routes/api/routes.index.js'
 import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
 import voucherExpireCron from './crons/voucher.crons.js'
+import { getTimezonesToExpire, isoToDateNumbers } from './services/date/date.services.js'
+import Voucher from './models/Voucher.js'
+import { format, startOfYesterday } from 'date-fns'
+import { endOfYesterday } from 'date-fns'
 
 const app = express()
 
@@ -27,6 +31,12 @@ app.use(rateLimiterMiddlware)
 app.get('/', (req, res) => res.send('Foodie API Running'))
 
 voucherExpireCron.start()
+
+const vouchers = await Voucher.find({ end_date: '2023-05-20' })
+
+console.log(vouchers)
+
+console.log(format(endOfYesterday(), 'yyyy-MM-dd'))
 
 app.use('/api', RouterIndex)
 

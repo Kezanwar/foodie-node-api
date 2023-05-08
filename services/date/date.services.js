@@ -1,5 +1,5 @@
-import { format, isAfter, isPast, parseISO } from 'date-fns'
-import { throwErr } from '../../routes/utilities/utilities.js'
+import { endOfYesterday, format, isAfter, isPast, parseISO } from 'date-fns'
+import { capitalizeFirstLetter, throwErr } from '../../routes/utilities/utilities.js'
 import axios from 'axios'
 import { timezonesData } from '../../constants/timezones.js'
 // A date string format is yyyy-mm-dd
@@ -18,6 +18,10 @@ export const isoToDateText = (iso) => {
 
 export const isDatePast = (iso) => {
   return isPast(parseISO(iso))
+}
+
+export const yeserdayDateString = () => {
+  return format(endOfYesterday(), 'yyyy-MM-dd')
 }
 
 export const isInPastWithinTimezone = (date, timezone) => {
@@ -53,6 +57,11 @@ export const checkTimezoneCurrentTime = async (tz = 'europe/london') => {
 
 export const timeNowInGMT = () => {
   return new Date().toUTCString().split(' ')[4]
+}
+
+const capitalizeTimezone = (tz) => {
+  const split = tz.split('/')
+  return capitalizeFirstLetter(split[0]) + '/' + capitalizeFirstLetter(split[1])
 }
 
 export const getTimezonesToExpire = async () => {
@@ -94,7 +103,7 @@ export const getTimezonesToExpire = async () => {
     const plusPromiseResults = await Promise.all(plusProms)
 
     plusGMTValidated = plusPromiseResults.reduce((arr, current) => {
-      if (Number(current.hour) === midnightStart) arr.push(current.timezone)
+      if (Number(current.hour) === midnightStart) arr.push(capitalizeTimezone(current.timezone))
       return arr
     }, [])
   }
@@ -107,7 +116,7 @@ export const getTimezonesToExpire = async () => {
     const minusPromsResults = await Promise.all(minusProms)
 
     minusGMTValidated = minusPromsResults.reduce((arr, current) => {
-      if (Number(current.hour) === midnightStart) arr.push(current.timezone)
+      if (Number(current.hour) === midnightStart) arr.push(capitalizeTimezone(current.timezone))
       return arr
     }, [])
   }
