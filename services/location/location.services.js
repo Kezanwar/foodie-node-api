@@ -88,7 +88,7 @@ export const getTimezone = async ({ lat, long }) => {
     else return Zones[0]?.TimezoneId
   } catch (error) {
     console.error(error)
-    throwErr('Unable to find timezone for this location', 401)
+    return undefined
   }
 }
 

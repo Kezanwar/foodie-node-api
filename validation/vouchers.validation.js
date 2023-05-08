@@ -1,4 +1,4 @@
-import { isBefore, isPast } from 'date-fns'
+import { isBefore } from 'date-fns'
 import { object, string, array } from 'yup'
 import { matchesDateString } from '../routes/utilities/regex.js'
 import { isInPastWithinTimezone } from '../services/date/date.services.js'
@@ -32,5 +32,25 @@ export const addVoucherSchema = object({
       .max(500, 'Description can be maximum 500 characters')
       .required('Description is required'),
     locations: array().min(1, 'Minimum 1 location required').required('Locations are required'),
+  }),
+})
+
+export const editVoucherSchema = object({
+  body: object({
+    end_date: string().test(
+      'end_date',
+      'End Date: Must be in yyyy-mm-dd format, must not be in the past and must be after the start date',
+      function (val) {
+        if (!matchesDateString(val)) return false
+        const endDate = new Date(val)
+        return !!endDate
+        // have to run more validation on the end date within the route, when we have access to the voucher
+      }
+    ),
+    name: string().max(30, 'Name can be maximum 30 characters').required('Name is required'),
+    description: string()
+      .min(50, 'Description is minimum 50 characters')
+      .max(500, 'Description can be maximum 500 characters')
+      .required('Description is required'),
   }),
 })

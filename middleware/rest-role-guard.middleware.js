@@ -80,8 +80,6 @@ const restRoleGuard =
           break
       }
 
-      console.log(canAccess)
-
       if (!canAccess) {
         // eslint-disable-next-line quotes
         throwErr("Access denied - users permissions can't access this route", 403)
