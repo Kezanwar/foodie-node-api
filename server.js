@@ -1,5 +1,6 @@
 import express, { json } from 'express'
 import dotenv from 'dotenv'
+import mixpanel from 'mixpanel'
 dotenv.config()
 import connectDB from './db/db.js'
 import path from 'path'
@@ -12,14 +13,12 @@ import cors from 'cors'
 import RouterIndex from './routes/api/routes.index.js'
 import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
 import voucherExpireCron from './crons/voucher.crons.js'
-import { getTimezonesToExpire, isoToDateNumbers } from './services/date/date.services.js'
-import Voucher from './models/Voucher.js'
-import { format, startOfYesterday } from 'date-fns'
-import { endOfYesterday } from 'date-fns'
 
 const app = express()
 
 connectDB()
+
+mixpanel.init(process.env.MIXPANEL_TOKEN, { host: 'api-eu.mixpanel.com' })
 
 // init middleware
 app.set('view engine', 'ejs')
@@ -30,14 +29,8 @@ app.use(rateLimiterMiddlware)
 
 app.get('/', (req, res) => res.send('Foodie API Running'))
 
-voucherExpireCron.start()
-
-const vouchers = await Voucher.find({ end_date: '2023-05-20' })
-
-console.log(vouchers)
-
-console.log(format(endOfYesterday(), 'yyyy-MM-dd'))
-
 app.use('/api', RouterIndex)
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
+
+voucherExpireCron()

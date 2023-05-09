@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import GeoSchema from './schemas/GeoSchema.js'
+import { isMainThread } from 'node:worker_threads'
 
 const VoucherSchema = new mongoose.Schema(
   {
@@ -81,6 +82,8 @@ VoucherSchema.set('toJSON', {
 
 const Voucher = mongoose.model('voucher', VoucherSchema)
 
-Voucher.createIndexes()
+if (isMainThread) {
+  Voucher.createIndexes()
+}
 
 export default Voucher

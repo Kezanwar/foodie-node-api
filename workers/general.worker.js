@@ -2,7 +2,7 @@ import { define } from 'nanolith'
 import { hasMultipleTimezones } from '../services/location/location.services.js'
 import { getTimezonesToExpire } from '../services/date/date.services.js'
 
-export const worker = await define({
+const generalWorker = await define({
   hasMultipleTimezones,
   getTimezonesToExpire,
 
@@ -10,3 +10,5 @@ export const worker = await define({
   // object, they can be defined elsewhere outside, or even
   // imported from a totally different module.
 })
+
+export default generalWorker

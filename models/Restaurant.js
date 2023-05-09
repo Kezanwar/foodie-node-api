@@ -3,6 +3,7 @@ import { prefixImageWithBaseUrl } from '../routes/utilities/utilities.js'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import User from './User.js'
 import LocationSchema from './schemas/LocationSchema.js'
+import { isMainThread } from 'node:worker_threads'
 
 const RestaurantSchema = new mongoose.Schema(
   {
@@ -169,6 +170,8 @@ RestaurantSchema.set('toJSON', {
 
 const Restaurant = mongoose.model('restaurant', RestaurantSchema)
 
-Restaurant.createIndexes()
+if (isMainThread) {
+  Restaurant.createIndexes()
+}
 
 export default Restaurant
