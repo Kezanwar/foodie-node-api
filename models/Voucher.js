@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import GeoSchema from './schemas/GeoSchema.js'
+import { isMainThread } from 'node:worker_threads'
 
 const VoucherSchema = new mongoose.Schema(
   {
@@ -12,6 +13,10 @@ const VoucherSchema = new mongoose.Schema(
     },
     start_date: {
       type: Date,
+    },
+    is_expired: {
+      type: Boolean,
+      index: true,
     },
     end_date: {
       type: Date,
@@ -32,13 +37,21 @@ const VoucherSchema = new mongoose.Schema(
     dietary_requirements: [CategorySchemaWithIndex],
     locations: [
       {
-        name: String,
+        location_id: String,
+        nickname: String,
         geometry: GeoSchema,
       },
     ],
+    timezone: {
+      type: String,
+    },
     restaurant: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'restaurant',
+      id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'restaurant',
+        index: true,
+      },
+      name: String,
     },
   },
   { timestamps: true }
@@ -69,6 +82,8 @@ VoucherSchema.set('toJSON', {
 
 const Voucher = mongoose.model('voucher', VoucherSchema)
 
-Voucher.createIndexes()
+if (isMainThread) {
+  Voucher.createIndexes()
+}
 
 export default Voucher

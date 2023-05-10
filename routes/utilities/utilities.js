@@ -1,24 +1,19 @@
 import dotenv from 'dotenv'
 dotenv.config()
+import { mongo } from 'mongoose'
 
 import sharp from 'sharp'
 import _ from 'lodash'
 const { upperCase } = _
 
-import { STORE_ROLES } from '../../constants/store.js'
 import User from '../../models/User.js'
 
 export function ArrayIsEmpty(array) {
-  if (array.length > 0) return false
-  else return true
+  return !array.length > 0
 }
 
 export function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
-}
-
-export function mapValidationErrorArray(errors) {
-  return errors?.errors.map((err) => err.msg)
 }
 
 export function getDocumentValues(arrayOfRequiredKeys, document) {
@@ -39,13 +34,6 @@ export function removeDocumentValues(arrayOfUnrequiredKeys, document) {
     )
   const object = document.toObject()
   return _.omit(object, arrayOfUnrequiredKeys)
-}
-
-export function isAdmin(user) {
-  if (!user) throw new Error('No user')
-  if (!user.store) throw new Error('No store associated with this user')
-  if (!user.store.role !== STORE_ROLES.admin || !user.store.role !== STORE_ROLES.super_admin) return false
-  else return true
 }
 
 export async function getUser(id) {
@@ -71,7 +59,7 @@ export async function findUserByEmailWithPassword(email) {
 
 export function createImageName(obj, item, image) {
   const type = image.mimetype.split('/')[1]
-  return `${obj.id}-${item}.${type}`
+  return `${obj.image_uuid}-${item}.${type}`
 }
 
 export async function resizeProfilePhoto(buffer) {
@@ -97,7 +85,7 @@ export function SendError(res, err) {
 
 export const prefixImageWithBaseUrl = (imageName) => {
   const d = new Date()
-  return `${process.env.S3_BUCKET_BASE_URL}${imageName}?${d.toTimeString().split(' ').join('')}`
+  return `${process.env.S3_BUCKET_BASE_URL}${imageName}?${d.toTimeString().split(' ').join('').split('GMT')[0]}`
 }
 
 export const allCapsNoSpace = (str) => {
@@ -105,7 +93,7 @@ export const allCapsNoSpace = (str) => {
 }
 
 export const getID = (doc) => {
-  return doc?._id?.toHexString()
+  return doc?._id?.toHexString ? doc?._id?.toHexString() : doc?.id?.toHexString()
 }
 
 export const fakeLongLoadPromise = (duration = 5000) =>
@@ -114,3 +102,7 @@ export const fakeLongLoadPromise = (duration = 5000) =>
       resolve()
     }, duration)
   })
+
+export const createImgUUID = () => {
+  return new mongo.ObjectId().toHexString()
+}

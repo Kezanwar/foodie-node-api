@@ -24,6 +24,9 @@ const LocationSchema = new mongoose.Schema(
         type: String,
       },
     },
+    timezone: {
+      type: String,
+    },
     phone_number: {
       type: String,
     },

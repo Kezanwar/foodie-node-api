@@ -2,7 +2,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 import _ from 'lodash'
 const { capitalize } = _
-import { throwErr } from '../routes/utilities/utilities.js'
+import { throwErr } from '../../routes/utilities/utilities.js'
 import axios from 'axios'
 
 export const getLongLat = async (address) => {
@@ -11,11 +11,11 @@ export const getLongLat = async (address) => {
       throwErr('Need postcode and address line 1 to get geographical data', 500)
 
     const sPostcode = address.postcode.toUpperCase()
-    console.log(sPostcode)
     const sAddresLine1 = capitalize(address.address_line_1)
+    const sAddresLine2 = address?.address_line_2 ? capitalize(address.address_line_2) : null
 
     const response = await axios.get('https://address-from-to-latitude-longitude.p.rapidapi.com/geolocationapi', {
-      params: { address: `${sAddresLine1} ${sPostcode}` },
+      params: { address: `${sAddresLine1}${sAddresLine2 ? ' ' + sAddresLine2 + ' ' : ' '}${sPostcode}` },
       headers: {
         'X-RapidAPI-Key': process.env.RAPID_KEY,
         'X-RapidAPI-Host': 'address-from-to-latitude-longitude.p.rapidapi.com',
@@ -29,9 +29,9 @@ export const getLongLat = async (address) => {
     if (!results?.length) tryJustPost = true
 
     if (results.length) {
-      console.log(results)
+      console.log('results:', results)
       const firstResultsMatchingPostcode = results.find(
-        (r) => r.postalcode && r.postalcode.split(' ').join('') === sPostcode.split(' ').join('')
+        (r) => r.postalcode && r.postalcode.split(' ').join('').includes(sPostcode.split(' ').join(''))
       )
       if (!firstResultsMatchingPostcode) tryJustPost = true
       else return { long: firstResultsMatchingPostcode.longitude, lat: firstResultsMatchingPostcode.latitude }
@@ -50,13 +50,12 @@ export const getLongLat = async (address) => {
       )
 
       const justPostResults = justPostResponse?.data?.Results
+      console.log('justpost:', justPostResults)
 
       if (!justPostResults?.length) return undefined
 
-      console.log(justPostResults)
-
       const justPostResultsMatchingPostcode = justPostResults.find(
-        (r) => r.postalcode && r.postalcode.split(' ').join('') === sPostcode.split(' ').join('')
+        (r) => r.postalcode && r.postalcode.split(' ').join('').includes(sPostcode.split(' ').join(''))
       )
 
       if (!justPostResultsMatchingPostcode) return undefined
@@ -67,4 +66,36 @@ export const getLongLat = async (address) => {
   } catch (error) {
     throwErr(error, 500)
   }
+}
+
+export const getTimezone = async ({ lat, long }) => {
+  if (!lat || !long) return undefined
+  try {
+    const response = await axios.get('https://timezone-by-location.p.rapidapi.com/timezone', {
+      params: {
+        lat: lat,
+        lon: long,
+        c: '1',
+        s: '0',
+      },
+      headers: {
+        'X-RapidAPI-Key': process.env.RAPID_KEY,
+        'X-RapidAPI-Host': 'timezone-by-location.p.rapidapi.com',
+      },
+    })
+    const Zones = response?.data?.Zones
+    if (!Zones || !Zones?.length) return undefined
+    else return Zones[0]?.TimezoneId
+  } catch (error) {
+    console.error(error)
+    return undefined
+  }
+}
+
+export function hasMultipleTimezones(arrToTest) {
+  const sum = arrToTest.reduce((arr, el) => {
+    if (!arr.includes(el.timezone)) arr.push(el.timezone)
+    return arr
+  }, [])
+  return sum.length > 1
 }

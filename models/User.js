@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose'
+import { isMainThread } from 'node:worker_threads'
 
 const UserSchema = Schema(
   {
@@ -59,6 +60,8 @@ const UserSchema = Schema(
 )
 const User = model('user', UserSchema)
 
-User.createIndexes()
+if (isMainThread) {
+  User.createIndexes()
+}
 
 export default User

@@ -3,6 +3,7 @@ import { prefixImageWithBaseUrl } from '../routes/utilities/utilities.js'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import User from './User.js'
 import LocationSchema from './schemas/LocationSchema.js'
+import { isMainThread } from 'node:worker_threads'
 
 const RestaurantSchema = new mongoose.Schema(
   {
@@ -13,6 +14,9 @@ const RestaurantSchema = new mongoose.Schema(
       type: String,
     },
     avatar: {
+      type: String,
+    },
+    image_uuid: {
       type: String,
     },
     cover_photo: {
@@ -153,6 +157,7 @@ RestaurantSchema.methods.toClient = function () {
   delete returnToClient.createdAt
   delete returnToClient.updatedAt
   delete returnToClient.locations
+  delete returnToClient.image_uuid
   if (returnToClient.avatar) returnToClient.avatar = prefixImageWithBaseUrl(returnToClient.avatar)
   if (returnToClient.cover_photo) returnToClient.cover_photo = prefixImageWithBaseUrl(returnToClient.cover_photo)
   return returnToClient
@@ -165,6 +170,8 @@ RestaurantSchema.set('toJSON', {
 
 const Restaurant = mongoose.model('restaurant', RestaurantSchema)
 
-Restaurant.createIndexes()
+if (isMainThread) {
+  Restaurant.createIndexes()
+}
 
 export default Restaurant

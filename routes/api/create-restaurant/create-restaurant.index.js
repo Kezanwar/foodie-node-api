@@ -18,12 +18,12 @@ import {
   restaurantSubmitApplicationSchema,
 } from '../../../validation/create-restaurant.validation.js'
 
-import { createImageName, getID, SendError, throwErr } from '../../utilities/utilities.js'
+import { createImageName, createImgUUID, getID, SendError, throwErr } from '../../utilities/utilities.js'
 import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
 import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/aws.services.js'
 import { appEnv } from '../../../base/base.js'
 import { email_addresses } from '../../../constants/email.js'
-import transporter from '../../../services/email.services.js'
+import transporter from '../../../services/email/email.services.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -33,6 +33,9 @@ router.post('/company-info', auth, validate(companyInfoSchema), async (req, res)
   const { company_name, company_number, company_address } = req.body
   try {
     const user = req.user
+
+    if (!user.email_confirmed)
+      throwErr('Access denied - Please confirm your email before accessing these resources', 403)
 
     let uRest = user?.restaurant
     let uRestID = uRest?.id
@@ -51,6 +54,7 @@ router.post('/company-info', auth, validate(companyInfoSchema), async (req, res)
         super_admin: user.id,
         registration_step: RESTAURANT_REG_STEPS.STEP_1_COMPLETE,
         status: RESTAURANT_STATUS.APPLICATION_PENDING,
+        image_uuid: createImgUUID(),
       })
       await newRest.save()
 
@@ -92,7 +96,7 @@ router.post('/company-info', auth, validate(companyInfoSchema), async (req, res)
 router.post(
   '/details',
   auth,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN),
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
   upload.fields([
     { name: 'avatar', maxCount: 1 },
     { name: 'cover_photo', maxCount: 1 },
@@ -196,38 +200,43 @@ router.post(
 //? @desc STEP 3, checks if the restaurant has a minimum of 1 locations added
 //! @access private && super_admin
 
-router.post('/locations', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), async (req, res) => {
-  const { restaurant } = req
+router.post(
+  '/locations',
+  auth,
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
+  async (req, res) => {
+    const { restaurant } = req
 
-  try {
-    if (restaurant?.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
-      throwErr(
-        'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
-        400
-      )
+    try {
+      if (restaurant?.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+        throwErr(
+          'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
+          400
+        )
+      }
+
+      if (!restaurant?.registration_step || restaurant?.registration_step === RESTAURANT_REG_STEPS.STEP_1_COMPLETE) {
+        throwErr('Error: Must complete step 1 & 2 first')
+        return
+      }
+
+      if (!restaurant?.locations || restaurant?.locations.length === 0) {
+        throwErr('Error: A minimum of 1 locations is required')
+        return
+      }
+
+      if (restaurant.registration_step === RESTAURANT_REG_STEPS.STEP_2_COMPLETE) {
+        restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_3_COMPLETE
+        await restaurant.save()
+      }
+
+      return res.status(200).json(restaurant.toClient())
+    } catch (error) {
+      console.log(error)
+      SendError(res, error)
     }
-
-    if (!restaurant?.registration_step || restaurant?.registration_step === RESTAURANT_REG_STEPS.STEP_1_COMPLETE) {
-      throwErr('Error: Must complete step 1 & 2 first')
-      return
-    }
-
-    if (!restaurant?.locations || restaurant?.locations.length === 0) {
-      throwErr('Error: A minimum of 1 locations is required')
-      return
-    }
-
-    if (restaurant.registration_step === RESTAURANT_REG_STEPS.STEP_2_COMPLETE) {
-      restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_3_COMPLETE
-      await restaurant.save()
-    }
-
-    return res.status(200).json(restaurant.toClient())
-  } catch (error) {
-    console.log(error)
-    SendError(res, error)
   }
-})
+)
 
 //* route POST api/create-restaurant/submit-application (STEP 4)
 //? @desc STEP 4, checks if the restaurant has all details and submits application
@@ -237,7 +246,7 @@ router.post(
   '/submit-application',
   auth,
   validate(restaurantSubmitApplicationSchema),
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN),
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
   async (req, res) => {
     const {
       restaurant,
