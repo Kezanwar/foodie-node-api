@@ -36,19 +36,24 @@ export const isInPastWithinTimezone = (date, timezone) => {
   }
 }
 
-export const checkTimezoneCurrentTime = async (tz = 'europe/london') => {
+export const checkTimezoneCurrentTime = (tz = 'europe/london') => {
   if (!tz) throwErr('check timezones current time needs a timezone', 500)
   try {
-    const response = await axios.get('https://world-time-by-api-ninjas.p.rapidapi.com/v1/worldtime', {
-      params: {
-        timezone: tz,
-      },
-      headers: {
-        'X-RapidAPI-Key': process.env.RAPID_KEY,
-        'X-RapidAPI-Host': 'world-time-by-api-ninjas.p.rapidapi.com',
-      },
-    })
-    return response?.data
+    // const response = await axios.get('https://world-time-by-api-ninjas.p.rapidapi.com/v1/worldtime', {
+    //   params: {
+    //     timezone: tz,
+    //   },
+    //   headers: {
+    //     'X-RapidAPI-Key': process.env.RAPID_KEY,
+    //     'X-RapidAPI-Host': 'world-time-by-api-ninjas.p.rapidapi.com',
+    //   },
+    // })
+
+    // return response.data
+
+    const time = new Date().toLocaleString('en-GB', { timeZone: tz })
+    const [hour, min, sec] = time.split(' ')[1].split(':')
+    return { hour, min, sec }
   } catch (error) {
     console.error(error)
     return undefined
@@ -59,67 +64,72 @@ export const timeNowInGMT = () => {
   return new Date().toUTCString().split(' ')[4]
 }
 
-const capitalizeTimezone = (tz) => {
-  const split = tz.split('/')
-  return capitalizeFirstLetter(split[0]) + '/' + capitalizeFirstLetter(split[1])
-}
+// const capitalizeTimezone = (tz) => {
+//   const split = tz.split('/')
+//   return capitalizeFirstLetter(split[0]) + '/' + capitalizeFirstLetter(split[1])
+// }
 
-export const getTimezonesToExpire = async () => {
+export const getTimezonesToExpire = () => {
   const midnightStart = 0
   const midnightEnd = 24
   const nowHour = Number(timeNowInGMT().split(':')[0])
 
-  let plusGMTValidated = []
-  let minusGMTValidated = []
+  // let plusGMTValidated = []
+  // let minusGMTValidated = []
 
   const minusGMTArray = timezonesData
     .filter((tz) => {
       const strOffset = tz.offset.toString()
-      if (strOffset.includes('-')) {
-        if (nowHour - Number(strOffset.charAt(1)) === midnightStart) return tz
-      }
+      return strOffset.includes('-') && nowHour - Number(strOffset.charAt(1)) === midnightStart
     })
     .map((el) => {
       return el.utc
     })
     .flat(1)
+    .filter((tz) => {
+      const { hour } = checkTimezoneCurrentTime(tz)
+      return Number(hour) === midnightStart
+    })
+
   const plusGMTArray = timezonesData
     .filter((tz) => {
       const strOffset = tz.offset.toString()
-      if (!strOffset.includes('-')) {
-        if (nowHour + tz.offset === midnightEnd) return tz
-      }
+      return !strOffset.includes('-') && nowHour + tz.offset === midnightEnd
     })
     .map((el) => {
       return el.utc
     })
     .flat(1)
-
-  if (plusGMTArray.length > 0) {
-    const plusProms = plusGMTArray.map((pTz) => {
-      return checkTimezoneCurrentTime(pTz)
+    .filter((tz) => {
+      const { hour } = checkTimezoneCurrentTime(tz)
+      return Number(hour) === midnightStart
     })
 
-    const plusPromiseResults = await Promise.all(plusProms)
+  // if (plusGMTArray.length > 0) {
+  //   const plusProms = plusGMTArray.map((pTz) => {
+  //     return checkTimezoneCurrentTime(pTz)
+  //   })
 
-    plusGMTValidated = plusPromiseResults.reduce((arr, current) => {
-      if (Number(current.hour) === midnightStart) arr.push(capitalizeTimezone(current.timezone))
-      return arr
-    }, [])
-  }
+  //   const plusPromiseResults = await Promise.all(plusProms)
 
-  if (minusGMTArray.length > 0) {
-    const minusProms = minusGMTArray.map((pTz) => {
-      return checkTimezoneCurrentTime(pTz)
-    })
+  //   plusGMTValidated = plusPromiseResults.reduce((arr, current) => {
+  //     if (Number(current.hour) === midnightStart) arr.push(capitalizeTimezone(current.timezone))
+  //     return arr
+  //   }, [])
+  // }
 
-    const minusPromsResults = await Promise.all(minusProms)
+  // if (minusGMTArray.length > 0) {
+  //   const minusProms = minusGMTArray.map((pTz) => {
+  //     return checkTimezoneCurrentTime(pTz)
+  //   })
 
-    minusGMTValidated = minusPromsResults.reduce((arr, current) => {
-      if (Number(current.hour) === midnightStart) arr.push(capitalizeTimezone(current.timezone))
-      return arr
-    }, [])
-  }
+  //   const minusPromsResults = await Promise.all(minusProms)
 
-  return { minusGMT: minusGMTValidated, plusGMT: plusGMTValidated }
+  //   minusGMTValidated = minusPromsResults.reduce((arr, current) => {
+  //     if (Number(current.hour) === midnightStart) arr.push(capitalizeTimezone(current.timezone))
+  //     return arr
+  //   }, [])
+  // }
+
+  return { minusGMT: minusGMTArray, plusGMT: plusGMTArray }
 }

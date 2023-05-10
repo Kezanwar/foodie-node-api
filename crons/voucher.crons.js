@@ -14,6 +14,7 @@ const voucherExpireCron = () => {
         name: 'getTimezonesToExpire',
       })
       const { minusGMT, plusGMT } = result
+
       if (plusGMT?.length > 0) {
         const today = todayDateString()
         const updatePlusGMTVouchers = await Voucher.updateMany(
