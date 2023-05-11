@@ -35,6 +35,4 @@ app.use('/api', RouterIndex)
 
 voucherExpireCron()
 
-console.log(getTimezonesToExpire())
-
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
