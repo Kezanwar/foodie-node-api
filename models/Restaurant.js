@@ -1,9 +1,10 @@
 import mongoose from 'mongoose'
-import { prefixImageWithBaseUrl } from '../routes/utilities/utilities.js'
+
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import User from './User.js'
 import LocationSchema from './schemas/LocationSchema.js'
 import { isMainThread } from 'node:worker_threads'
+import { prefixImageWithBaseUrl } from '../services/images/images.services.js'
 
 const RestaurantSchema = new mongoose.Schema(
   {

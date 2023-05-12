@@ -1,8 +1,6 @@
 import dotenv from 'dotenv'
 dotenv.config()
-import { mongo } from 'mongoose'
 
-import sharp from 'sharp'
 import _ from 'lodash'
 const { upperCase } = _
 
@@ -57,21 +55,6 @@ export async function findUserByEmailWithPassword(email) {
   return user
 }
 
-export function createImageName(obj, item, image) {
-  const type = image.mimetype.split('/')[1]
-  return `${obj.image_uuid}-${item}.${type}`
-}
-
-export async function resizeProfilePhoto(buffer) {
-  try {
-    const resizedBuffer = await sharp(buffer).resize({ height: 500, width: 500, fit: 'contain' }).toBuffer()
-    return resizedBuffer
-  } catch (error) {
-    console.error(error)
-    throw new Error(error)
-  }
-}
-
 export const throwErr = (msg, code) => {
   const exception = new Error(msg)
   exception.code = code ?? 500
@@ -83,17 +66,12 @@ export function SendError(res, err) {
   res.status(err.code ?? 500).json({ message: err?.message || 'Internal server error' })
 }
 
-export const prefixImageWithBaseUrl = (imageName) => {
-  const d = new Date()
-  return `${process.env.S3_BUCKET_BASE_URL}${imageName}?${d.toTimeString().split(' ').join('').split('GMT')[0]}`
-}
-
 export const allCapsNoSpace = (str) => {
   return upperCase(str).split(' ').join('')
 }
 
 export const getID = (doc) => {
-  return doc?._id?.toHexString ? doc?._id?.toHexString() : doc?.id?.toHexString()
+  return doc?._id?.toHexString ? doc?._id?.toHexString() : doc?.id?.toHexString() || doc?.id
 }
 
 export const fakeLongLoadPromise = (duration = 5000) =>
@@ -102,7 +80,3 @@ export const fakeLongLoadPromise = (duration = 5000) =>
       resolve()
     }, duration)
   })
-
-export const createImgUUID = () => {
-  return new mongo.ObjectId().toHexString()
-}
