@@ -29,7 +29,6 @@ export const getLongLat = async (address) => {
     if (!results?.length) tryJustPost = true
 
     if (results.length) {
-      console.log('results:', results)
       const firstResultsMatchingPostcode = results.find(
         (r) => r.postalcode && r.postalcode.split(' ').join('').includes(sPostcode.split(' ').join(''))
       )
@@ -50,7 +49,6 @@ export const getLongLat = async (address) => {
       )
 
       const justPostResults = justPostResponse?.data?.Results
-      console.log('justpost:', justPostResults)
 
       if (!justPostResults?.length) return undefined
 

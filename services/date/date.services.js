@@ -59,8 +59,9 @@ export const getTimezonesToExpire = () => {
   const minusGMTArray = timezonesData
     .filter((tz) => {
       const strOffset = tz.offset.toString()
-      const isMinus = strOffset.includes('-')
-      return isMinus && nowHour - Number(strOffset.charAt(1)) === midnightStart
+      const isMinus = tz.offset <= 0
+      const numToMinus = tz.offset === 0 ? tz.offset : Number(strOffset.charAt(1))
+      return isMinus && nowHour - numToMinus === midnightStart
     })
     .map((el) => {
       return el.utc
@@ -73,8 +74,7 @@ export const getTimezonesToExpire = () => {
 
   const plusGMTArray = timezonesData
     .filter((tz) => {
-      const strOffset = tz.offset.toString()
-      const isPlus = !strOffset.includes('-')
+      const isPlus = tz.offset >= 0
       return isPlus && nowHour + tz.offset === midnightEnd
     })
     .map((el) => {

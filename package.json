@@ -39,7 +39,10 @@
     "yup": "^1.0.0"
   },
   "devDependencies": {
+    "@types/axios": "^0.14.0",
     "@types/jest": "^29.5.0",
+    "@types/nodemailer": "^6.4.7",
+    "@types/sharp": "^0.32.0",
     "concurrently": "^7.0.0",
     "eslint": "^8.33.0",
     "eslint-plugin-modules": "^1.1.1",

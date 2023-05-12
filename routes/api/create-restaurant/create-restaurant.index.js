@@ -18,12 +18,17 @@ import {
   restaurantSubmitApplicationSchema,
 } from '../../../validation/create-restaurant.validation.js'
 
-import { createImageName, createImgUUID, getID, SendError, throwErr } from '../../utilities/utilities.js'
+import { getID, SendError, throwErr } from '../../utilities/utilities.js'
 import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
+
 import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/aws.services.js'
-import { appEnv } from '../../../base/base.js'
-import { email_addresses } from '../../../constants/email.js'
 import transporter from '../../../services/email/email.services.js'
+import { generalWorkerService } from '../../../services/workers/general.service.worker.js'
+
+import { email_addresses } from '../../../constants/email.js'
+import { RESTAURANT_IMAGES } from '../../../constants/images.js'
+import { appEnv } from '../../../base/base.js'
+import { createImageName, createImgUUID } from '../../../services/images/images.services.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -152,9 +157,18 @@ router.post(
               const imageName = createImageName(restaurant, item, img)
               imageNames[item] = imageName
               let buffer = img.buffer
-              // if (item === STORE_IMAGES.profile_image) {
-              //   buffer = await resizeProfilePhoto(buffer)
-              // }
+              if (item === RESTAURANT_IMAGES.avatar) {
+                buffer = await generalWorkerService.call({
+                  name: 'resizeImg',
+                  params: [buffer, { width: 500 }],
+                })
+              }
+              if (item === RESTAURANT_IMAGES.cover_photo) {
+                buffer = await generalWorkerService.call({
+                  name: 'resizeImg',
+                  params: [buffer, { width: 1400 }],
+                })
+              }
               const pc = s3PutCommand({
                 Bucket: bucketName,
                 Key: createImageName(restaurant, item, img),
@@ -358,7 +372,7 @@ if (appEnv === 'development' || appEnv === 'staging') {
 }
 
 if (appEnv === 'development' || appEnv === 'staging') {
-  router.get('/reject-application/:id', async (req, res) => {
+  router.get('/decline-application/:id', async (req, res) => {
     const {
       params: { id },
     } = req

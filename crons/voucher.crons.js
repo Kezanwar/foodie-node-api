@@ -1,7 +1,8 @@
 import * as cron from 'node-cron'
-
 import Voucher from '../models/Voucher.js'
+
 import { generalWorkerService } from '../services/workers/general.service.worker.js'
+
 import { todayDateString, yeserdayDateString } from '../services/date/date.services.js'
 import { MIXPANEL_EVENTS, mixpanelTrack } from '../services/mixpanel/mixpanel.services.js'
 
@@ -9,11 +10,12 @@ const voucherExpireCron = () => {
   cron.schedule(
     '0 * * * *',
     async () => {
-      const mixpanelProps = { plusGMT: {}, minusGMT: {} }
       const result = await generalWorkerService.call({
         name: 'getTimezonesToExpire',
       })
       const { minusGMT, plusGMT } = result
+
+      const mixpanelProps = { plusGMT: {}, minusGMT: {} }
 
       if (plusGMT?.length > 0) {
         const today = todayDateString()
