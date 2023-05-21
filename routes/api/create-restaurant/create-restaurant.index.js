@@ -166,14 +166,14 @@ router.post(
               if (item === RESTAURANT_IMAGES.cover_photo) {
                 buffer = await generalWorkerService.call({
                   name: 'resizeImg',
-                  params: [buffer, { width: 1400 }],
+                  params: [buffer, { width: 1000 }],
                 })
               }
               const pc = s3PutCommand({
                 Bucket: bucketName,
                 Key: createImageName(restaurant, item, img),
                 Body: buffer,
-                ContentType: img.mimetype,
+                ContentType: 'image/jpeg',
               })
               const res = await foodieS3Client.send(pc)
               resolve(res)
