@@ -14,7 +14,7 @@ export async function resizeImg(buffer, { height, width }) {
   }
 }
 
-export function createImageName(obj, item, image) {
+export function createImageName(obj, item) {
   // const type = image.mimetype.split('/')[1]
   const type = 'image/jpeg'
   return `${obj.image_uuid}-${item}.${type}`
