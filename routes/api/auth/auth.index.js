@@ -120,15 +120,12 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 
     if (user) throw new Error('User already exists')
 
-    const display_name = capitalizeFirstLetter(first_name) + ' ' + capitalizeFirstLetter(last_name)
-
     // create a new user with our schema and users details from req
     user = new User({
-      first_name,
-      last_name,
+      first_name: capitalizeFirstLetter(first_name),
+      last_name: capitalizeFirstLetter(last_name),
       email: email.toLowerCase(),
       password,
-      display_name,
     })
     // encrypt users passsord using bcrypt
     // generate the salt
