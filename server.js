@@ -13,7 +13,6 @@ import cors from 'cors'
 import RouterIndex from './routes/api/routes.index.js'
 import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
 import voucherExpireCron from './crons/voucher.crons.js'
-import { getTimezonesToExpire } from './services/date/date.services.js'
 
 const app = express()
 
