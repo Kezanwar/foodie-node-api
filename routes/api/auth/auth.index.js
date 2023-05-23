@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import { renderFile } from 'ejs'
-import { OAuth2Client } from 'google-auth-library'
 const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
@@ -31,9 +30,6 @@ import { feUrl } from '../../../base/base.js'
 import { confirm_email_content, email_addresses } from '../../../constants/email.js'
 import transporter from '../../../services/email/email.services.js'
 import axios from 'axios'
-
-// handles google authentication
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET)
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
