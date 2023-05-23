@@ -26,6 +26,12 @@ const UserSchema = Schema(
       required: true,
       select: false,
     },
+    auth_method: {
+      type: String,
+    },
+    avatar: {
+      type: String,
+    },
     vouchers: {
       downloaded: [
         {
