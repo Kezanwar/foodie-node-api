@@ -4,6 +4,7 @@ import _ from 'lodash'
 const { capitalize } = _
 import { throwErr } from '../../routes/utilities/utilities.js'
 import axios from 'axios'
+import { countries } from '../../constants/countries.js'
 
 export const getLongLat = async (address) => {
   try {
@@ -96,4 +97,9 @@ export function hasMultipleTimezones(arrToTest) {
     return arr
   }, [])
   return sum.length > 1
+}
+
+export function findCountryPhoneCode(country) {
+  const code = countries.find((c) => c.label === country)?.phone
+  return `+${code}`
 }

@@ -13,6 +13,7 @@ import { addLocationSchema, checkLocationSchema } from '../../../validation/loca
 import { allCapsNoSpace, getID, SendError, throwErr } from '../../utilities/utilities.js'
 
 import { getLongLat, getTimezone } from '../../../services/location/location.services.js'
+import { generalWorkerService } from '../../../services/workers/general.service.worker.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check
@@ -68,10 +69,31 @@ router.post(
 
       const timezone = await getTimezone(long_lat)
 
+      let phoneWithCode = phone_number
+
+      const firstChar = phone_number.charAt(0)
+
+      if (firstChar !== '+' && firstChar !== '0') {
+        const code = await generalWorkerService.call({
+          name: 'findCountryPhoneCode',
+          params: [address.country],
+        })
+        phoneWithCode = `${code}${phoneWithCode}`
+      }
+
+      if (firstChar === '0') {
+        const code = await generalWorkerService.call({
+          name: 'findCountryPhoneCode',
+          params: [address.country],
+        })
+        const restOfNumber = phone_number.substring(1)
+        phoneWithCode = `${code}${restOfNumber}`
+      }
+
       const newLocation = {
         nickname,
         address,
-        phone_number,
+        phone_number: phoneWithCode,
         email,
         opening_times,
         geometry: { coordinates: [long_lat.long, long_lat.lat] },
@@ -185,9 +207,30 @@ router.patch(
         return
       }
 
+      let phoneWithCode = phone_number
+
+      const firstChar = phone_number.charAt(0)
+
+      if (firstChar !== '+' && firstChar !== '0') {
+        const code = await generalWorkerService.call({
+          name: 'findCountryPhoneCode',
+          params: [address.country],
+        })
+        phoneWithCode = `${code}${phoneWithCode}`
+      }
+
+      if (firstChar === '0') {
+        const code = await generalWorkerService.call({
+          name: 'findCountryPhoneCode',
+          params: [address.country],
+        })
+        const restOfNumber = phone_number.substring(1)
+        phoneWithCode = `${code}${restOfNumber}`
+      }
+
       restaurant.locations[editLocationIndex].nickname = nickname
       restaurant.locations[editLocationIndex].address = address
-      restaurant.locations[editLocationIndex].phone_number = phone_number
+      restaurant.locations[editLocationIndex].phone_number = phoneWithCode
       restaurant.locations[editLocationIndex].email = email
       restaurant.locations[editLocationIndex].opening_times = opening_times
       restaurant.locations[editLocationIndex].geometry = { coordinates: [long_lat.long, long_lat.lat] }
