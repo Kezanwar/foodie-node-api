@@ -60,20 +60,23 @@ const restRoleGuard =
 
       let canAccess
 
+      const isSuperAdmin = restaurant?.super_admin.toString() === user.id
+      const isAdmin = restaurant?.admins?.some((admin) => admin?.toString() === user.id)
+      const isUser = restaurant?.users?.some((u) => u?.toString() === user.id)
+
       switch (role) {
         case RESTAURANT_ROLES.SUPER_ADMIN:
-          canAccess = uRole === RESTAURANT_ROLES.SUPER_ADMIN && restaurant.super_admin.toString() === user.id
+          canAccess = uRole === RESTAURANT_ROLES.SUPER_ADMIN && isSuperAdmin
           break
         case RESTAURANT_ROLES.ADMIN:
           canAccess =
-            (uRole === RESTAURANT_ROLES.SUPER_ADMIN && restaurant.super_admin.toString() === user.id) ||
-            (uRole === RESTAURANT_ROLES.ADMIN && restaurant.admins.some((admin) => admin.toString() === user.id))
+            (uRole === RESTAURANT_ROLES.SUPER_ADMIN && isSuperAdmin) || (uRole === RESTAURANT_ROLES.ADMIN && isAdmin)
           break
         case RESTAURANT_ROLES.USER:
           canAccess = canAccess =
-            (uRole === RESTAURANT_ROLES.SUPER_ADMIN && restaurant.super_admin.toString() === user.id) ||
-            (uRole === RESTAURANT_ROLES.ADMIN && restaurant.admins.some((admin) => admin.toString() === user.id)) ||
-            (uRole === RESTAURANT_ROLES.USER && restaurant.users.some((u) => u.toString() === user.id))
+            (uRole === RESTAURANT_ROLES.SUPER_ADMIN && isSuperAdmin) ||
+            (uRole === RESTAURANT_ROLES.ADMIN && isAdmin) ||
+            (uRole === RESTAURANT_ROLES.USER && isUser)
           break
         default:
           canAccess = false
