@@ -58,10 +58,10 @@ const RestaurantSchema = new mongoose.Schema(
         type: LocationSchema,
       },
     ],
-    vouchers: [
+    deals: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'voucher',
+        ref: 'deal',
       },
     ],
     contact_details: {

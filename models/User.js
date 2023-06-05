@@ -32,17 +32,17 @@ const UserSchema = Schema(
     avatar: {
       type: String,
     },
-    vouchers: {
+    deals: {
       downloaded: [
         {
           type: Schema.Types.ObjectId,
-          ref: 'voucher',
+          ref: 'deal',
         },
       ],
       redeemed: [
         {
           type: Schema.Types.ObjectId,
-          ref: 'voucher',
+          ref: 'deal',
         },
       ],
     },

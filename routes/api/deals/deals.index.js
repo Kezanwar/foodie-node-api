@@ -10,8 +10,8 @@ import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
 import validate from '../../../middleware/validation.middleware.js'
 
 import { SendError, getID, throwErr } from '../../utilities/utilities.js'
-import { addVoucherSchema, editVoucherSchema } from '../../../validation/vouchers.validation.js'
-import Voucher from '../../../models/Voucher.js'
+import { addDealSchema, editDealSchema } from '../../../validation/deals.validation.js'
+import Deal from '../../../models/Deal.js'
 import { isInPastWithinTimezone } from '../../../services/date/date.services.js'
 import { isBefore } from 'date-fns'
 
@@ -22,8 +22,8 @@ import { isBefore } from 'date-fns'
 router.get('/', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }), async (req, res) => {
   const { restaurant } = req
   try {
-    const vouchers = await Voucher.find({ 'restaurant.id': getID(restaurant) })
-    res.json(vouchers)
+    const deals = await Deal.find({ 'restaurant.id': getID(restaurant) })
+    res.json(deals)
   } catch (error) {
     SendError(res, error)
   }
@@ -33,7 +33,7 @@ router.post(
   '/add',
   auth,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
-  validate(addVoucherSchema),
+  validate(addDealSchema),
   async (req, res) => {
     const {
       restaurant,
@@ -50,7 +50,7 @@ router.post(
 
       if (!locationsMap?.length) throwErr('Error: No matching locations found', 400)
 
-      const voucher = new Voucher({
+      const deal = new Deal({
         start_date,
         end_date,
         name,
@@ -62,8 +62,8 @@ router.post(
         is_expired: false,
         timezone,
       })
-      await voucher.save()
-      return res.status(200).json(voucher)
+      await deal.save()
+      return res.status(200).json(deal)
     } catch (error) {
       SendError(res, error)
     }
@@ -74,7 +74,7 @@ router.patch(
   '/edit/:id',
   auth,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
-  validate(editVoucherSchema),
+  validate(editDealSchema),
   async (req, res) => {
     const {
       restaurant,
@@ -83,17 +83,17 @@ router.patch(
     } = req
 
     try {
-      const voucher = await Voucher.findById(id)
-      if (!voucher) throwErr('Voucher not found', 400)
-      if (getID(voucher.restaurant) !== getID(restaurant)) throwErr('Unauthorized to edit this voucher', 400)
-      if (isInPastWithinTimezone(end_date, voucher.timezone)) throwErr('Voucher end date cannot be in the past', 400)
-      if (isBefore(new Date(end_date), new Date(voucher.start_date))) {
-        throwErr('Voucher end date cannot be before the start date', 400)
+      const deal = await Deal.findById(id)
+      if (!deal) throwErr('Deal not found', 400)
+      if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to edit this deal', 400)
+      if (isInPastWithinTimezone(end_date, deal.timezone)) throwErr('Deal end date cannot be in the past', 400)
+      if (isBefore(new Date(end_date), new Date(deal.start_date))) {
+        throwErr('Deal end date cannot be before the start date', 400)
       }
-      voucher.name = name
-      voucher.description = description
-      voucher.end_date = end_date
-      await voucher.save()
+      deal.name = name
+      deal.description = description
+      deal.end_date = end_date
+      await deal.save()
       return res.status(200).json('Success')
     } catch (error) {
       SendError(res, error)
@@ -111,10 +111,10 @@ router.post(
     } = req
 
     try {
-      const voucher = await Voucher.findById(id)
-      if (!voucher) throwErr('Voucher not found', 400)
-      if (getID(voucher.restaurant) !== getID(restaurant)) throwErr('Unauthorized to delete this voucher', 400)
-      await voucher.delete()
+      const deal = await Deal.findById(id)
+      if (!deal) throwErr('Deal not found', 400)
+      if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to delete this deal', 400)
+      await deal.delete()
       return res.status(200).json('Success')
     } catch (error) {
       SendError(res, error)
@@ -133,12 +133,12 @@ router.post(
     } = req
 
     try {
-      const voucher = await Voucher.findById(id)
-      if (!voucher) throwErr('Voucher not found', 400)
-      if (getID(voucher.restaurant) !== getID(restaurant)) throwErr('Unauthorized to expire this voucher', 400)
-      if (voucher.is_expired) throwErr('Voucher is already expired', 400)
-      voucher.is_expired = true
-      await voucher.save()
+      const deal = await Deal.findById(id)
+      if (!deal) throwErr('Deal not found', 400)
+      if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to expire this deal', 400)
+      if (deal.is_expired) throwErr('Deal is already expired', 400)
+      deal.is_expired = true
+      await deal.save()
       return res.status(200).json('Success')
     } catch (error) {
       SendError(res, error)

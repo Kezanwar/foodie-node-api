@@ -3,7 +3,7 @@ import { object, string, array } from 'yup'
 import { matchesDateString } from '../routes/utilities/regex.js'
 import { isInPastWithinTimezone } from '../services/date/date.services.js'
 
-export const addVoucherSchema = object({
+export const addDealSchema = object({
   body: object({
     timezone: string().required('Timezone is required'),
     start_date: string()
@@ -35,7 +35,7 @@ export const addVoucherSchema = object({
   }),
 })
 
-export const editVoucherSchema = object({
+export const editDealSchema = object({
   body: object({
     end_date: string().test(
       'end_date',
@@ -44,7 +44,7 @@ export const editVoucherSchema = object({
         if (!matchesDateString(val)) return false
         const endDate = new Date(val)
         return !!endDate
-        // have to run more validation on the end date within the route, when we have access to the voucher
+        // have to run more validation on the end date within the route, when we have access to the deal
       }
     ),
     name: string().max(30, 'Name can be maximum 30 characters').required('Name is required'),

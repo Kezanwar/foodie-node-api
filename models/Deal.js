@@ -3,7 +3,7 @@ import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import GeoSchema from './schemas/GeoSchema.js'
 import { isMainThread } from 'node:worker_threads'
 
-const VoucherSchema = new mongoose.Schema(
+const DealSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -57,7 +57,7 @@ const VoucherSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-VoucherSchema.methods.updateVoucher = async function (data) {
+DealSchema.methods.updateDeal = async function (data) {
   if (!data) throw new Error('no data passed to setup method')
   const dataArr = Object.entries(data)
   dataArr.forEach(([key, value]) => {
@@ -66,7 +66,7 @@ VoucherSchema.methods.updateVoucher = async function (data) {
   await this.save()
 }
 
-VoucherSchema.methods.toClient = function () {
+DealSchema.methods.toClient = function () {
   let returnToClient = this.toJSON()
   delete returnToClient._id
   delete returnToClient.__v
@@ -76,14 +76,14 @@ VoucherSchema.methods.toClient = function () {
 }
 
 // Ensure virtual fields are serialised.
-VoucherSchema.set('toJSON', {
+DealSchema.set('toJSON', {
   virtuals: true,
 })
 
-const Voucher = mongoose.model('voucher', VoucherSchema)
+const Deal = mongoose.model('deal', DealSchema)
 
 if (isMainThread) {
-  Voucher.createIndexes()
+  Deal.createIndexes()
 }
 
-export default Voucher
+export default Deal
