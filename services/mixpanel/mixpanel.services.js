@@ -2,7 +2,7 @@ import mixpanel from 'mixpanel'
 const MIX = mixpanel.init(process.env.MIXPANEL_TOKEN, { host: 'api-eu.mixpanel.com' })
 
 export const MIXPANEL_EVENTS = {
-  cron_vouchers_expired: 'be_cron_vouchers_expired',
+  cron_deals_expired: 'be_cron_deals_expired',
 }
 
 export async function mixpanelTrack(eventName, props) {

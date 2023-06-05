@@ -4,7 +4,7 @@ import CreateRestaurantRouter from './create-restaurant/create-restaurant.index.
 import RestaurantRouter from './restaurant/restaurant.index.js'
 import LocationsRouter from './locations/locations.index.js'
 import OptionsRouter from './options/options.index.js'
-import VouchersRouter from './vouchers/vouchers.index.js'
+import DealsRouter from './deals/deals.index.js'
 import PrototypeRouter from './prototype.router.js'
 import { appEnv } from '../../base/base.js'
 
@@ -17,7 +17,7 @@ router.use('/locations', LocationsRouter)
 router.use('/create-restaurant', CreateRestaurantRouter)
 router.use('/restaurant', RestaurantRouter)
 router.use('/options', OptionsRouter)
-router.use('/vouchers', VouchersRouter)
+router.use('/deals', DealsRouter)
 
 if (appEnv === 'development') {
   router.use('/prototype', PrototypeRouter)

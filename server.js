@@ -12,7 +12,7 @@ const PORT = process.env.PORT
 import cors from 'cors'
 import RouterIndex from './routes/api/routes.index.js'
 import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
-import voucherExpireCron from './crons/voucher.crons.js'
+import dealExpireCron from './crons/deal.crons.js'
 
 const app = express()
 
@@ -32,6 +32,6 @@ app.get('/', (req, res) => res.send('Foodie API Running'))
 
 app.use('/api', RouterIndex)
 
-voucherExpireCron()
+dealExpireCron()
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
