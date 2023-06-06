@@ -29,6 +29,7 @@ import { email_addresses } from '../../../constants/email.js'
 import { RESTAURANT_IMAGES } from '../../../constants/images.js'
 import { appEnv } from '../../../base/base.js'
 import { createImageName, createImgUUID } from '../../../services/images/images.services.js'
+import { createUrlFromLink } from '../../../services/util/util.services.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -110,10 +111,12 @@ router.post(
 
   async (req, res) => {
     const {
-      body: { name, bio, social_media, dietary_requirements, cuisines },
+      body: { name, bio, social_media, dietary_requirements, cuisines, booking_link },
       restaurant,
       files,
     } = req
+
+    if (!cuisines || cuisines?.length <= 0) throwErr('Must provide atleast 1 cuisine', 400)
 
     //! route is expecting formdata - any objects that arent files must be stringified and sent as formdata
     //! then destringifyd on the server
@@ -139,6 +142,7 @@ router.post(
 
       if ((!rAvatar && !uAvatar) || (!rCoverPhoto && !uCoverPhoto)) {
         throwErr('Error - Restaurant must provide Avatar and Cover Photo', 400)
+        return
       }
 
       const filesArr = Object.entries(files)
@@ -190,12 +194,15 @@ router.post(
         ...(imageNames.cover_photo && { cover_photo: imageNames.cover_photo }),
         name,
         bio,
+        booking_link,
         ...(dietary_requirements && { dietary_requirements: JSON.parse(dietary_requirements) }),
         ...(cuisines && { cuisines: JSON.parse(cuisines) }),
         ...(social_media && { social_media: JSON.parse(social_media) }),
       }
 
       await restaurant.updateRest(newData)
+
+      if (!restaurant.cover_photo || !restaurant.avatar) return throwErr('Must provide an Avatar and Cover Photo')
 
       if (restaurant?.registration_step === RESTAURANT_REG_STEPS.STEP_1_COMPLETE) {
         restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_2_COMPLETE

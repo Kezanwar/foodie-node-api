@@ -14,20 +14,20 @@ const DealSchema = new mongoose.Schema(
     start_date: {
       type: Date,
     },
+    end_date: {
+      type: Date,
+    },
     is_expired: {
       type: Boolean,
       index: true,
     },
-    end_date: {
-      type: Date,
-    },
-    redeems: [
+    views: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user',
       },
     ],
-    downloads: [
+    saves: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user',
