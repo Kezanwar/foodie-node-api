@@ -106,6 +106,21 @@ const RestaurantSchema = new mongoose.Schema(
       // need to add to this
       select: false,
     },
+    booking_clicks: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'user',
+        },
+        deal: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'deal',
+        },
+      },
+    ],
+    booking_link: {
+      type: String,
+    },
     is_subscribed: {
       type: Boolean,
     },
@@ -159,6 +174,7 @@ RestaurantSchema.methods.toClient = function () {
   delete returnToClient.updatedAt
   delete returnToClient.locations
   delete returnToClient.image_uuid
+  delete returnToClient.booking_clicks
   if (returnToClient.avatar) returnToClient.avatar = prefixImageWithBaseUrl(returnToClient.avatar)
   if (returnToClient.cover_photo) returnToClient.cover_photo = prefixImageWithBaseUrl(returnToClient.cover_photo)
   return returnToClient
