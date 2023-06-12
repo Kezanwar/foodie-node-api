@@ -46,6 +46,22 @@ export const checkTimezoneCurrentTime = (tz = 'europe/london') => {
   }
 }
 
+export const getGMTandDSTDateStrings = () => {
+  return {
+    gmt: format(
+      new Date(new Date().toLocaleString('en-GB', { timeZone: 'europe/london' }).split(',')[0]),
+      'yyyy-MM-dd'
+    ),
+    dst: format(new Date(new Date().toLocaleString('en-GB', { timeZone: 'Etc/GMT+12' }).split(',')[0]), 'yyyy-MM-dd'),
+  }
+}
+
+export const expireDate = () => {
+  const { dst, gmt } = getGMTandDSTDateStrings()
+  if (dst !== gmt) return ''
+  return dst
+}
+
 export const timeNowInGMT = () => {
   return new Date().toUTCString().split(' ')[4].split(':')
 }
