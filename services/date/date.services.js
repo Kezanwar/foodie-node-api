@@ -1,6 +1,7 @@
 import { endOfYesterday, format, isAfter, isPast, parseISO } from 'date-fns'
 import { throwErr } from '../../routes/utilities/utilities.js'
 import { timezonesData } from '../../constants/timezones.js'
+import formatInTimeZone from 'date-fns-tz/formatInTimeZone'
 // A date string format is yyyy-mm-dd
 
 export const todayDateString = () => {
@@ -48,11 +49,8 @@ export const checkTimezoneCurrentTime = (tz = 'europe/london') => {
 
 export const getGMTandDSTDateStrings = () => {
   return {
-    gmt: format(
-      new Date(new Date().toLocaleString('en-GB', { timeZone: 'europe/london' }).split(',')[0]),
-      'yyyy-MM-dd'
-    ),
-    dst: format(new Date(new Date().toLocaleString('en-GB', { timeZone: 'Etc/GMT+12' }).split(',')[0]), 'yyyy-MM-dd'),
+    gmt: formatInTimeZone(new Date(), 'Europe/London', 'yyyy-MM-dd'),
+    dst: formatInTimeZone(new Date(), 'Etc/GMT+12', 'yyyy-MM-dd'),
   }
 }
 
