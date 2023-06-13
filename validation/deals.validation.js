@@ -1,4 +1,4 @@
-import { isBefore } from 'date-fns'
+import { isBefore, isPast } from 'date-fns'
 import { object, string, array } from 'yup'
 import { matchesDateString } from '../routes/utilities/regex.js'
 
@@ -6,7 +6,7 @@ export const addDealSchema = object({
   body: object({
     start_date: string()
       .required('Start date is required')
-      .test('start_date', 'Start Date: Must be in yyyy-mm-dd format and must not be in the past', function (val) {
+      .test('start_date', 'Start Date: Must be in yyyy-mm-dd format', function (val) {
         if (!matchesDateString(val)) return false
         const date = new Date(val)
         return !!date
@@ -19,6 +19,7 @@ export const addDealSchema = object({
         const endDate = new Date(val)
         const startDate = new Date(this.parent.start_date)
         if (!endDate || !startDate) return false
+        if (isPast(endDate)) return false
         else return isBefore(startDate, endDate)
       }
     ),
@@ -35,11 +36,12 @@ export const editDealSchema = object({
   body: object({
     end_date: string().test(
       'end_date',
-      'End Date: Must be in yyyy-mm-dd format, must not be in the past and must be after the start date',
+      'End Date: Must be in yyyy-mm-dd format, must not be in the past',
       function (val) {
         if (!matchesDateString(val)) return false
         const endDate = new Date(val)
-        return !!endDate
+        if (!endDate) return false
+        else return !isPast(endDate)
         // have to run more validation on the end date within the route, when we have access to the deal
       }
     ),

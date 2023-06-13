@@ -12,8 +12,7 @@ import validate from '../../../middleware/validation.middleware.js'
 import { SendError, getID, throwErr } from '../../utilities/utilities.js'
 import { addDealSchema, editDealSchema } from '../../../validation/deals.validation.js'
 import Deal from '../../../models/Deal.js'
-import { isInPastWithinTimezone } from '../../../services/date/date.services.js'
-import { isBefore, isPast } from 'date-fns'
+import { isBefore } from 'date-fns'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -85,7 +84,6 @@ router.patch(
       const deal = await Deal.findById(id)
       if (!deal) throwErr('Deal not found', 400)
       if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to edit this deal', 400)
-      if (isPast(end_date)) throwErr('Deal end date cannot be in the past', 400)
       if (isBefore(new Date(end_date), new Date(deal.start_date))) {
         throwErr('Deal end date cannot be before the start date', 400)
       }
