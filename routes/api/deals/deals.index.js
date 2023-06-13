@@ -13,7 +13,7 @@ import { SendError, getID, throwErr } from '../../utilities/utilities.js'
 import { addDealSchema, editDealSchema } from '../../../validation/deals.validation.js'
 import Deal from '../../../models/Deal.js'
 import { isInPastWithinTimezone } from '../../../services/date/date.services.js'
-import { isBefore } from 'date-fns'
+import { isBefore, isPast } from 'date-fns'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -37,14 +37,14 @@ router.post(
   async (req, res) => {
     const {
       restaurant,
-      body: { start_date, end_date, name, description, locations, timezone },
+      body: { start_date, end_date, name, description, locations },
     } = req
 
     try {
       const locationsMap = locations
         .map((id) => {
-          const mappedLoc = restaurant.locations.find((rL) => getID(rL) === id && rL.timezone === timezone)
-          return mappedLoc ? { id: id, geometry: mappedLoc.geometry, nickname: mappedLoc.nickname } : false
+          const mappedLoc = restaurant.locations.find((rL) => getID(rL) === id)
+          return mappedLoc ? { location_id: id, geometry: mappedLoc.geometry, nickname: mappedLoc.nickname } : false
         })
         .filter(Boolean)
 
@@ -60,7 +60,6 @@ router.post(
         dietary_requirements: restaurant.dietary_requirements,
         cuisines: restaurant.cuisines,
         is_expired: false,
-        timezone,
       })
       await deal.save()
       return res.status(200).json(deal)
@@ -86,7 +85,7 @@ router.patch(
       const deal = await Deal.findById(id)
       if (!deal) throwErr('Deal not found', 400)
       if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to edit this deal', 400)
-      if (isInPastWithinTimezone(end_date, deal.timezone)) throwErr('Deal end date cannot be in the past', 400)
+      if (isPast(end_date)) throwErr('Deal end date cannot be in the past', 400)
       if (isBefore(new Date(end_date), new Date(deal.start_date))) {
         throwErr('Deal end date cannot be before the start date', 400)
       }

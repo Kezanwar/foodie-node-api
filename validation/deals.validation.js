@@ -1,18 +1,15 @@
 import { isBefore } from 'date-fns'
 import { object, string, array } from 'yup'
 import { matchesDateString } from '../routes/utilities/regex.js'
-import { isInPastWithinTimezone } from '../services/date/date.services.js'
 
 export const addDealSchema = object({
   body: object({
-    timezone: string().required('Timezone is required'),
     start_date: string()
       .required('Start date is required')
       .test('start_date', 'Start Date: Must be in yyyy-mm-dd format and must not be in the past', function (val) {
         if (!matchesDateString(val)) return false
         const date = new Date(val)
-        if (!date) return false
-        else return !isInPastWithinTimezone(val, this.parent.timezone)
+        return !!date
       }),
     end_date: string().test(
       'end_date',
@@ -22,8 +19,7 @@ export const addDealSchema = object({
         const endDate = new Date(val)
         const startDate = new Date(this.parent.start_date)
         if (!endDate || !startDate) return false
-        if (isInPastWithinTimezone(val, this.parent.timezone)) return false
-        else return !isBefore(endDate, startDate)
+        else return isBefore(startDate, endDate)
       }
     ),
     name: string().max(30, 'Name can be maximum 30 characters').required('Name is required'),

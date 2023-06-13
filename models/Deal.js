@@ -37,14 +37,14 @@ const DealSchema = new mongoose.Schema(
     dietary_requirements: [CategorySchemaWithIndex],
     locations: [
       {
-        location_id: String,
+        location_id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'location',
+        },
         nickname: String,
         geometry: GeoSchema,
       },
     ],
-    timezone: {
-      type: String,
-    },
     restaurant: {
       id: {
         type: mongoose.Schema.Types.ObjectId,
