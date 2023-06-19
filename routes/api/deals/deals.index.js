@@ -51,7 +51,6 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
         },
       },
     ]).sort({ createdAt: -1 })
-    await fakeLongLoadPromise()
     res.json(agg)
   } catch (error) {
     SendError(res, error)
@@ -93,7 +92,6 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
         },
       },
     ]).sort({ createdAt: -1 })
-    await fakeLongLoadPromise()
     res.json(agg)
   } catch (error) {
     SendError(res, error)
