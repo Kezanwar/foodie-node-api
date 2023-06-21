@@ -244,7 +244,7 @@ router.patch(
   }
 )
 
-router.get('/all', auth, restRoleGuard(RESTAURANT_ROLES.USER), async (req, res) => {
+router.get('/', auth, restRoleGuard(RESTAURANT_ROLES.USER), async (req, res) => {
   const { restaurant } = req
   try {
     res.status(200).json(restaurant.locations)

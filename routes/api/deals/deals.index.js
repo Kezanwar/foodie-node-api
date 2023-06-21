@@ -13,16 +13,70 @@ import { SendError, getID, throwErr } from '../../utilities/utilities.js'
 import { addDealSchema, editDealSchema } from '../../../validation/deals.validation.js'
 import Deal from '../../../models/Deal.js'
 import { isBefore } from 'date-fns'
+import { todayDateString } from '../../../services/date/date.services.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
 //! @access authenticated & no restauant || restaurant
 
-router.get('/', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }), async (req, res) => {
-  const { restaurant } = req
+router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }), async (req, res) => {
+  const {
+    restaurant,
+    query: { current_date },
+  } = req
   try {
-    const deals = await Deal.find({ 'restaurant.id': getID(restaurant) })
-    res.json(deals)
+    let currentDate = current_date || todayDateString()
+
+    const agg = await Deal.aggregate([
+      {
+        $match: {
+          'restaurant.id': restaurant._id,
+          $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
+        },
+      },
+      {
+        $addFields: {
+          impressions: {
+            $sum: {
+              $size: { $setUnion: [[], '$views'] },
+            },
+          },
+          id: '$_id',
+        },
+      },
+    ]).sort({ createdAt: -1 })
+    res.json(agg)
+  } catch (error) {
+    SendError(res, error)
+  }
+})
+
+router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }), async (req, res) => {
+  const {
+    restaurant,
+    query: { current_date },
+  } = req
+  try {
+    let currentDate = current_date || todayDateString()
+    const agg = await Deal.aggregate([
+      {
+        $match: {
+          'restaurant.id': restaurant._id,
+          $or: [{ is_expired: true }, { end_date: { $lte: currentDate } }],
+        },
+      },
+      {
+        $addFields: {
+          impressions: {
+            $sum: {
+              $size: { $setUnion: [[], '$views'] },
+            },
+          },
+          id: '$_id',
+        },
+      },
+    ]).sort({ createdAt: -1 })
+    res.json(agg)
   } catch (error) {
     SendError(res, error)
   }
