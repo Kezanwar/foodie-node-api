@@ -9,7 +9,7 @@ import auth from '../../../middleware/auth.middleware.js'
 import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
 import validate from '../../../middleware/validation.middleware.js'
 
-import { SendError, fakeLongLoadPromise, getID, throwErr } from '../../utilities/utilities.js'
+import { SendError, getID, throwErr } from '../../utilities/utilities.js'
 import { addDealSchema, editDealSchema } from '../../../validation/deals.validation.js'
 import Deal from '../../../models/Deal.js'
 import { isBefore } from 'date-fns'
@@ -26,12 +26,6 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
   } = req
   try {
     let currentDate = current_date || todayDateString()
-
-    // const deals = await Deal.find({
-    //   'restaurant.id': getID(restaurant),
-    //   is_expired: false,
-    //   end_date: { $gt: currentDate },
-    // }).sort({ createdAt: -1 })
 
     const agg = await Deal.aggregate([
       {
@@ -64,16 +58,6 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
   } = req
   try {
     let currentDate = current_date || todayDateString()
-    // const deals = await Deal.find({
-    //   'restaurant.id': getID(restaurant),
-    //   $or: [
-    //     {
-    //       is_expired: true,
-    //     },
-    //     { end_date: currentDate },
-    //   ],
-    // }).sort({ createdAt: -1 })
-
     const agg = await Deal.aggregate([
       {
         $match: {
