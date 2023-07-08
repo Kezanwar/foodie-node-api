@@ -9,7 +9,7 @@ import auth from '../../../middleware/auth.middleware.js'
 import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
 import validate from '../../../middleware/validation.middleware.js'
 
-import { SendError, getID, throwErr } from '../../utilities/utilities.js'
+import { SendError, getID, removeDocumentValues, removeObjectValues, throwErr } from '../../utilities/utilities.js'
 import { addDealSchema, editDealSchema } from '../../../validation/deals.validation.js'
 import Deal from '../../../models/Deal.js'
 import { isBefore } from 'date-fns'
@@ -36,15 +36,50 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
       },
       {
         $addFields: {
+          view_count: {
+            $size: '$views',
+          },
+          save_count: {
+            $size: '$saves',
+          },
           impressions: {
             $sum: {
               $size: { $setUnion: [[], '$views'] },
             },
           },
           id: '$_id',
+          days_left: {
+            $dateDiff: {
+              startDate: new Date(),
+              endDate: '$end_date',
+              unit: 'day',
+            },
+          },
+          days_active: {
+            $dateDiff: {
+              startDate: '$start_date',
+              endDate: new Date(),
+              unit: 'day',
+            },
+          },
         },
       },
-    ]).sort({ createdAt: -1 })
+      {
+        $unset: [
+          'views',
+          'saves',
+          'locations',
+          'restaurant',
+          'cuisines',
+          'dietary_requirements',
+          'createdAt',
+          'description',
+        ],
+      },
+    ]).sort({ updatedAt: -1 })
+
+    console.log(agg)
+
     res.json(agg)
   } catch (error) {
     SendError(res, error)
@@ -67,15 +102,40 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
       },
       {
         $addFields: {
+          view_count: {
+            $size: '$views',
+          },
+          save_count: {
+            $size: '$saves',
+          },
           impressions: {
             $sum: {
               $size: { $setUnion: [[], '$views'] },
             },
           },
           id: '$_id',
+          days_active: {
+            $dateDiff: {
+              startDate: '$start_date',
+              endDate: '$end_date',
+              unit: 'day',
+            },
+          },
         },
       },
-    ]).sort({ createdAt: -1 })
+      {
+        $unset: [
+          'views',
+          'saves',
+          'locations',
+          'restaurant',
+          'cuisines',
+          'dietary_requirements',
+          'createdAt',
+          'description',
+        ],
+      },
+    ]).sort({ updatedAt: -1 })
     res.json(agg)
   } catch (error) {
     SendError(res, error)

@@ -33,6 +33,9 @@ export function removeDocumentValues(arrayOfUnrequiredKeys, document) {
   const object = document.toObject()
   return _.omit(object, arrayOfUnrequiredKeys)
 }
+export function removeObjectValues(arrayOfUnrequiredKeys, object) {
+  return _.omit(object, arrayOfUnrequiredKeys)
+}
 
 export async function getUser(id) {
   if (!id) throw new Error('no ID passed')
