@@ -186,6 +186,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       email: email.toLowerCase(),
       password,
       auth_method: AUTH_METHODS.jwt,
+      email_confirmed: false,
     })
     // encrypt users passsord using bcrypt
     // generate the salt
@@ -232,17 +233,6 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
           }
         }
       )
-      // const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
-      //   user_name: user.first_name,
-      //   title: title,
-      //   description: description,
-      //   action_text: 'Confirm email',
-      //   action_href: `${process.env.BASE_URL}/auth/confirm-email/${token}`,
-      // })
-      // transporter.sendMail(emailOptions, (err, info) => {
-      //   if (err) console.log(err)
-      //   else console.log('email sent' + ' ' + info.response)
-      // })
     })
 
     //  call jwt sign method, poss in the payload, the jwtsecret from our config we created, an argument for optional extra parameters such as expiry, a call back function which allows us to handle any errors that occur or send the response back to user.
@@ -290,7 +280,7 @@ router.post('/register-google', async (req, res) => {
       first_name: capitalizeFirstLetter(given_name),
       last_name: family_name ? capitalizeFirstLetter(family_name) : '',
       email: email.toLowerCase(),
-      email_confirmed: email_verified,
+      email_confirmed: !!email_verified,
       avatar: picture,
       auth_method: AUTH_METHODS.google,
     })
