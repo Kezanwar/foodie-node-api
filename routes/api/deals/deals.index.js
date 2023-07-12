@@ -2,17 +2,24 @@ import { Router } from 'express'
 const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
+import { isBefore } from 'date-fns'
 
+// models
+import Deal from '../../../models/Deal.js'
+
+// constants
 import { RESTAURANT_ROLES } from '../../../constants/restaurant.js'
 
+// middlewares
 import auth from '../../../middleware/auth.middleware.js'
 import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
 import validate from '../../../middleware/validation.middleware.js'
 
-import { SendError, getID, removeDocumentValues, removeObjectValues, throwErr } from '../../utilities/utilities.js'
+// validations
 import { addDealSchema, editDealSchema } from '../../../validation/deals.validation.js'
-import Deal from '../../../models/Deal.js'
-import { isBefore } from 'date-fns'
+
+// utils
+import { SendError, getID, throwErr } from '../../utilities/utilities.js'
 import { todayDateString } from '../../../services/date/date.services.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
@@ -27,7 +34,7 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
   try {
     let currentDate = current_date || todayDateString()
 
-    const agg = await Deal.aggregate([
+    const query = await Deal.aggregate([
       {
         $match: {
           'restaurant.id': restaurant._id,
@@ -78,9 +85,7 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
       },
     ]).sort({ updatedAt: -1 })
 
-    console.log(agg)
-
-    res.json(agg)
+    res.json(query)
   } catch (error) {
     SendError(res, error)
   }
@@ -141,6 +146,27 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
     SendError(res, error)
   }
 })
+
+router.get(
+  '/single/:id',
+  auth,
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
+  async (req, res) => {
+    const {
+      params: { id },
+    } = req
+    try {
+      const deal = await Deal.findById(id)
+
+      if (!deal) {
+        throwErr('Deal not found', 402)
+        return
+      } else res.json(deal)
+    } catch (error) {
+      SendError(res, error)
+    }
+  }
+)
 
 router.post(
   '/add',
@@ -241,6 +267,7 @@ router.post(
     const {
       restaurant,
       params: { id },
+      body: { end_date },
     } = req
 
     try {
@@ -248,7 +275,11 @@ router.post(
       if (!deal) throwErr('Deal not found', 400)
       if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to expire this deal', 400)
       if (deal.is_expired) throwErr('Deal is already expired', 400)
+      if (isBefore(new Date(end_date), new Date(deal.start_date))) {
+        throwErr('Deal end date cannot be before the start date', 400)
+      }
       deal.is_expired = true
+      deal.end_date = end_date
       await deal.save()
       return res.status(200).json('Success')
     } catch (error) {
