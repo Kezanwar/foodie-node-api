@@ -19,7 +19,7 @@ import validate from '../../../middleware/validation.middleware.js'
 import { addDealSchema, editDealSchema } from '../../../validation/deals.validation.js'
 
 // utils
-import { SendError, getID, throwErr } from '../../utilities/utilities.js'
+import { SendError, capitalizeSentence, getID, throwErr } from '../../utilities/utilities.js'
 import { todayDateString } from '../../../services/date/date.services.js'
 import mongoose from 'mongoose'
 
@@ -281,7 +281,7 @@ router.post(
       const deal = new Deal({
         start_date,
         end_date,
-        name,
+        name: capitalizeSentence(name),
         description,
         locations: locationsMap,
         restaurant: { id: restaurant._id, name: restaurant.name },
