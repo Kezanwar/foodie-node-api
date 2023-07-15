@@ -60,9 +60,9 @@ const restRoleGuard =
 
       let canAccess
 
-      const isSuperAdmin = restaurant?.super_admin.toString() === user.id
-      const isAdmin = restaurant?.admins?.some((admin) => admin?.toString() === user.id)
-      const isUser = restaurant?.users?.some((u) => u?.toString() === user.id)
+      const isSuperAdmin = !!(restaurant?.super_admin.toString() === user.id)
+      const isAdmin = !!restaurant?.admins?.some((admin) => admin?.toString() === user.id)
+      const isUser = !!restaurant?.users?.some((u) => u?.toString() === user.id)
 
       switch (role) {
         case RESTAURANT_ROLES.SUPER_ADMIN:

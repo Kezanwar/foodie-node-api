@@ -13,6 +13,9 @@ import cors from 'cors'
 import RouterIndex from './routes/api/routes.index.js'
 import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
 import dealExpireCron from './crons/deal.crons.js'
+import Deal from './models/Deal.js'
+
+// import User from './models/User.js'
 
 const app = express()
 
@@ -33,5 +36,11 @@ app.get('/', (req, res) => res.send('Foodie API Running'))
 app.use('/api', RouterIndex)
 
 dealExpireCron()
+
+const del = async () => {
+  await Deal.deleteMany()
+}
+
+await del()
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`))

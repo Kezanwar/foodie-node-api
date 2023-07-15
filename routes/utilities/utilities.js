@@ -14,6 +14,13 @@ export function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
+export const capitalizeSentence = (str) => {
+  return str
+    .split(' ')
+    .map((word) => capitalizeFirstLetter(word))
+    .join(' ')
+}
+
 export function getDocumentValues(arrayOfRequiredKeys, document) {
   if (!arrayOfRequiredKeys || !Array.isArray(arrayOfRequiredKeys || !document))
     throw new Error(
@@ -31,6 +38,9 @@ export function removeDocumentValues(arrayOfUnrequiredKeys, document) {
       'removeDocumentValues expects an array of values as its first argument and the MGDB/Document to omit from as the second'
     )
   const object = document.toObject()
+  return _.omit(object, arrayOfUnrequiredKeys)
+}
+export function removeObjectValues(arrayOfUnrequiredKeys, object) {
   return _.omit(object, arrayOfUnrequiredKeys)
 }
 

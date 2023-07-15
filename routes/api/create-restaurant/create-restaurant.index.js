@@ -26,7 +26,7 @@ import transporter from '../../../services/email/email.services.js'
 import { generalWorkerService } from '../../../services/workers/general.service.worker.js'
 
 import { email_addresses } from '../../../constants/email.js'
-import { RESTAURANT_IMAGES } from '../../../constants/images.js'
+import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '../../../constants/images.js'
 import { appEnv } from '../../../base/base.js'
 import { createImageName, createImgUUID } from '../../../services/images/images.services.js'
 
@@ -141,6 +141,16 @@ router.post(
 
       if ((!rAvatar && !uAvatar) || (!rCoverPhoto && !uCoverPhoto)) {
         throwErr('Error - Restaurant must provide Avatar and Cover Photo', 400)
+        return
+      }
+
+      if (uAvatar && !!ACCEPTED_FILES.some((type) => type === uAvatar.mimetype)) {
+        throwErr('Restaurant avatar must be JPEG or PNG', 400)
+        return
+      }
+
+      if (uCoverPhoto && !!ACCEPTED_FILES.some((type) => type === uCoverPhoto.mimetype)) {
+        throwErr('Restaurant cover photo must be JPEG or PNG', 400)
         return
       }
 
