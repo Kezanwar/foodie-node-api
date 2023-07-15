@@ -21,6 +21,7 @@ import { addDealSchema, editDealSchema } from '../../../validation/deals.validat
 // utils
 import { SendError, getID, throwErr } from '../../utilities/utilities.js'
 import { todayDateString } from '../../../services/date/date.services.js'
+import mongoose from 'mongoose'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -32,7 +33,7 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
     query: { current_date },
   } = req
   try {
-    let currentDate = current_date || todayDateString()
+    let currentDate = current_date ? new Date(current_date) : new Date()
 
     const query = await Deal.aggregate([
       {
@@ -57,7 +58,7 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
           id: '$_id',
           days_left: {
             $dateDiff: {
-              startDate: new Date(),
+              startDate: currentDate,
               endDate: '$end_date',
               unit: 'day',
             },
@@ -65,7 +66,7 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
           days_active: {
             $dateDiff: {
               startDate: '$start_date',
-              endDate: new Date(),
+              endDate: currentDate,
               unit: 'day',
             },
           },
@@ -97,7 +98,7 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
     query: { current_date },
   } = req
   try {
-    let currentDate = current_date || todayDateString()
+    let currentDate = current_date ? new Date(current_date) : new Date()
     const agg = await Deal.aggregate([
       {
         $match: {
@@ -154,14 +155,102 @@ router.get(
   async (req, res) => {
     const {
       params: { id },
+      restaurant,
+      query: { current_date },
     } = req
-    try {
-      const deal = await Deal.findById(id)
 
-      if (!deal) {
+    let currentDate = current_date ? new Date(current_date) : new Date()
+    try {
+      const deal = await Deal.aggregate([
+        {
+          $match: {
+            'restaurant.id': restaurant._id,
+            _id: mongoose.Types.ObjectId(id),
+          },
+        },
+        {
+          $addFields: {
+            days_active: {
+              $dateDiff: {
+                startDate: '$start_date',
+                endDate: currentDate,
+                unit: 'day',
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
+            impressions: {
+              count: {
+                $sum: {
+                  $size: { $setUnion: [[], '$views'] },
+                },
+              },
+              avg: {
+                $cond: {
+                  if: { $gte: ['$days_active', 1] },
+                  then: {
+                    $divide: [
+                      {
+                        $sum: {
+                          $size: { $setUnion: [[], '$views'] },
+                        },
+                      },
+                      '$days_active',
+                    ],
+                  },
+                  else: {
+                    $sum: {
+                      $size: { $setUnion: [[], '$views'] },
+                    },
+                  },
+                },
+              },
+            },
+            view_count: {
+              count: {
+                $size: '$views',
+              },
+              avg: {
+                $cond: {
+                  if: { $gte: ['$days_active', 1] },
+                  then: {
+                    $divide: [{ $size: '$views' }, '$days_active'],
+                  },
+                  else: {
+                    $size: '$views',
+                  },
+                },
+              },
+            },
+            save_count: {
+              count: {
+                $size: '$saves',
+              },
+              avg: {
+                $cond: {
+                  if: { $gte: ['$days_active', 1] },
+                  then: {
+                    $divide: [{ $size: '$saves' }, '$days_active'],
+                  },
+                  else: {
+                    $size: '$saves',
+                  },
+                },
+              },
+            },
+          },
+        },
+        {
+          $unset: ['views', 'saves', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt'],
+        },
+      ])
+
+      if (!deal?.length) {
         throwErr('Deal not found', 402)
         return
-      } else res.json(deal)
+      } else res.json(deal[0])
     } catch (error) {
       SendError(res, error)
     }
@@ -259,7 +348,7 @@ router.post(
   }
 )
 
-router.post(
+router.patch(
   '/expire/:id',
   auth,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
