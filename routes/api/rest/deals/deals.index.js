@@ -5,22 +5,22 @@ dotenv.config()
 import { isBefore } from 'date-fns'
 
 // models
-import Deal from '../../../models/Deal.js'
+import Deal from '../../../../models/Deal.js'
 
 // constants
-import { RESTAURANT_ROLES } from '../../../constants/restaurant.js'
+import { RESTAURANT_ROLES } from '../../../../constants/restaurant.js'
 
 // middlewares
-import auth from '../../../middleware/auth.middleware.js'
-import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
-import validate from '../../../middleware/validation.middleware.js'
+import auth from '../../../../middleware/auth.middleware.js'
+import restRoleGuard from '../../../../middleware/rest-role-guard.middleware.js'
+import validate from '../../../../middleware/validation.middleware.js'
 
 // validations
-import { addDealSchema, editDealSchema } from '../../../validation/deals.validation.js'
+import { addDealSchema, editDealSchema } from '../../../../validation/deals.validation.js'
 
 // utils
-import { SendError, capitalizeSentence, getID, throwErr } from '../../utilities/utilities.js'
-import { todayDateString } from '../../../services/date/date.services.js'
+import { SendError, capitalizeSentence, getID, throwErr } from '../../../utilities/utilities.js'
+
 import mongoose from 'mongoose'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
@@ -44,15 +44,9 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
       },
       {
         $addFields: {
-          view_count: {
-            $size: '$views',
-          },
-          save_count: {
-            $size: '$saves',
-          },
-          impressions: {
+          'views.unique': {
             $sum: {
-              $size: { $setUnion: [[], '$views'] },
+              $size: { $setUnion: [[], '$views.users'] },
             },
           },
           id: '$_id',
@@ -74,8 +68,8 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
       },
       {
         $unset: [
-          'views',
-          'saves',
+          'views.users',
+          'saves.users',
           'locations',
           'restaurant',
           'cuisines',
@@ -108,15 +102,9 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
       },
       {
         $addFields: {
-          view_count: {
-            $size: '$views',
-          },
-          save_count: {
-            $size: '$saves',
-          },
-          impressions: {
+          'views.unique': {
             $sum: {
-              $size: { $setUnion: [[], '$views'] },
+              $size: { $setUnion: [[], '$views.users'] },
             },
           },
           id: '$_id',
@@ -131,8 +119,8 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
       },
       {
         $unset: [
-          'views',
-          'saves',
+          'views.users',
+          'saves.users',
           'locations',
           'restaurant',
           'cuisines',
@@ -181,20 +169,20 @@ router.get(
         },
         {
           $addFields: {
-            impressions: {
+            unique_views: {
               count: {
                 $sum: {
-                  $size: { $setUnion: [[], '$views'] },
+                  $size: { $setUnion: [[], '$views.users'] },
                 },
               },
               avg: {
                 $cond: {
-                  if: { $gte: ['$days_active', 1] },
+                  if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['views.count', 1] }] },
                   then: {
                     $divide: [
                       {
                         $sum: {
-                          $size: { $setUnion: [[], '$views'] },
+                          $size: { $setUnion: [[], '$views.users'] },
                         },
                       },
                       '$days_active',
@@ -202,48 +190,34 @@ router.get(
                   },
                   else: {
                     $sum: {
-                      $size: { $setUnion: [[], '$views'] },
+                      $size: { $setUnion: [[], '$views.users'] },
                     },
                   },
                 },
               },
             },
-            view_count: {
-              count: {
-                $size: '$views',
-              },
-              avg: {
-                $cond: {
-                  if: { $gte: ['$days_active', 1] },
-                  then: {
-                    $divide: [{ $size: '$views' }, '$days_active'],
-                  },
-                  else: {
-                    $size: '$views',
-                  },
+            'views.avg': {
+              $cond: {
+                if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['views.count', 1] }] },
+                then: {
+                  $divide: ['$views.count', '$days_active'],
                 },
+                else: '$views.count',
               },
             },
-            save_count: {
-              count: {
-                $size: '$saves',
-              },
-              avg: {
-                $cond: {
-                  if: { $gte: ['$days_active', 1] },
-                  then: {
-                    $divide: [{ $size: '$saves' }, '$days_active'],
-                  },
-                  else: {
-                    $size: '$saves',
-                  },
+            'saves.avg': {
+              $cond: {
+                if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['saves.count', 1] }] },
+                then: {
+                  $divide: ['$saves.count', '$days_active'],
                 },
+                else: '$saves.count',
               },
             },
           },
         },
         {
-          $unset: ['views', 'saves', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt'],
+          $unset: ['views.users', 'saves.users', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt'],
         },
       ])
 
@@ -290,7 +264,7 @@ router.post(
         is_expired: false,
       })
       await deal.save()
-      return res.status(200).json(deal)
+      return res.status(200).json('Success')
     } catch (error) {
       SendError(res, error)
     }

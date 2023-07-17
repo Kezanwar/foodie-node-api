@@ -21,18 +21,24 @@ const DealSchema = new mongoose.Schema(
       type: Boolean,
       index: true,
     },
-    views: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
-      },
-    ],
-    saves: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
-      },
-    ],
+    views: {
+      users: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'user',
+        },
+      ],
+      count: { type: Number, default: 0 },
+    },
+    saves: {
+      users: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'user',
+        },
+      ],
+      count: { type: Number, default: 0 },
+    },
     cuisines: [CategorySchemaWithIndex],
     dietary_requirements: [CategorySchemaWithIndex],
     locations: [
