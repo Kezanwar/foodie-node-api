@@ -3,17 +3,17 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES } from '../../../constants/restaurant.js'
+import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES } from '../../../../constants/restaurant.js'
 
-import auth from '../../../middleware/auth.middleware.js'
-import validate from '../../../middleware/validation.middleware.js'
-import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
-import { addLocationSchema, checkLocationSchema } from '../../../validation/locations.validation.js'
+import auth from '../../../../middleware/auth.middleware.js'
+import validate from '../../../../middleware/validation.middleware.js'
+import restRoleGuard from '../../../../middleware/rest-role-guard.middleware.js'
+import { addLocationSchema, checkLocationSchema } from '../../../../validation/locations.validation.js'
 
-import { allCapsNoSpace, getID, SendError, throwErr } from '../../utilities/utilities.js'
+import { allCapsNoSpace, getID, SendError, throwErr } from '../../../utilities/utilities.js'
 
-import { getLongLat, getTimezone } from '../../../services/location/location.services.js'
-import { generalWorkerService } from '../../../services/workers/general.service.worker.js'
+import { getLongLat, getTimezone } from '../../../../services/location/location.services.js'
+import { generalWorkerService } from '../../../../services/workers/general.service.worker.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check

@@ -7,28 +7,28 @@ dotenv.config()
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 
-import Restaurant from '../../../models/Restaurant.js'
-import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '../../../constants/restaurant.js'
+import Restaurant from '../../../../models/Restaurant.js'
+import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '../../../../constants/restaurant.js'
 
-import auth from '../../../middleware/auth.middleware.js'
-import validate from '../../../middleware/validation.middleware.js'
+import auth from '../../../../middleware/auth.middleware.js'
+import validate from '../../../../middleware/validation.middleware.js'
 import {
   companyInfoSchema,
   restaurantDetailsSchema,
   restaurantSubmitApplicationSchema,
-} from '../../../validation/create-restaurant.validation.js'
+} from '../../../../validation/create-restaurant.validation.js'
 
-import { getID, SendError, throwErr } from '../../utilities/utilities.js'
-import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
+import { getID, SendError, throwErr } from '../../../utilities/utilities.js'
+import restRoleGuard from '../../../../middleware/rest-role-guard.middleware.js'
 
-import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/aws.services.js'
-import transporter from '../../../services/email/email.services.js'
-import { generalWorkerService } from '../../../services/workers/general.service.worker.js'
+import { bucketName, foodieS3Client, s3PutCommand } from '../../../../services/aws/aws.services.js'
+import transporter from '../../../../services/email/email.services.js'
+import { generalWorkerService } from '../../../../services/workers/general.service.worker.js'
 
-import { email_addresses } from '../../../constants/email.js'
-import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '../../../constants/images.js'
-import { appEnv } from '../../../base/base.js'
-import { createImageName, createImgUUID } from '../../../services/images/images.services.js'
+import { email_addresses } from '../../../../constants/email.js'
+import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '../../../../constants/images.js'
+import { appEnv } from '../../../../base/base.js'
+import { createImageName, createImgUUID } from '../../../../services/images/images.services.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
