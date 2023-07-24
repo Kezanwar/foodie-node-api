@@ -22,6 +22,7 @@ import { addDealSchema, editDealSchema } from '../../../../validation/deals.vali
 import { SendError, capitalizeSentence, getID, throwErr } from '../../../utilities/utilities.js'
 
 import mongoose from 'mongoose'
+import { DEALS_PER_LOCATION } from '../../../../constants/deals.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -44,7 +45,7 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
       },
       {
         $addFields: {
-          'views.unique': {
+          unique_views: {
             $sum: {
               $size: { $setUnion: [[], '$views.users'] },
             },
@@ -102,7 +103,7 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
       },
       {
         $addFields: {
-          'views.unique': {
+          unique_views: {
             $sum: {
               $size: { $setUnion: [[], '$views.users'] },
             },
@@ -130,6 +131,7 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
         ],
       },
     ]).sort({ updatedAt: -1 })
+
     res.json(agg)
   } catch (error) {
     SendError(res, error)
@@ -148,6 +150,7 @@ router.get(
     } = req
 
     let currentDate = current_date ? new Date(current_date) : new Date()
+
     try {
       const deal = await Deal.aggregate([
         {
@@ -231,6 +234,51 @@ router.get(
   }
 )
 
+router.get(
+  '/use-template/:id',
+  auth,
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
+  async (req, res) => {
+    const {
+      params: { id },
+      restaurant,
+    } = req
+
+    try {
+      const deal = await Deal.aggregate([
+        {
+          $match: {
+            'restaurant.id': restaurant._id,
+            _id: mongoose.Types.ObjectId(id),
+          },
+        },
+        {
+          $unset: [
+            'views',
+            'saves',
+            'restaurant',
+            'cuisines',
+            'dietary_requirements',
+            'createdAt',
+            'updatedAt',
+            'is_expired',
+            'start_date',
+            'end_date',
+            'locations',
+          ],
+        },
+      ])
+
+      if (!deal?.length) {
+        throwErr('Deal not found', 402)
+        return
+      } else res.json(deal[0])
+    } catch (error) {
+      SendError(res, error)
+    }
+  }
+)
+
 router.post(
   '/add',
   auth,
@@ -240,9 +288,23 @@ router.post(
     const {
       restaurant,
       body: { start_date, end_date, name, description, locations },
+      query: { current_date },
     } = req
 
+    let currentDate = current_date ? new Date(current_date) : new Date()
+
     try {
+      const activeDealsCount = await Deal.count({
+        'restaurant.id': restaurant._id,
+        $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
+      })
+
+      const locationsCount = restaurant?.locations?.length || 0
+
+      if (activeDealsCount >= locationsCount * DEALS_PER_LOCATION) {
+        throwErr('Maxmimum active deals limit reached', 402)
+      }
+
       const locationsMap = locations
         .map((id) => {
           const mappedLoc = restaurant.locations.find((rL) => getID(rL) === id)
@@ -280,8 +342,17 @@ router.patch(
     const {
       restaurant,
       params: { id },
-      body: { name, description, end_date },
+      body: { name, description, end_date, locations },
     } = req
+
+    const locationsMap = locations
+      .map((id) => {
+        const mappedLoc = restaurant.locations.find((rL) => getID(rL) === id)
+        return mappedLoc ? { location_id: id, geometry: mappedLoc.geometry, nickname: mappedLoc.nickname } : false
+      })
+      .filter(Boolean)
+
+    if (!locationsMap?.length) throwErr('Error: No matching locations found', 400)
 
     try {
       const deal = await Deal.findById(id)
@@ -293,6 +364,7 @@ router.patch(
       deal.name = name
       deal.description = description
       deal.end_date = end_date
+      deal.locations = locationsMap
       await deal.save()
       return res.status(200).json('Success')
     } catch (error) {
