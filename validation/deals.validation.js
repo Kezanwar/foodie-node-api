@@ -50,6 +50,7 @@ export const editDealSchema = object({
       .min(50, 'Description is minimum 50 characters')
       .max(500, 'Description can be maximum 500 characters')
       .required('Description is required'),
+    locations: array().min(1, 'Minimum 1 location required').required('Locations are required'),
   }),
 })
 
