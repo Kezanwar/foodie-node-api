@@ -328,11 +328,11 @@ router.post(
           ],
           action_primary: {
             text: 'Accept',
-            url: `${process.env.BASE_URL}/create-restaurant/accept-application/${getID(restaurant)}`,
+            url: `${process.env.BASE_URL}/rest/create-restaurant/accept-application/${getID(restaurant)}`,
           },
           action_secondary: {
             text: 'Decline',
-            url: `${process.env.BASE_URL}/create-restaurant/decline-application/${getID(restaurant)}`,
+            url: `${process.env.BASE_URL}/rest/create-restaurant/decline-application/${getID(restaurant)}`,
           },
           receiver: 'Admin',
         },
