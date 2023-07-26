@@ -14,6 +14,7 @@ import { allCapsNoSpace, getID, SendError, throwErr } from '../../../utilities/u
 
 import { getLongLat, getTimezone } from '../../../../services/location/location.services.js'
 import { generalWorkerService } from '../../../../services/workers/general.service.worker.js'
+import Deal from '../../../../models/Deal.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check
@@ -236,6 +237,14 @@ router.patch(
       restaurant.locations[editLocationIndex].geometry = { coordinates: [long_lat.long, long_lat.lat] }
 
       await restaurant.save()
+
+      const deals = await Deal.updateMany({
+        'locations.location_id': getID(restaurant.locations[editLocationIndex]),
+      })
+
+      const dealcount = await Deal.count()
+
+      console.dir({ dealcount, deals })
 
       res.status(200).json(restaurant.locations)
     } catch (error) {
