@@ -124,6 +124,8 @@ router.post('/delete/:id', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), as
 
     if (!rLocToDelete) throwErr('Location not found', 401)
 
+    // Delete location from restuarant
+
     restaurant.locations = restaurant.locations.filter((rl) => getID(rl) !== id)
 
     if (restaurant.locations.length < 1) {
@@ -133,6 +135,8 @@ router.post('/delete/:id', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), as
     }
 
     await restaurant.save()
+
+    // Delete location from deals
 
     await Deal.updateMany(
       {
@@ -220,6 +224,8 @@ router.patch(
         return
       }
 
+      // update location
+
       let phoneWithCode = phone_number
 
       const firstChar = phone_number.charAt(0)
@@ -249,6 +255,8 @@ router.patch(
       restaurant.locations[editLocationIndex].geometry = { coordinates: [long_lat.long, long_lat.lat] }
 
       await restaurant.save()
+
+      // update location in deals
 
       await Deal.updateMany(
         {

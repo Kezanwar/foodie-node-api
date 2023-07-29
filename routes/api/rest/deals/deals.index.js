@@ -71,7 +71,7 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
         $unset: [
           'views.users',
           'saves.users',
-          // 'locations',
+          'locations',
           'restaurant',
           'cuisines',
           'dietary_requirements',
