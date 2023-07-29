@@ -15,6 +15,7 @@ import { allCapsNoSpace, getID, SendError, throwErr } from '../../../utilities/u
 import { getLongLat, getTimezone } from '../../../../services/location/location.services.js'
 import { generalWorkerService } from '../../../../services/workers/general.service.worker.js'
 import Deal from '../../../../models/Deal.js'
+import mongoose from 'mongoose'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check
@@ -133,6 +134,17 @@ router.post('/delete/:id', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), as
 
     await restaurant.save()
 
+    await Deal.updateMany(
+      {
+        'restaurant.id': restaurant._id,
+      },
+      {
+        $pull: {
+          locations: { location_id: id },
+        },
+      }
+    )
+
     res.status(200).json(restaurant.locations)
   } catch (error) {
     SendError(res, error)
@@ -238,13 +250,20 @@ router.patch(
 
       await restaurant.save()
 
-      const deals = await Deal.updateMany({
-        'locations.location_id': getID(restaurant.locations[editLocationIndex]),
-      })
-
-      const dealcount = await Deal.count()
-
-      console.dir({ dealcount, deals })
+      await Deal.updateMany(
+        {
+          'restaurant.id': restaurant._id,
+        },
+        {
+          $set: {
+            'locations.$[loc].nickname': nickname,
+            'locations.$[loc].geometry': { coordinates: [long_lat.long, long_lat.lat] },
+          },
+        },
+        {
+          arrayFilters: [{ 'loc.location_id': mongoose.Types.ObjectId(id) }],
+        }
+      )
 
       res.status(200).json(restaurant.locations)
     } catch (error) {
