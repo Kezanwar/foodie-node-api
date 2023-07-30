@@ -18,6 +18,7 @@ import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '../../../../constants/images.
 import { createImageName } from '../../../../services/images/images.services.js'
 import { generalWorkerService } from '../../../../services/workers/general.service.worker.js'
 import { bucketName, foodieS3Client, s3PutCommand } from '../../../../services/aws/aws.services.js'
+import Deal from '../../../../models/Deal.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -140,6 +141,17 @@ router.patch(
       }
 
       await restaurant.updateRest(newData)
+
+      await Deal.updateMany(
+        {
+          'restaurant.id': restaurant._id,
+        },
+        {
+          $set: {
+            'restaurant.name': name,
+          },
+        }
+      )
 
       if (!restaurant.cover_photo || !restaurant.avatar) return throwErr('Must provide an Avatar and Cover Photo')
 
