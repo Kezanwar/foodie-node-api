@@ -45,7 +45,6 @@ const DealSchema = new mongoose.Schema(
       {
         location_id: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'location',
         },
         nickname: String,
         geometry: GeoSchema,

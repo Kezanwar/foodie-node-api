@@ -14,6 +14,8 @@ import { allCapsNoSpace, getID, SendError, throwErr } from '../../../utilities/u
 
 import { getLongLat, getTimezone } from '../../../../services/location/location.services.js'
 import { generalWorkerService } from '../../../../services/workers/general.service.worker.js'
+import Deal from '../../../../models/Deal.js'
+import mongoose from 'mongoose'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check
@@ -122,6 +124,8 @@ router.post('/delete/:id', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), as
 
     if (!rLocToDelete) throwErr('Location not found', 401)
 
+    // Delete location from restuarant
+
     restaurant.locations = restaurant.locations.filter((rl) => getID(rl) !== id)
 
     if (restaurant.locations.length < 1) {
@@ -131,6 +135,19 @@ router.post('/delete/:id', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN), as
     }
 
     await restaurant.save()
+
+    // Delete location from deals
+
+    await Deal.updateMany(
+      {
+        'restaurant.id': restaurant._id,
+      },
+      {
+        $pull: {
+          locations: { location_id: id },
+        },
+      }
+    )
 
     res.status(200).json(restaurant.locations)
   } catch (error) {
@@ -207,6 +224,8 @@ router.patch(
         return
       }
 
+      // update location
+
       let phoneWithCode = phone_number
 
       const firstChar = phone_number.charAt(0)
@@ -236,6 +255,23 @@ router.patch(
       restaurant.locations[editLocationIndex].geometry = { coordinates: [long_lat.long, long_lat.lat] }
 
       await restaurant.save()
+
+      // update location in deals
+
+      await Deal.updateMany(
+        {
+          'restaurant.id': restaurant._id,
+        },
+        {
+          $set: {
+            'locations.$[loc].nickname': nickname,
+            'locations.$[loc].geometry': { coordinates: [long_lat.long, long_lat.lat] },
+          },
+        },
+        {
+          arrayFilters: [{ 'loc.location_id': mongoose.Types.ObjectId(id) }],
+        }
+      )
 
       res.status(200).json(restaurant.locations)
     } catch (error) {
