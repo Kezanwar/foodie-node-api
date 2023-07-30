@@ -254,11 +254,9 @@ router.patch(
       restaurant.locations[editLocationIndex].opening_times = opening_times
       restaurant.locations[editLocationIndex].geometry = { coordinates: [long_lat.long, long_lat.lat] }
 
-      await restaurant.save()
+      const saveRestProm = restaurant.save()
 
-      // update location in deals
-
-      await Deal.updateMany(
+      const updateDealsProm = Deal.updateMany(
         {
           'restaurant.id': restaurant._id,
         },
@@ -272,6 +270,8 @@ router.patch(
           arrayFilters: [{ 'loc.location_id': mongoose.Types.ObjectId(id) }],
         }
       )
+
+      Promise.all([saveRestProm, updateDealsProm])
 
       res.status(200).json(restaurant.locations)
     } catch (error) {

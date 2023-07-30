@@ -140,9 +140,9 @@ router.patch(
         ...(social_media && { social_media: JSON.parse(social_media) }),
       }
 
-      await restaurant.updateRest(newData)
+      const updateRestProm = restaurant.updateRest(newData)
 
-      await Deal.updateMany(
+      const updateDealsProm = Deal.updateMany(
         {
           'restaurant.id': restaurant._id,
         },
@@ -152,6 +152,8 @@ router.patch(
           },
         }
       )
+
+      await Promise.all([updateRestProm, updateDealsProm])
 
       if (!restaurant.cover_photo || !restaurant.avatar) return throwErr('Must provide an Avatar and Cover Photo')
 
