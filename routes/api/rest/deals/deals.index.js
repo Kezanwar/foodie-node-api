@@ -52,17 +52,35 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
           },
           id: '$_id',
           days_left: {
-            $dateDiff: {
-              startDate: currentDate,
-              endDate: '$end_date',
-              unit: 'day',
+            $cond: {
+              if: { $lt: ['$start_date', currentDate] },
+              then: {
+                $dateDiff: {
+                  startDate: currentDate,
+                  endDate: '$end_date',
+                  unit: 'day',
+                },
+              },
+              else: {
+                $dateDiff: {
+                  startDate: '$start_date',
+                  endDate: '$end_date',
+                  unit: 'day',
+                },
+              },
             },
           },
           days_active: {
-            $dateDiff: {
-              startDate: '$start_date',
-              endDate: currentDate,
-              unit: 'day',
+            $cond: {
+              if: { $lt: ['$start_date', currentDate] },
+              then: {
+                $dateDiff: {
+                  startDate: '$start_date',
+                  endDate: currentDate,
+                  unit: 'day',
+                },
+              },
+              else: 0,
             },
           },
         },
@@ -110,10 +128,16 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
           },
           id: '$_id',
           days_active: {
-            $dateDiff: {
-              startDate: '$start_date',
-              endDate: '$end_date',
-              unit: 'day',
+            $cond: {
+              if: { $lt: ['$start_date', currentDate] },
+              then: {
+                $dateDiff: {
+                  startDate: '$start_date',
+                  endDate: '$end_date',
+                  unit: 'day',
+                },
+              },
+              else: 0,
             },
           },
         },
