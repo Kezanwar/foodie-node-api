@@ -93,6 +93,12 @@ const RestaurantSchema = new mongoose.Schema(
         type: String,
       },
     },
+    favourites: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+      },
+    ],
     cuisines: [CategorySchemaWithIndex],
     dietary_requirements: [CategorySchemaWithIndex],
     reviews: [
@@ -175,6 +181,8 @@ RestaurantSchema.methods.toClient = function () {
   delete returnToClient.locations
   delete returnToClient.image_uuid
   delete returnToClient.booking_clicks
+  delete returnToClient.favourites
+  delete returnToClient.payment_details
   if (returnToClient.avatar) returnToClient.avatar = prefixImageWithBaseUrl(returnToClient.avatar)
   if (returnToClient.cover_photo) returnToClient.cover_photo = prefixImageWithBaseUrl(returnToClient.cover_photo)
   return returnToClient
