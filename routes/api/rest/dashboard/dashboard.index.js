@@ -25,27 +25,17 @@ router.get('/overview', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acce
   let currentDate = current_date ? new Date(current_date) : new Date()
 
   try {
-    const active_deals = await Deal.aggregate([
-      {
-        $match: {
-          'restaurant.id': restaurant._id,
-          $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
-        },
-      },
-      { $count: 'count' },
-    ])
+    const active_deals_prom = Deal.count({
+      'restaurant.id': restaurant._id,
+      $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
+    })
 
-    const expired_deals = await Deal.aggregate([
-      {
-        $match: {
-          'restaurant.id': restaurant._id,
-          $or: [{ is_expired: true }, { end_date: { $lte: currentDate } }],
-        },
-      },
-      { $count: 'count' },
-    ])
+    const expired_deals_prom = Deal.count({
+      'restaurant.id': restaurant._id,
+      $or: [{ is_expired: true }, { end_date: { $lte: currentDate } }],
+    })
 
-    const impressions_views_saves = await Deal.aggregate([
+    const impressions_views_saves_prom = Deal.aggregate([
       {
         $match: {
           'restaurant.id': restaurant._id,
@@ -77,6 +67,12 @@ router.get('/overview', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acce
           },
         },
       },
+    ])
+
+    const [active_deals, expired_deals, impressions_views_saves] = await Promise.all([
+      active_deals_prom,
+      expired_deals_prom,
+      impressions_views_saves_prom,
     ])
 
     const booking_clicks = restaurant?.booking_clicks?.length || 0
