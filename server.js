@@ -1,3 +1,8 @@
+//    ___                __ __
+//  .'  _.-----.-----.--|  |__.-----.
+//  |   _|  _  |  _  |  _  |  |  -__|
+//  |__| |_____|_____|_____|__|_____|
+
 import express, { json } from 'express'
 import dotenv from 'dotenv'
 import mixpanel from 'mixpanel'
