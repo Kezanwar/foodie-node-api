@@ -54,9 +54,19 @@ router.get('/', auth, async (req, res) => {
 
 router.get('/set-cuisines', auth, async (req, res) => {
   try {
-    const data = CUISINES_DATA.map((c) => ({
+    await Cuisine.deleteMany({})
+
+    const data = CUISINES_DATA.sort(function (a, b) {
+      if (a < b) {
+        return -1
+      }
+      if (a > b) {
+        return 1
+      }
+      return 0
+    }).map((c) => ({
       name: c,
-      slug: c.split(' ').join('-').toLowerCase(),
+      slug: c.split(' ').join('-').toLowerCase().replace(/&/g, 'and'),
     }))
 
     for await (const d of data) {
@@ -77,21 +87,21 @@ router.get('/set-cuisines', auth, async (req, res) => {
   }
 })
 
-router.get('/delete-cuisines', auth, async (req, res) => {
-  try {
-    await Cuisine.deleteMany({})
-
-    res.status(200).json('success')
-  } catch (error) {
-    SendError(res, error)
-  }
-})
-
 router.get('/set-dietary-reqs', auth, async (req, res) => {
   try {
-    const data = DIETARY_REQUIREMENTS.map((c) => ({
+    await DietaryRequirement.deleteMany({})
+
+    const data = DIETARY_REQUIREMENTS.sort(function (a, b) {
+      if (a < b) {
+        return -1
+      }
+      if (a > b) {
+        return 1
+      }
+      return 0
+    }).map((c) => ({
       name: c,
-      slug: c.split(' ').join('-').toLowerCase(),
+      slug: c.split(' ').join('-').toLowerCase().replace(/&/g, 'and'),
     }))
 
     for await (const d of data) {
@@ -107,15 +117,6 @@ router.get('/set-dietary-reqs', auth, async (req, res) => {
     }))
 
     res.status(200).json(recats)
-  } catch (error) {
-    SendError(res, error)
-  }
-})
-router.get('/delete-dietary-reqs', auth, async (req, res) => {
-  try {
-    await DietaryRequirement.deleteMany({})
-
-    res.status(200).json('success')
   } catch (error) {
     SendError(res, error)
   }
