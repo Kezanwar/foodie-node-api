@@ -47,9 +47,11 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
         $addFields: {
           unique_views: {
             $sum: {
-              $size: { $setUnion: [[], '$views.users'] },
+              $size: { $setUnion: [[], '$views'] },
             },
           },
+          views: { $size: '$views' },
+          favourites: { $size: '$favourites' },
           id: '$_id',
           days_left: {
             $cond: {
@@ -86,16 +88,7 @@ router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accept
         },
       },
       {
-        $unset: [
-          'views.users',
-          'saves.users',
-          'locations',
-          'restaurant',
-          'cuisines',
-          'dietary_requirements',
-          'createdAt',
-          'description',
-        ],
+        $unset: ['locations', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt', 'description'],
       },
     ]).sort({ updatedAt: -1 })
 
@@ -123,9 +116,11 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
         $addFields: {
           unique_views: {
             $sum: {
-              $size: { $setUnion: [[], '$views.users'] },
+              $size: { $setUnion: [[], '$views'] },
             },
           },
+          views: { $size: '$views' },
+          favourites: { $size: '$favourites' },
           id: '$_id',
           days_active: {
             $cond: {
@@ -143,16 +138,7 @@ router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { accep
         },
       },
       {
-        $unset: [
-          'views.users',
-          'saves.users',
-          'locations',
-          'restaurant',
-          'cuisines',
-          'dietary_requirements',
-          'createdAt',
-          'description',
-        ],
+        $unset: ['locations', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt', 'description'],
       },
     ]).sort({ updatedAt: -1 })
 
@@ -196,55 +182,52 @@ router.get(
         },
         {
           $addFields: {
-            unique_views: {
-              count: {
+            counts: {
+              unique_views: {
                 $sum: {
-                  $size: { $setUnion: [[], '$views.users'] },
+                  $size: { $setUnion: [[], '$views'] },
                 },
               },
-              avg: {
+              views: { $size: '$views' },
+              favourites: { $size: '$favourites' },
+            },
+          },
+        },
+        {
+          $addFields: {
+            averages: {
+              unique_views: {
                 $cond: {
-                  if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['views.count', 1] }] },
+                  if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['$counts.unique_views', 1] }] },
                   then: {
-                    $divide: [
-                      {
-                        $sum: {
-                          $size: { $setUnion: [[], '$views.users'] },
-                        },
-                      },
-                      '$days_active',
-                    ],
+                    $divide: ['$counts.unique_views', '$days_active'],
                   },
-                  else: {
-                    $sum: {
-                      $size: { $setUnion: [[], '$views.users'] },
-                    },
-                  },
+                  else: '$counts.unique_views',
                 },
               },
-            },
-            'views.avg': {
-              $cond: {
-                if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['views.count', 1] }] },
-                then: {
-                  $divide: ['$views.count', '$days_active'],
+              views: {
+                $cond: {
+                  if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['$counts.views', 1] }] },
+                  then: {
+                    $divide: ['$counts.views', '$days_active'],
+                  },
+                  else: '$counts.views',
                 },
-                else: '$views.count',
               },
-            },
-            'saves.avg': {
-              $cond: {
-                if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['saves.count', 1] }] },
-                then: {
-                  $divide: ['$saves.count', '$days_active'],
+              favourites: {
+                $cond: {
+                  if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['$counts.favourites', 1] }] },
+                  then: {
+                    $divide: ['$counts.favourites', '$days_active'],
+                  },
+                  else: '$counts.favourites',
                 },
-                else: '$saves.count',
               },
             },
           },
         },
         {
-          $unset: ['views.users', 'saves.users', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt'],
+          $unset: ['views', 'favourites', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt'],
         },
       ])
 
@@ -279,7 +262,7 @@ router.get(
         {
           $unset: [
             'views',
-            'saves',
+            'favourites',
             'restaurant',
             'cuisines',
             'dietary_requirements',
@@ -318,7 +301,7 @@ router.post(
     let currentDate = current_date ? new Date(current_date) : new Date()
 
     try {
-      const activeDealsCount = await Deal.count({
+      const activeDealsCount = await Deal({
         'restaurant.id': restaurant._id,
         $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
       })

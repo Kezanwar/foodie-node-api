@@ -19,8 +19,6 @@ import RouterIndex from './routes/api/routes.index.js'
 import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
 import dealExpireCron from './crons/deal.crons.js'
 
-// import User from './models/User.js'
-
 const app = express()
 
 connectDB()
