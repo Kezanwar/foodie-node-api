@@ -93,7 +93,7 @@ const RestaurantSchema = new mongoose.Schema(
         type: String,
       },
     },
-    favourites: [
+    followers: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user',
@@ -181,7 +181,7 @@ RestaurantSchema.methods.toClient = function () {
   delete returnToClient.locations
   delete returnToClient.image_uuid
   delete returnToClient.booking_clicks
-  delete returnToClient.favourites
+  delete returnToClient.followers
   delete returnToClient.payment_details
   if (returnToClient.avatar) returnToClient.avatar = prefixImageWithBaseUrl(returnToClient.avatar)
   if (returnToClient.cover_photo) returnToClient.cover_photo = prefixImageWithBaseUrl(returnToClient.cover_photo)

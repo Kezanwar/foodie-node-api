@@ -32,21 +32,13 @@ const UserSchema = Schema(
     avatar: {
       type: String,
     },
-    deals: {
-      downloaded: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: 'deal',
-        },
-      ],
-      redeemed: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: 'deal',
-        },
-      ],
-    },
     favourites: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'deal',
+      },
+    ],
+    following: [
       {
         type: Schema.Types.ObjectId,
         ref: 'restaurant',

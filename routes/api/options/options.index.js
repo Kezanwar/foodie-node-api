@@ -21,16 +21,16 @@ import {
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
-// @access auth
+//! @access public
 
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     let resAllCuisines = cacheGetCuisines()
     let resAllDietaries = cacheGetDietaryRequirements()
 
     if (!resAllCuisines) {
       const allCuisines = await Cuisine.find().lean()
-      resAllCuisines = allCuisines.map(({ name, slug, ...rest }) => ({
+      resAllCuisines = allCuisines.map(({ name, slug }) => ({
         name,
         slug,
       }))
@@ -39,7 +39,7 @@ router.get('/', auth, async (req, res) => {
 
     if (!resAllDietaries) {
       const allDietaries = await DietaryRequirement.find().lean()
-      resAllDietaries = allDietaries.map(({ name, slug, ...rest }) => ({
+      resAllDietaries = allDietaries.map(({ name, slug }) => ({
         name,
         slug,
       }))
@@ -76,7 +76,7 @@ router.get('/set-cuisines', auth, async (req, res) => {
 
     const allCats = await Cuisine.find({}, 'name slug')
 
-    const recats = allCats.map(({ name, slug, ...rest }) => ({
+    const recats = allCats.map(({ name, slug }) => ({
       name,
       slug,
     }))
@@ -111,7 +111,7 @@ router.get('/set-dietary-reqs', auth, async (req, res) => {
 
     const allCats = await DietaryRequirement.find({}, 'name slug')
 
-    const recats = allCats.map(({ name, slug, ...rest }) => ({
+    const recats = allCats.map(({ name, slug }) => ({
       name,
       slug,
     }))

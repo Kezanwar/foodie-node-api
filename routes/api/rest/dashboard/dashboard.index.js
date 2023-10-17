@@ -1,11 +1,10 @@
 import { Router } from 'express'
-import mongoose from 'mongoose'
 const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
 import { RESTAURANT_ROLES } from '../../../../constants/restaurant.js'
-import { getID, SendError, throwErr } from '../../../utilities/utilities.js'
+import { SendError } from '../../../utilities/utilities.js'
 
 import auth from '../../../../middleware/auth.middleware.js'
 import restRoleGuard from '../../../../middleware/rest-role-guard.middleware.js'
@@ -35,7 +34,7 @@ router.get('/overview', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acce
       $or: [{ is_expired: true }, { end_date: { $lte: currentDate } }],
     })
 
-    const impressions_views_saves_prom = Deal.aggregate([
+    const impressions_views_favourites_prom = Deal.aggregate([
       {
         $match: {
           'restaurant.id': restaurant._id,
@@ -45,12 +44,12 @@ router.get('/overview', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acce
       {
         $addFields: {
           unique_views: {
-            count: {
-              $sum: {
-                $size: { $setUnion: [[], '$views.users'] },
-              },
+            $sum: {
+              $size: { $setUnion: [[], '$views'] },
             },
           },
+          views: { $size: '$views' },
+          favourites: { $size: '$favourites' },
         },
       },
       {
@@ -59,31 +58,27 @@ router.get('/overview', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acce
           impressions: {
             $sum: '$unique_views',
           },
-          views: {
-            $sum: '$views.count',
-          },
-          saves: {
-            $sum: '$saves.count',
-          },
+          views: { $sum: '$views' },
+          favourites: { $sum: '$favourites' },
         },
       },
     ])
 
-    const [active_deals, expired_deals, impressions_views_saves] = await Promise.all([
+    const [active_deals, expired_deals, impressions_views_favourites] = await Promise.all([
       active_deals_prom,
       expired_deals_prom,
-      impressions_views_saves_prom,
+      impressions_views_favourites_prom,
     ])
 
     const booking_clicks = restaurant?.booking_clicks?.length || 0
 
-    const favourites = restaurant?.favourites?.length || 0
+    const followers = restaurant?.followers?.length || 0
 
     const locations = restaurant?.locations?.length || 0
 
     return res
       .status(200)
-      .json({ active_deals, expired_deals, impressions_views_saves, booking_clicks, favourites, locations })
+      .json({ active_deals, expired_deals, impressions_views_favourites, booking_clicks, followers, locations })
   } catch (error) {
     SendError(res, error)
   }
