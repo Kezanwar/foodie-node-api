@@ -12,8 +12,7 @@ dotenv.config()
 // import restRoleGuard from '../../middleware/rest-role-guard.middleware.js'÷
 import { SendError } from '../utilities/utilities.js'
 
-import auth from '../../middleware/auth.middleware.js'
-import Restaurant from '../../models/Restaurant.js'
+import Deal from '../../models/Deal.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -34,17 +33,29 @@ import Restaurant from '../../models/Restaurant.js'
 //   }
 // })
 
-router.post('/', auth, async (req, res) => {
-  try {
-    const rest = await Restaurant.findById(req?.user?.restaurant?.id)
-    if (!rest) return res.json('fail')
-    const loc = { nickname: 'test_locations' }
-    rest.test_locations.push(loc)
-    await rest.save()
-    return res.json(rest)
-  } catch (error) {
-    SendError(res, error)
-  }
-})
+// router.post('/', async (req, res) => {
+//   const LIMIT = 10
+
+//   try {
+//     const results = await Deal.find({
+//       is_expired: false,
+//       'locations.geometry.coordinates': {
+//         $near: {
+//           $geometry: {
+//             type: 'Point',
+//             coordinates: [-2.23535, 53.41724],
+//           },
+//           $maxDistance: 4000,
+//           $minDistance: 0,
+//         },
+//       },
+//     })
+//       .limit(LIMIT)
+//       .skip()
+//     return res.json(results)
+//   } catch (error) {
+//     SendError(res, error)
+//   }
+// })
 
 export default router
