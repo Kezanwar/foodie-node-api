@@ -76,7 +76,7 @@ router.post(
       // if dont exist send an error
 
       if (!isMatch) {
-        throw new Error('Invalid credentials')
+        throwErr('Invalid credentials', 400)
       }
 
       // is user credentials are a match
