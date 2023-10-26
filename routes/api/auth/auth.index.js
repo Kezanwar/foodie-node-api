@@ -177,7 +177,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
     // checking if user exists, if they do then send err
     let user = await findUserByEmail(email)
 
-    if (user) throw new Error('User already exists')
+    if (user) throwErr('User aleady exists', 400)
 
     // create a new user with our schema and users details from req
     user = new User({
