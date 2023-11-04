@@ -87,6 +87,16 @@ export const getID = (doc) => {
   return doc?._id?.toHexString ? doc?._id?.toHexString() : doc?.id?.toHexString() || doc?.id
 }
 
+export const createOTP = () => {
+  const arr = []
+  let start = 0
+  while (start <= 5) {
+    arr.push(Math.floor(Math.random() * 10))
+    start++
+  }
+  return arr.join('')
+}
+
 export const fakeLongLoadPromise = (duration = 5000) =>
   new Promise((resolve) => {
     setTimeout(() => {

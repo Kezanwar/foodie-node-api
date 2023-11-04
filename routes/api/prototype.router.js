@@ -10,9 +10,13 @@ dotenv.config()
 // import auth from '../../middleware/auth.middleware.js'
 // import validate from '../../middleware/validation.middleware.js'
 // import restRoleGuard from '../../middleware/rest-role-guard.middleware.js'÷
-import { SendError } from '../utilities/utilities.js'
+import { SendError, capitalizeFirstLetter, createOTP, throwErr } from '../utilities/utilities.js'
 
 import Deal from '../../models/Deal.js'
+import { renderFile } from 'ejs'
+import { confirm_email_content, email_addresses } from '../../constants/email.js'
+
+import transporter from '../../services/email/email.services.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -57,5 +61,42 @@ import Deal from '../../models/Deal.js'
 //     SendError(res, error)
 //   }
 // })
+
+router.post('/', async (req, res) => {
+  try {
+    renderFile(
+      process.cwd() + '/views/emails/action-email.ejs',
+      {
+        content: `${confirm_email_content.description} \n 
+        <p class="otp"><strong>${createOTP()}</strong><p>`,
+        title: confirm_email_content.title,
+        receiver: 'Kez Anwar',
+      },
+      (err, data) => {
+        if (err) {
+          throwErr('error creating enmail email')
+        } else {
+          const mainOptions = {
+            from: email_addresses.noreply,
+            to: 'kezanwar@gmail.com',
+            subject: confirm_email_content.title,
+            html: data,
+          }
+          transporter.sendMail(mainOptions, (err, info) => {
+            if (err) {
+              console.log(err)
+              throwErr('error sending enmail email')
+            } else {
+              console.log('email sent: ' + info.response)
+            }
+          })
+        }
+      }
+    )
+    return res.json('success')
+  } catch (error) {
+    SendError(res, error)
+  }
+})
 
 export default router
