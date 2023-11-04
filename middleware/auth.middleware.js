@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
-import { getUser, SendError } from '../routes/utilities/utilities.js'
+import { getUser, SendError, throwErr } from '../routes/utilities/utilities.js'
 dotenv.config()
 
 const JWT_SECRET = process.env.JWT_SECRET
@@ -19,7 +19,7 @@ async function auth(req, res, next) {
     // verify token
     const decoded = jwt.verify(token, JWT_SECRET)
 
-    if (!decoded) throw new Error('token not valid')
+    if (!decoded) throwErr('token not valid')
     //  attach dedcoded user in token to req.user in req object
     const User = await getUser(decoded.user.id)
 

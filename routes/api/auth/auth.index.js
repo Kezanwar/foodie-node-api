@@ -3,7 +3,7 @@ import { renderFile } from 'ejs'
 const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
-
+import axios from 'axios'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 
@@ -15,6 +15,7 @@ import auth from '../../../middleware/auth.middleware.js'
 import {
   SendError,
   capitalizeFirstLetter,
+  createOTP,
   findUserByEmail,
   findUserByEmailWithPassword,
   removeDocumentValues,
@@ -22,14 +23,10 @@ import {
 } from '../../utilities/utilities.js'
 import { loginUserSchema, registerUserSchema } from '../../../validation/auth.validation.js'
 import validate from '../../../middleware/validation.middleware.js'
-
 import { AUTH_METHODS, JWT_SECRET } from '../../../constants/auth.js'
-
 import { feUrl } from '../../../base/base.js'
-
 import { confirm_email_content, email_addresses } from '../../../constants/email.js'
 import transporter from '../../../services/email/email.services.js'
-import axios from 'axios'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -39,6 +36,7 @@ router.get('/initialize', auth, async (req, res) => {
   try {
     const user = req.user
     if (!user) throw new Error('User doesnt exist')
+
     res.json({ user })
   } catch (error) {
     SendError(res, error)
@@ -92,11 +90,6 @@ router.post(
 
       jwt.sign(payload, JWT_SECRET, { expiresIn: 360000 }, (err, token) => {
         if (err) throw new Error(err)
-        // res.cookie('authCookie', JSON.stringify(token), {
-        //   secure: process.env.APP_ENV !== 'development',
-        //   httpOnly: true,
-        //   expires: 360000,
-        // })
         const userResponse = removeDocumentValues(['_id', 'password'], user)
         res.json({
           accessToken: token,
@@ -145,11 +138,6 @@ router.post(
 
       jwt.sign(payload, JWT_SECRET, { expiresIn: 360000 }, (err, token) => {
         if (err) throw new Error(err)
-        // res.cookie('authCookie', JSON.stringify(token), {
-        //   secure: process.env.APP_ENV !== 'development',
-        //   httpOnly: true,
-        //   expires: 360000,
-        // })
         const userResponse = removeDocumentValues(['_id', 'password'], user)
         res.json({
           accessToken: token,
@@ -186,6 +174,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       email: email.toLowerCase(),
       password,
       auth_method: AUTH_METHODS.jwt,
+      auth_otp: createOTP(),
       email_confirmed: false,
     })
     // encrypt users passsord using bcrypt
@@ -197,43 +186,38 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
     // save the new user to DB using mongoose
     await user.save()
 
-    //  call jwt sign method, pass in the email and send an email to confirm their email address
+    // send OTP in email to user for them to confirm their email from either rest dashboard or
+    // customer mobile app
 
-    const confirmEmailPayload = {
-      email: user.email,
-    }
-
-    jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
-      if (err) throw new Error(err)
-      renderFile(
-        process.cwd() + '/views/emails/action-email.ejs',
-        {
-          content: confirm_email_content.description,
-          title: confirm_email_content.title,
-          action_primary: { text: 'Confirm email', url: `${process.env.BASE_URL}/auth/confirm-email/${token}` },
-          receiver: capitalizeFirstLetter(user.first_name),
-        },
-        function (err, data) {
-          if (err) {
-            console.log(err)
-          } else {
-            const mainOptions = {
-              from: email_addresses.noreply,
-              to: user.email,
-              subject: confirm_email_content.title,
-              html: data,
-            }
-            transporter.sendMail(mainOptions, function (err, info) {
-              if (err) {
-                console.log(err)
-              } else {
-                console.log('email sent: ' + info.response)
-              }
-            })
+    renderFile(
+      process.cwd() + '/views/emails/action-email.ejs',
+      {
+        content: `${confirm_email_content.description} 
+        <p class="otp"><strong>${user.auth_otp}</strong><p>`,
+        title: confirm_email_content.title,
+        receiver: user.first_name,
+      },
+      (err, data) => {
+        if (err) {
+          throwErr('error creating email email')
+        } else {
+          const mainOptions = {
+            from: email_addresses.noreply,
+            to: user.email,
+            subject: confirm_email_content.title,
+            html: data,
           }
+          transporter.sendMail(mainOptions, (err, info) => {
+            if (err) {
+              console.log(err)
+              throwErr('error sending enmail email')
+            } else {
+              console.log('email sent: ' + info.response)
+            }
+          })
         }
-      )
-    })
+      }
+    )
 
     //  call jwt sign method, poss in the payload, the jwtsecret from our config we created, an argument for optional extra parameters such as expiry, a call back function which allows us to handle any errors that occur or send the response back to user.
     const authIdPayload = {
@@ -242,9 +226,8 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       },
     }
 
-    jwt.sign(authIdPayload, JWT_SECRET, { expiresIn: '14d' }, async (err, token) => {
+    jwt.sign(authIdPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
       if (err) throw new Error(err)
-
       const userResponse = removeDocumentValues(['_id', 'password'], user)
       return res.json({
         accessToken: token,
@@ -269,7 +252,7 @@ router.post('/register-google', async (req, res) => {
 
     const userRequested = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`)
 
-    const { given_name, family_name, picture, email, email_verified } = userRequested.data
+    const { given_name, family_name, picture, email } = userRequested.data
 
     let user = await findUserByEmail(email)
 
@@ -280,7 +263,7 @@ router.post('/register-google', async (req, res) => {
       first_name: capitalizeFirstLetter(given_name),
       last_name: family_name ? capitalizeFirstLetter(family_name) : '',
       email: email.toLowerCase(),
-      email_confirmed: !!email_verified,
+      email_confirmed: true,
       avatar: picture,
       auth_method: AUTH_METHODS.google,
     })
@@ -295,46 +278,6 @@ router.post('/register-google', async (req, res) => {
     // save the new user to DB using mongoose
     await user.save()
 
-    //  call jwt sign method, pass in the email and send an email to confirm their email address
-
-    if (!user.email_confirmed) {
-      const confirmEmailPayload = {
-        email: user.email,
-      }
-
-      jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
-        if (err) throw new Error(err)
-        renderFile(
-          process.cwd() + '/views/emails/action-email.ejs',
-          {
-            content: confirm_email_content.description,
-            title: confirm_email_content.title,
-            action_primary: { text: 'Confirm email', url: `${process.env.BASE_URL}/auth/confirm-email/${token}` },
-            receiver: capitalizeFirstLetter(user.first_name),
-          },
-          function (err, data) {
-            if (err) {
-              console.log(err)
-            } else {
-              const mainOptions = {
-                from: email_addresses.noreply,
-                to: user.email,
-                subject: confirm_email_content.title,
-                html: data,
-              }
-              transporter.sendMail(mainOptions, function (err, info) {
-                if (err) {
-                  console.log(err)
-                } else {
-                  console.log('email sent: ' + info.response)
-                }
-              })
-            }
-          }
-        )
-      })
-    }
-
     //  call jwt sign method, poss in the payload, the jwtsecret from our config we created, an argument for optional extra parameters such as expiry, a call back function which allows us to handle any errors that occur or send the response back to user.
     const authIdPayload = {
       user: {
@@ -342,7 +285,7 @@ router.post('/register-google', async (req, res) => {
       },
     }
 
-    jwt.sign(authIdPayload, JWT_SECRET, { expiresIn: '14d' }, async (err, token) => {
+    jwt.sign(authIdPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
       if (err) throw new Error(err)
 
       const userResponse = removeDocumentValues(['_id', 'password'], user)
@@ -361,26 +304,18 @@ router.post('/register-google', async (req, res) => {
 //? @desc CONFIRM EMAIL ADDRESS
 //! @access auth (requires token from confirm email button)
 
-router.get('/confirm-email/:token', async (req, res) => {
+router.post('/confirm-email/:otp', auth, async (req, res) => {
+  const { otp } = req.params
+  const user = req.user
   try {
-    const { token } = req.params
+    if (!otp) throwErr('No OTP Passed')
 
-    if (!token) throw new Error('Unexpected error')
+    if (otp === user.auth_otp) {
+      user.email_confirmed = true
+      await user.save()
+    } else throwErr('Incorrect OTP please try again', 401)
 
-    const decoded = jwt.verify(token, JWT_SECRET)
-    const email = decoded.email
-
-    if (!email) throw new Error('Email address not recognized')
-
-    const user = await findUserByEmail(email)
-
-    if (!user) throw new Error('User doesnt exist')
-
-    user.email_confirmed = true
-
-    await user.save()
-
-    return res.render('pages/email-confirmed', { loginUrl: feUrl, first_name: capitalizeFirstLetter(user.first_name) })
+    return res.json('success')
   } catch (error) {
     SendError(res, error)
   }
@@ -390,46 +325,41 @@ router.get('/confirm-email/:token', async (req, res) => {
 //? @desc CONFIRM EMAIL ADDRESS
 //! @access auth
 
-router.post('/resend-confirm-email', auth, async (req, res) => {
+router.patch('/confirm-email/resend-otp', auth, async (req, res) => {
+  const user = req.user
   try {
-    const user = req.user
+    user.auth_otp = createOTP()
+    await user.save()
 
-    const confirmEmailPayload = {
-      email: user.email,
-    }
-
-    jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
-      if (err) throw new Error(err)
-
-      renderFile(
-        process.cwd() + '/views/emails/action-email.ejs',
-        {
-          content: confirm_email_content.description,
-          title: confirm_email_content.title,
-          action_primary: { text: 'Confirm email', url: `${process.env.BASE_URL}/auth/confirm-email/${token}` },
-          receiver: capitalizeFirstLetter(user.first_name),
-        },
-        function (err, data) {
-          if (err) {
-            console.log(err)
-          } else {
-            const mainOptions = {
-              from: email_addresses.noreply,
-              to: user.email,
-              subject: confirm_email_content.title,
-              html: data,
-            }
-            transporter.sendMail(mainOptions, function (err, info) {
-              if (err) {
-                console.log(err)
-              } else {
-                console.log('email sent: ' + info.response)
-              }
-            })
+    renderFile(
+      process.cwd() + '/views/emails/action-email.ejs',
+      {
+        content: `${confirm_email_content.description} 
+        <p class="otp"><strong>${user.auth_otp}</strong><p>`,
+        title: confirm_email_content.title,
+        receiver: user.first_name,
+      },
+      (err, data) => {
+        if (err) {
+          throwErr('error creating email email')
+        } else {
+          const mainOptions = {
+            from: email_addresses.noreply,
+            to: user.email,
+            subject: confirm_email_content.title,
+            html: data,
           }
+          transporter.sendMail(mainOptions, (err, info) => {
+            if (err) {
+              console.log(err)
+              throwErr('error sending email email')
+            } else {
+              console.log('email sent: ' + info.response)
+            }
+          })
         }
-      )
-    })
+      }
+    )
     res.status(200).send({ message: 'success' })
   } catch (error) {
     SendError(res, error)

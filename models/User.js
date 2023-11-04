@@ -29,6 +29,9 @@ const UserSchema = Schema(
     auth_method: {
       type: String,
     },
+    auth_otp: {
+      type: String,
+    },
     avatar: {
       type: String,
     },
