@@ -24,7 +24,6 @@ import {
 import { loginUserSchema, registerUserSchema } from '../../../validation/auth.validation.js'
 import validate from '../../../middleware/validation.middleware.js'
 import { AUTH_METHODS, JWT_SECRET } from '../../../constants/auth.js'
-import { feUrl } from '../../../base/base.js'
 import { confirm_email_content, email_addresses } from '../../../constants/email.js'
 import transporter from '../../../services/email/email.services.js'
 

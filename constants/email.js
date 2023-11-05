@@ -1,7 +1,7 @@
 // EMAIL ADDRESSES
 
 export const email_addresses = {
-  noreply: 'noreply@mylocaldeli.com',
+  noreply: 'noreply@thefoodie.app',
 }
 
 // USER/RESTAURANT EMAIL CONTENT
