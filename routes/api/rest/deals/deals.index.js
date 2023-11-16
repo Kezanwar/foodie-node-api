@@ -327,7 +327,12 @@ router.post(
         name: capitalizeSentence(name),
         description,
         locations: locationsMap,
-        restaurant: { id: restaurant._id, name: restaurant.name },
+        restaurant: {
+          id: restaurant._id,
+          name: restaurant.name,
+          avatar: restaurant.avatar,
+          cover_photo: restaurant.cover_photo,
+        },
         dietary_requirements: restaurant.dietary_requirements,
         cuisines: restaurant.cuisines,
         is_expired: false,
