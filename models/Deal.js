@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import GeoSchema from './schemas/GeoSchema.js'
 import { isMainThread } from 'node:worker_threads'
+import { FavouriteSchemaDeal } from './schemas/FavouriteSchema.js'
 
 const DealSchema = new mongoose.Schema(
   {
@@ -27,12 +28,7 @@ const DealSchema = new mongoose.Schema(
         ref: 'user',
       },
     ],
-    favourites: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
-      },
-    ],
+    favourites: [FavouriteSchemaDeal],
     cuisines: [CategorySchemaWithIndex],
     dietary_requirements: [CategorySchemaWithIndex],
     locations: [
@@ -50,7 +46,15 @@ const DealSchema = new mongoose.Schema(
         ref: 'restaurant',
         index: true,
       },
-      name: String,
+      name: {
+        type: String,
+      },
+      avatar: {
+        type: String,
+      },
+      cover_photo: {
+        type: String,
+      },
     },
   },
   { timestamps: true }

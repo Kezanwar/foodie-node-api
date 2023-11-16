@@ -58,12 +58,6 @@ const RestaurantSchema = new mongoose.Schema(
         type: LocationSchema,
       },
     ],
-    deals: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'deal',
-      },
-    ],
     contact_details: {
       // select: false,
       email: {
@@ -175,6 +169,7 @@ RestaurantSchema.methods.toClient = function () {
   let returnToClient = this.toJSON()
   delete returnToClient._id
   delete returnToClient.__v
+  delete returnToClient.reviews
   delete returnToClient.super_admin
   delete returnToClient.createdAt
   delete returnToClient.updatedAt

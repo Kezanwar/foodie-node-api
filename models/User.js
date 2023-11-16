@@ -1,5 +1,7 @@
 import { Schema, model } from 'mongoose'
 import { isMainThread } from 'node:worker_threads'
+import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
+import { FavouriteSchemaUser } from './schemas/FavouriteSchema.js'
 
 const UserSchema = Schema(
   {
@@ -35,12 +37,11 @@ const UserSchema = Schema(
     avatar: {
       type: String,
     },
-    favourites: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'deal',
-      },
-    ],
+    preferences: {
+      cuisines: [CategorySchemaWithIndex],
+      dietary_requirements: [CategorySchemaWithIndex],
+    },
+    favourites: [FavouriteSchemaUser],
     following: [
       {
         type: Schema.Types.ObjectId,
@@ -59,6 +60,21 @@ const UserSchema = Schema(
   },
   { timestamps: true }
 )
+
+UserSchema.methods.toClient = function () {
+  let returnToClient = this.toJSON()
+  delete returnToClient._id
+  delete returnToClient.__v
+  delete returnToClient.createdAt
+  delete returnToClient.updatedAt
+  // delete returnToClient.favourites
+  delete returnToClient.following
+  delete returnToClient.preferences
+  delete returnToClient.auth_otp
+  delete returnToClient.auth_method
+  delete returnToClient.password
+  return returnToClient
+}
 const User = model('user', UserSchema)
 
 if (isMainThread) {

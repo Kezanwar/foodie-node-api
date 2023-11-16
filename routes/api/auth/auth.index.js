@@ -18,7 +18,6 @@ import {
   createOTP,
   findUserByEmail,
   findUserByEmailWithPassword,
-  removeDocumentValues,
   throwErr,
 } from '../../utilities/utilities.js'
 import { loginUserSchema, registerUserSchema } from '../../../validation/auth.validation.js'
@@ -36,7 +35,7 @@ router.get('/initialize', auth, async (req, res) => {
     const user = req.user
     if (!user) throw new Error('User doesnt exist')
 
-    res.json({ user })
+    res.json({ user: user.toClient() })
   } catch (error) {
     SendError(res, error)
   }
@@ -89,7 +88,7 @@ router.post(
 
       jwt.sign(payload, JWT_SECRET, { expiresIn: 360000 }, (err, token) => {
         if (err) throw new Error(err)
-        const userResponse = removeDocumentValues(['_id', 'password'], user)
+        const userResponse = user.toClient()
         res.json({
           accessToken: token,
           user: userResponse,
@@ -137,7 +136,7 @@ router.post(
 
       jwt.sign(payload, JWT_SECRET, { expiresIn: 360000 }, (err, token) => {
         if (err) throw new Error(err)
-        const userResponse = removeDocumentValues(['_id', 'password'], user)
+        const userResponse = user.toClient()
         res.json({
           accessToken: token,
           user: userResponse,
@@ -227,7 +226,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 
     jwt.sign(authIdPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
       if (err) throw new Error(err)
-      const userResponse = removeDocumentValues(['_id', 'password'], user)
+      const userResponse = user.toClient()
       return res.json({
         accessToken: token,
         user: userResponse,
@@ -287,7 +286,7 @@ router.post('/register-google', async (req, res) => {
     jwt.sign(authIdPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
       if (err) throw new Error(err)
 
-      const userResponse = removeDocumentValues(['_id', 'password'], user)
+      const userResponse = user.toClient()
       return res.json({
         accessToken: token,
         user: userResponse,
