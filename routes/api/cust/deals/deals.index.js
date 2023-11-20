@@ -17,9 +17,28 @@ const RADIUS_MILES = RADIUS_METRES * METER_TO_MILE_CONVERSION
 const r = 6371 // km
 const p = Math.PI / 180
 
+const getQuery = (cuisines, dietary_requirements) => {
+  const defaults = { is_expired: false }
+  if (cuisines) {
+    defaults.cuisines = {
+      $elemMatch: {
+        slug: { $in: typeof cuisines === 'string' ? [cuisines] : cuisines },
+      },
+    }
+  }
+  if (dietary_requirements) {
+    defaults.dietary_requirements = {
+      $elemMatch: {
+        slug: { $in: typeof dietary_requirements === 'string' ? [dietary_requirements] : dietary_requirements },
+      },
+    }
+  }
+  return defaults
+}
+
 router.get('/feed', auth, async (req, res) => {
   const {
-    query: { page, long, lat },
+    query: { page, long, lat, cuisines, dietary_requirements },
     // coords must be [long, lat]
   } = req
 
@@ -37,6 +56,8 @@ router.get('/feed', auth, async (req, res) => {
       if (isNaN(n)) throwErr('You must pass a number for Page, Long or Lat')
     }
 
+    const query = getQuery(cuisines, dietary_requirements)
+
     const results = await Deal.aggregate([
       {
         $geoNear: {
@@ -44,7 +65,7 @@ router.get('/feed', auth, async (req, res) => {
           distanceField: 'distance_km',
           spherical: true,
           maxDistance: RADIUS_METRES,
-          query: { is_expired: false },
+          query: query,
         },
       },
       {
