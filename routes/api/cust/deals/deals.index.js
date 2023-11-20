@@ -1,7 +1,7 @@
 import { Router } from 'express'
 const router = Router()
 import dotenv from 'dotenv'
-import { SendError, getID, throwErr } from '../../../utilities/utilities.js'
+import { SendError, throwErr } from '../../../utilities/utilities.js'
 import Deal from '../../../../models/Deal.js'
 import auth from '../../../../middleware/auth.middleware.js'
 import { generalWorkerService } from '../../../../services/workers/general.service.worker.js'
@@ -17,9 +17,28 @@ const RADIUS_MILES = RADIUS_METRES * METER_TO_MILE_CONVERSION
 const r = 6371 // km
 const p = Math.PI / 180
 
+const getQuery = (cuisines, dietary_requirements) => {
+  const defaults = { is_expired: false }
+  if (cuisines) {
+    defaults.cuisines = {
+      $elemMatch: {
+        slug: { $in: typeof cuisines === 'string' ? [cuisines] : cuisines },
+      },
+    }
+  }
+  if (dietary_requirements) {
+    defaults.dietary_requirements = {
+      $elemMatch: {
+        slug: { $in: typeof dietary_requirements === 'string' ? [dietary_requirements] : dietary_requirements },
+      },
+    }
+  }
+  return defaults
+}
+
 router.get('/feed', auth, async (req, res) => {
   const {
-    query: { page, long, lat },
+    query: { page, long, lat, cuisines, dietary_requirements },
     // coords must be [long, lat]
   } = req
 
@@ -37,6 +56,8 @@ router.get('/feed', auth, async (req, res) => {
       if (isNaN(n)) throwErr('You must pass a number for Page, Long or Lat')
     }
 
+    const query = getQuery(cuisines, dietary_requirements)
+
     const results = await Deal.aggregate([
       {
         $geoNear: {
@@ -44,7 +65,7 @@ router.get('/feed', auth, async (req, res) => {
           distanceField: 'distance_km',
           spherical: true,
           maxDistance: RADIUS_METRES,
-          query: { is_expired: false },
+          query: query,
         },
       },
       {
@@ -191,32 +212,6 @@ router.get('/feed', auth, async (req, res) => {
     })
 
     return res.json({ count: filtered.length, results: filtered })
-  } catch (error) {
-    SendError(res, error)
-  }
-})
-
-router.post('/favourite', auth, async (req, res) => {
-  const {
-    body: { location_id, deal_id },
-    user,
-  } = req
-  try {
-    if (!deal_id || !location_id) throwErr('Deal/Location ID not passed', 401)
-    const deal = await Deal.findById(deal_id)
-
-    if (!deal) throwErr('Deal not found', 401)
-
-    const location = deal.locations.find((l) => getID(l.location_id) === location_id)
-
-    if (!location) throwErr('Location not found', 401)
-
-    deal.favourites.push({ user: user._id, location_id })
-    user.favourites.push({ deal: deal_id, location_id })
-
-    await Promise.all([deal.save(), user.save()])
-
-    return res.json('Success')
   } catch (error) {
     SendError(res, error)
   }

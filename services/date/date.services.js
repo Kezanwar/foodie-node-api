@@ -49,14 +49,13 @@ export const checkTimezoneCurrentTime = (tz = 'europe/london') => {
 
 export const getGMTandDSTDateStrings = () => {
   return {
-    gmt: formatInTimeZone(new Date(), 'Europe/London', 'yyyy-MM-dd'),
+    // gmt: formatInTimeZone(new Date(), 'Europe/London', 'yyyy-MM-dd'),
     dst: formatInTimeZone(new Date(), 'Etc/GMT+12', 'yyyy-MM-dd'),
   }
 }
 
 export const expireDate = () => {
-  const { dst, gmt } = getGMTandDSTDateStrings()
-  if (dst !== gmt) return ''
+  const { dst } = getGMTandDSTDateStrings()
   return dst
 }
 
