@@ -67,7 +67,7 @@ UserSchema.methods.toClient = function () {
   delete returnToClient.__v
   delete returnToClient.createdAt
   delete returnToClient.updatedAt
-  // delete returnToClient.favourites
+  delete returnToClient.favourites
   delete returnToClient.following
   delete returnToClient.preferences
   delete returnToClient.auth_otp
