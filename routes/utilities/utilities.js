@@ -5,6 +5,7 @@ import _ from 'lodash'
 const { upperCase } = _
 
 import User from '../../models/User.js'
+import Location from '../../models/Location.js'
 
 export function ArrayIsEmpty(array) {
   return !array.length > 0
@@ -45,24 +46,37 @@ export function removeObjectValues(arrayOfUnrequiredKeys, object) {
 }
 
 export async function getUser(id) {
-  if (!id) throw new Error('no ID passed')
+  if (!id) throwErr('no ID passed')
   const user = await User.findById(id)
-  if (!user) throw new Error('Authentication error: user doesnt exist')
+  if (!user) throwErr('User doesnt exist', 401)
   return user
 }
 
 export async function findUserByEmail(email) {
-  if (!email) throw new Error('no email found')
+  if (!email) throwErr('no email found')
   const sEmail = email.toLowerCase()
   const user = await User.findOne({ email: sEmail })
   return user
 }
 
 export async function findUserByEmailWithPassword(email) {
-  if (!email) throw new Error('no email found')
+  if (!email) throwErr('no email found')
   const sEmail = email.toLowerCase()
   const user = await User.findOne({ email: sEmail }).select('+password')
   return user
+}
+
+export async function findRestaurantsLocations(
+  rest_id,
+  select = '-cuisines -dietary_requirements -restaurant -active_deals'
+) {
+  if (!rest_id) throwErr('No Restaurant / Locations found')
+  if (!select) {
+    const locationsNoSelect = await Location.find({ 'restaurant.id': rest_id })
+    return locationsNoSelect
+  }
+  const locations = await Location.find({ 'restaurant.id': rest_id }).select(select)
+  return locations
 }
 
 export const throwErr = (msg, code) => {

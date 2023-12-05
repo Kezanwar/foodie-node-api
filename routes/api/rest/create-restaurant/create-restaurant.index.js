@@ -18,7 +18,7 @@ import {
   restaurantSubmitApplicationSchema,
 } from '../../../../validation/create-restaurant.validation.js'
 
-import { getID, SendError, throwErr } from '../../../utilities/utilities.js'
+import { findRestaurantsLocations, getID, SendError, throwErr } from '../../../utilities/utilities.js'
 import restRoleGuard from '../../../../middleware/rest-role-guard.middleware.js'
 
 import { bucketName, foodieS3Client, s3PutCommand } from '../../../../services/aws/aws.services.js'
@@ -250,7 +250,9 @@ router.post(
         return
       }
 
-      if (!restaurant?.locations || restaurant?.locations.length === 0) {
+      const locations = await findRestaurantsLocations(restaurant._id)
+
+      if (!locations || locations.length === 0) {
         throwErr('Error: A minimum of 1 locations is required')
         return
       }
@@ -296,7 +298,9 @@ router.post(
         return
       }
 
-      if (!restaurant.locations || restaurant.locations.length === 0) {
+      const locations = await findRestaurantsLocations(restaurant._id)
+
+      if (!locations || locations.length === 0) {
         throwErr('Error: A minimum of 1 locations is required')
         return
       }
@@ -311,7 +315,7 @@ router.post(
 
       const cuisinesText = restaurant.cuisines.map((c) => c.name).join(', ')
       const dietText = restaurant.dietary_requirements.map((c) => c.name).join(', ')
-      const locations = await restaurant.getLocations()
+
       const locationsText = locations.map((c) => `${c.address.address_line_1}, ${c.address.postcode}`).join(' - ')
 
       renderFile(

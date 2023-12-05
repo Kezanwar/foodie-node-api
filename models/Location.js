@@ -1,129 +1,119 @@
-// import mongoose from 'mongoose'
-// import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
-// import GeoSchema from './schemas/GeoSchema.js'
+import mongoose from 'mongoose'
 
-// const LocationSchema = new mongoose.Schema(
-//   {
-//     nickname: {
-//       type: String,
-//     },
-//     cover_photo: {
-//       type: String,
-//     },
-//     address: {
-//       type: Object,
-//       address_line_1: {
-//         type: String,
-//       },
-//       address_line_2: {
-//         type: String,
-//       },
-//       postcode: {
-//         type: String,
-//       },
-//       city: {
-//         type: String,
-//       },
-//       country: {
-//         type: String,
-//       },
-//     },
-//     cuisines: [CategorySchemaWithIndex],
-//     dietary_requirements: [CategorySchemaWithIndex],
-//     phone_number: {
-//       type: String,
-//     },
-//     email: {
-//       type: String,
-//     },
-//     opening_times: {
-//       type: Object,
-//       mon: {
-//         type: Object,
-//         is_open: { type: Boolean },
-//         open: { type: String },
-//         close: { type: String },
-//       },
-//       tue: {
-//         type: Object,
-//         is_open: { type: Boolean },
-//         open: { type: String },
-//         close: { type: String },
-//       },
-//       wed: {
-//         type: Object,
-//         is_open: { type: Boolean },
-//         open: { type: String },
-//         close: { type: String },
-//       },
-//       thu: {
-//         type: Object,
-//         is_open: { type: Boolean },
-//         open: { type: String },
-//         close: { type: String },
-//       },
-//       fri: {
-//         type: Object,
-//         is_open: { type: Boolean },
-//         open: { type: String },
-//         close: { type: String },
-//       },
-//       sat: {
-//         type: Object,
-//         is_open: { type: Boolean },
-//         open: { type: String },
-//         close: { type: String },
-//       },
-//       sun: {
-//         type: Object,
-//         is_open: { type: Boolean },
-//         open: { type: String },
-//         close: { type: String },
-//       },
-//     },
-//     geometry: GeoSchema,
-//     long_lat: {
-//       type: Object,
-//       longitude: {
-//         type: Number,
-//       },
-//       latitude: {
-//         type: Number,
-//       },
-//     },
-//     restaurant: {
-//       type: mongoose.Schema.Types.ObjectId,
-//       ref: 'restaurant',
-//     },
-//   },
-//   { timestamps: true }
-// )
+import { isMainThread } from 'node:worker_threads'
+import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
+import GeoSchema from './schemas/GeoSchema.js'
 
-// LocationSchema.methods.updateLocation = async function (data) {
-//   if (!data) throw new Error('no data passed to setup method')
-//   const dataArr = Object.entries(data)
-//   dataArr.forEach(([key, value]) => {
-//     this[key] = value
-//   })
-//   await this.save()
-// }
+const LocationSchema = new mongoose.Schema(
+  {
+    nickname: {
+      type: String,
+    },
+    address: {
+      type: Object,
+      address_line_1: {
+        type: String,
+      },
+      address_line_2: {
+        type: String,
+      },
+      postcode: {
+        type: String,
+      },
+      city: {
+        type: String,
+      },
+      country: {
+        type: String,
+      },
+    },
+    timezone: {
+      type: String,
+    },
+    phone_number: {
+      type: String,
+    },
+    email: {
+      type: String,
+    },
+    opening_times: {
+      type: Object,
+      mon: {
+        type: Object,
+        is_open: { type: Boolean },
+        open: { type: String },
+        close: { type: String },
+      },
+      tue: {
+        type: Object,
+        is_open: { type: Boolean },
+        open: { type: String },
+        close: { type: String },
+      },
+      wed: {
+        type: Object,
+        is_open: { type: Boolean },
+        open: { type: String },
+        close: { type: String },
+      },
+      thu: {
+        type: Object,
+        is_open: { type: Boolean },
+        open: { type: String },
+        close: { type: String },
+      },
+      fri: {
+        type: Object,
+        is_open: { type: Boolean },
+        open: { type: String },
+        close: { type: String },
+      },
+      sat: {
+        type: Object,
+        is_open: { type: Boolean },
+        open: { type: String },
+        close: { type: String },
+      },
+      sun: {
+        type: Object,
+        is_open: { type: Boolean },
+        open: { type: String },
+        close: { type: String },
+      },
+    },
+    geometry: GeoSchema,
+    restaurant: {
+      id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'restaurant',
+        index: true,
+      },
+      name: {
+        type: String,
+      },
+      avatar: {
+        type: String,
+      },
+      cover_photo: {
+        type: String,
+      },
+    },
+    cuisines: [CategorySchemaWithIndex],
+    dietary_requirements: [CategorySchemaWithIndex],
+    active_deals: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'deal',
+      },
+    ],
+  },
+  { timestamps: true }
+)
 
-// LocationSchema.methods.toClient = function () {
-//   let returnToClient = this.toJSON()
-//   delete returnToClient._id
-//   delete returnToClient.__v
-//   delete returnToClient.createdAt
-//   delete returnToClient.updatedAt
-//   return returnToClient
-// }
+const Location = mongoose.model('location', LocationSchema)
 
-// // Ensure virtual fields are serialised.
-// LocationSchema.set('toJSON', {
-//   virtuals: true,
-// })
+if (isMainThread) {
+  Location.createIndexes()
+}
 
-// const Location = mongoose.model('location', LocationSchema)
-
-// Location.createIndexes()
-
-// export default Location
+export default Location

@@ -1,6 +1,6 @@
 import { RESTAURANT_ROLES, RESTAURANT_STATUS } from '../constants/restaurant.js'
 import Restaurant from '../models/Restaurant.js'
-import { SendError, throwErr } from '../routes/utilities/utilities.js'
+import { SendError, findRestaurantsLocations, throwErr } from '../routes/utilities/utilities.js'
 
 const restRoleGuard =
   (role, options = {}) =>
@@ -24,7 +24,15 @@ const restRoleGuard =
 
       if (!uRole) throwErr('Access denied - User has no role on this restaurant', 403)
 
-      const restaurant = await Restaurant.findById(uRestID).select('+super_admin')
+      const restaurantProm = Restaurant.findById(uRestID).select('+super_admin')
+
+      const proms = [restaurantProm]
+
+      const locationProm = options?.getLocations ? findRestaurantsLocations(uRestID) : null
+
+      if (locationProm) proms.push(locationProm)
+
+      const [restaurant, locations] = await Promise.all(proms)
 
       if (!restaurant) throwErr('Access denied - restaurant not found', 403)
 
@@ -87,11 +95,14 @@ const restRoleGuard =
         // eslint-disable-next-line quotes
         throwErr("Access denied - users permissions can't access this route", 403)
       } else if (canAccess) {
+        if (locations) {
+          req.locations = locations
+        }
         req.restaurant = restaurant
         return next()
       }
       // eslint-disable-next-line quotes
-      else throw new Error('Unexpected error: Please contact Foodie Admin')
+      else throwErr('Unexpected error: Please contact Foodie Admin')
     } catch (err) {
       SendError(res, err)
       return

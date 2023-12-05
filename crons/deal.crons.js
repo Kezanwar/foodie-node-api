@@ -4,6 +4,7 @@ import Deal from '../models/Deal.js'
 import { generalWorkerService } from '../services/workers/general.service.worker.js'
 
 import { MIXPANEL_EVENTS, mixpanelTrack } from '../services/mixpanel/mixpanel.services.js'
+import Location from '../models/Location.js'
 
 // const dealExpireCron = () => {
 //   cron.schedule(
@@ -44,14 +45,20 @@ const dealExpireCron = () => {
       const expireDate = await generalWorkerService.call({
         name: 'expireDate',
       })
+      const filter = { end_date: { $lte: expireDate }, is_expired: false }
+      const toExpire = await Deal.find(filter)
 
-      if (expireDate) {
-        const expireReq = await Deal.updateMany(
-          { end_date: { $lte: expireDate }, is_expired: false },
-          { is_expired: true }
+      const proms = toExpire.map((deal) =>
+        Location.updateMany(
+          {
+            'restaurant.id': deal.restaurant.id,
+          },
+          { $pull: { active_deals: deal._id } }
         )
-        mixpanelTrack(MIXPANEL_EVENTS.cron_deals_expired, expireReq)
-      }
+      )
+      await Promise.all(proms)
+      const expiredReq = await Deal.updateMany(filter, { is_expired: true })
+      mixpanelTrack(MIXPANEL_EVENTS.cron_deals_expired, expiredReq)
     },
     { scheduled: true }
   )

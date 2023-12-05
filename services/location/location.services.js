@@ -5,6 +5,7 @@ const { capitalize } = _
 import { throwErr } from '../../routes/utilities/utilities.js'
 import axios from 'axios'
 import { countries } from '../../constants/countries.js'
+import Location from '../../models/Location.js'
 
 export const getLongLat = async (address) => {
   try {
@@ -102,4 +103,15 @@ export function hasMultipleTimezones(arrToTest) {
 export function findCountryPhoneCode(country) {
   const code = countries.find((c) => c.label === country)?.phone
   return `+${code}`
+}
+
+export const getLocationsToExpireFromDealsPromises = (deals) => {
+  return deals.map((deal) =>
+    Location.updateMany(
+      {
+        'restaurant.id': deal.restaurant.id,
+      },
+      { $pull: { active_deals: deal._id } }
+    )
+  )
 }

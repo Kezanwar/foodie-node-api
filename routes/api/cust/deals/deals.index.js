@@ -10,8 +10,8 @@ dotenv.config()
 
 const METER_TO_MILE_CONVERSION = 0.00062137
 
-const LIMIT = 10 //20 results at a time
-const RADIUS_METRES = 10000 //20km
+const LIMIT = 2 //20 results at a time
+const RADIUS_METRES = 20000 //20km
 const RADIUS_MILES = RADIUS_METRES * METER_TO_MILE_CONVERSION
 
 const r = 6371 // km
@@ -74,7 +74,6 @@ router.get('/feed', auth, async (req, res) => {
       {
         $limit: LIMIT,
       },
-
       // { $unwind: '$favourites' },
       { $unwind: '$locations' },
       {
@@ -183,7 +182,6 @@ router.get('/feed', auth, async (req, res) => {
           },
         },
       },
-
       {
         $project: {
           name: 1,
@@ -211,7 +209,7 @@ router.get('/feed', auth, async (req, res) => {
       params: [JSON.stringify(results), RADIUS_MILES],
     })
 
-    return res.json({ count: filtered.length, results: filtered })
+    return res.json({ nextCursor: filtered < LIMIT ? undefined : PAGE + 1, deals: filtered })
   } catch (error) {
     SendError(res, error)
   }

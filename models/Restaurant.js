@@ -2,7 +2,6 @@ import mongoose from 'mongoose'
 
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import User from './User.js'
-import LocationSchema from './schemas/LocationSchema.js'
 import { isMainThread } from 'node:worker_threads'
 import { prefixImageWithBaseUrl } from '../services/images/images.services.js'
 
@@ -53,11 +52,12 @@ const RestaurantSchema = new mongoose.Schema(
         },
       },
     },
-    locations: [
-      {
-        type: LocationSchema,
-      },
-    ],
+    // locations: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'location',
+    //   },
+    // ],
     contact_details: {
       // select: false,
       email: {
@@ -160,11 +160,6 @@ RestaurantSchema.methods.updateRegStep = async function (step) {
   await this.save()
 }
 
-RestaurantSchema.methods.getLocations = async function () {
-  if (!this.locations?.length) return []
-  return this.locations
-}
-
 RestaurantSchema.methods.toClient = function () {
   let returnToClient = this.toJSON()
   delete returnToClient._id
@@ -173,7 +168,6 @@ RestaurantSchema.methods.toClient = function () {
   delete returnToClient.super_admin
   delete returnToClient.createdAt
   delete returnToClient.updatedAt
-  delete returnToClient.locations
   delete returnToClient.image_uuid
   delete returnToClient.booking_clicks
   delete returnToClient.followers

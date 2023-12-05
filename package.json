@@ -23,6 +23,7 @@
     "dotenv": "^16.0.3",
     "ejs": "^3.1.9",
     "express": "^4.17.2",
+    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^6.7.0",
     "jsdom": "^21.1.0",
     "jsonwebtoken": "^8.5.1",

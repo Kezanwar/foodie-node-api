@@ -10,6 +10,7 @@ import auth from '../../../../middleware/auth.middleware.js'
 import restRoleGuard from '../../../../middleware/rest-role-guard.middleware.js'
 
 import Deal from '../../../../models/Deal.js'
+import Location from '../../../../models/Location.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -64,17 +65,18 @@ router.get('/overview', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acce
       },
     ])
 
-    const [active_deals, expired_deals, impressions_views_favourites] = await Promise.all([
+    const locationsProm = Location.count({ 'restaurant.id': restaurant._id })
+
+    const [active_deals, expired_deals, impressions_views_favourites, locations] = await Promise.all([
       active_deals_prom,
       expired_deals_prom,
       impressions_views_favourites_prom,
+      locationsProm,
     ])
 
     const booking_clicks = restaurant?.booking_clicks?.length || 0
 
     const followers = restaurant?.followers?.length || 0
-
-    const locations = restaurant?.locations?.length || 0
 
     return res
       .status(200)
