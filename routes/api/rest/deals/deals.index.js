@@ -23,6 +23,7 @@ import { SendError, capitalizeSentence, getID, throwErr } from '../../../utiliti
 
 import mongoose from 'mongoose'
 import { DEALS_PER_LOCATION } from '../../../../constants/deals.js'
+import Location from '../../../../models/Location.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -289,11 +290,12 @@ router.get(
 router.post(
   '/add',
   auth,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true, getLocations: true }),
   validate(addDealSchema),
   async (req, res) => {
     const {
       restaurant,
+      locations: restLocations,
       body: { start_date, end_date, name, description, locations },
       query: { current_date },
     } = req
@@ -306,7 +308,7 @@ router.post(
         $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
       })
 
-      const locationsCount = restaurant?.locations?.length || 0
+      const locationsCount = restLocations.length || 0
 
       if (activeDealsCount >= locationsCount * DEALS_PER_LOCATION) {
         throwErr('Maxmimum active deals limit reached', 402)
@@ -314,7 +316,7 @@ router.post(
 
       const locationsMap = locations
         .map((id) => {
-          const mappedLoc = restaurant.locations.find((rL) => getID(rL) === id)
+          const mappedLoc = restLocations.find((rL) => getID(rL) === id)
           return mappedLoc ? { location_id: id, geometry: mappedLoc.geometry, nickname: mappedLoc.nickname } : false
         })
         .filter(Boolean)
@@ -337,7 +339,16 @@ router.post(
         cuisines: restaurant.cuisines,
         is_expired: false,
       })
-      await deal.save()
+
+      const updateLocationsActiveDealProm = Location.updateMany(
+        {
+          'restaurant.id': restaurant._id,
+          _id: { $in: locations },
+        },
+        { $push: { active_deals: deal._id } }
+      )
+
+      await Promise.all([deal.save(), updateLocationsActiveDealProm])
       return res.status(200).json('Success')
     } catch (error) {
       SendError(res, error)
@@ -348,18 +359,19 @@ router.post(
 router.patch(
   '/edit/:id',
   auth,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true, getLocations: true }),
   validate(editDealSchema),
   async (req, res) => {
     const {
       restaurant,
+      locations: restLocations,
       params: { id },
       body: { name, description, end_date, locations },
     } = req
 
     const locationsMap = locations
       .map((id) => {
-        const mappedLoc = restaurant.locations.find((rL) => getID(rL) === id)
+        const mappedLoc = restLocations.find((rL) => getID(rL) === id)
         return mappedLoc ? { location_id: id, geometry: mappedLoc.geometry, nickname: mappedLoc.nickname } : false
       })
       .filter(Boolean)
@@ -373,11 +385,55 @@ router.patch(
       if (isBefore(new Date(end_date), new Date(deal.start_date))) {
         throwErr('Deal end date cannot be before the start date', 400)
       }
+
+      const proms = []
+
+      const locationsToRemove = deal.locations.reduce((acc, oldL) => {
+        if (!locations.find((newL) => oldL.location_id.toHexString() === newL)) {
+          acc.push(oldL.location_id)
+        }
+        return acc
+      }, [])
+
+      if (locationsToRemove?.length) {
+        proms.push(
+          Location.updateMany(
+            {
+              'restaurant.id': restaurant._id,
+              _id: { $in: locationsToRemove },
+            },
+            { $pull: { active_deals: deal._id } }
+          )
+        )
+      }
+
+      const locationsToAdd = locations.reduce((acc, newL) => {
+        if (!deal.locations.find((oldL) => oldL.location_id.toHexString() === newL)) {
+          acc.push(newL)
+        }
+        return acc
+      }, [])
+
+      if (locationsToAdd?.length) {
+        proms.push(
+          Location.updateMany(
+            {
+              'restaurant.id': restaurant._id,
+              _id: { $in: locationsToAdd },
+            },
+            { $push: { active_deals: deal._id } }
+          )
+        )
+      }
+
       deal.name = name
       deal.description = description
       deal.end_date = end_date
       deal.locations = locationsMap
-      await deal.save()
+
+      proms.push(deal.save())
+
+      await Promise.all(proms)
       return res.status(200).json('Success')
     } catch (error) {
       SendError(res, error)
@@ -398,7 +454,17 @@ router.post(
       const deal = await Deal.findById(id)
       if (!deal) throwErr('Deal not found', 400)
       if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to delete this deal', 400)
-      await deal.delete()
+
+      await Promise.all([
+        Location.updateMany(
+          {
+            'restaurant.id': restaurant._id,
+          },
+          { $pull: { active_deals: deal._id } }
+        ),
+        deal.delete(),
+      ])
+
       return res.status(200).json('Success')
     } catch (error) {
       SendError(res, error)
@@ -422,12 +488,26 @@ router.patch(
       if (!deal) throwErr('Deal not found', 400)
       if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to expire this deal', 400)
       if (deal.is_expired) throwErr('Deal is already expired', 400)
+      if (isBefore(new Date(), new Date(deal.start_date))) {
+        throwErr('You cant expire a deal that hasnt started yet', 400)
+      }
+      if (!end_date) throwErr('Must provide an end_date', 400)
       if (isBefore(new Date(end_date), new Date(deal.start_date))) {
-        throwErr('Deal end date cannot be before the start date', 400)
+        throwErr('You cant expire a deal that hasnt start yet... Deal end date cannot be before the start date', 400)
       }
       deal.is_expired = true
       deal.end_date = end_date
-      await deal.save()
+
+      await Promise.all([
+        Location.updateMany(
+          {
+            'restaurant.id': restaurant._id,
+          },
+          { $pull: { active_deals: deal._id } }
+        ),
+        deal.save(),
+      ])
+
       return res.status(200).json('Success')
     } catch (error) {
       SendError(res, error)

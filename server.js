@@ -18,6 +18,7 @@ import cors from 'cors'
 import RouterIndex from './routes/api/routes.index.js'
 import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
 import dealExpireCron from './crons/deal.crons.js'
+import ExpressMongoSanitize from 'express-mongo-sanitize'
 
 const app = express()
 
@@ -29,9 +30,13 @@ mixpanel.init(process.env.MIXPANEL_TOKEN, { host: 'api-eu.mixpanel.com' })
 app.set('view engine', 'ejs')
 app.use(json({ extended: false }))
 app.use(express.static(__dirname + '/public'))
-
 app.use(cors())
 app.use(rateLimiterMiddlware)
+app.use(
+  ExpressMongoSanitize({
+    allowDots: true,
+  })
+)
 
 app.get('/', (req, res) => res.send('Foodie API Running'))
 
