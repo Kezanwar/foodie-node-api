@@ -19,14 +19,6 @@ import RouterIndex from './routes/api/routes.index.js'
 import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
 import dealExpireCron from './crons/deal.crons.js'
 import ExpressMongoSanitize from 'express-mongo-sanitize'
-import Location from './models/Location.js'
-import Deal from './models/Deal.js'
-import User from './models/User.js'
-import Restaurant from './models/Restaurant.js'
-// import Deal from './models/Deal.js'
-// import Location from './models/Location.js'
-// import User from './models/User.js'
-// import Restaurant from './models/Restaurant.js'
 
 const app = express()
 
