@@ -3,31 +3,40 @@
 //  |   _|  _  |  _  |  _  |  |  -__|
 //  |__| |_____|_____|_____|__|_____|
 
+//defaults
 import express, { json } from 'express'
+import cors from 'cors'
 import dotenv from 'dotenv'
-import mixpanel from 'mixpanel'
 dotenv.config()
-import connectDB from './db/db.js'
+import mixpanel from 'mixpanel'
+import ExpressMongoSanitize from 'express-mongo-sanitize'
 import path from 'path'
 import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+//db
+import connectDB from './services/db/db.services.js'
+//api
+import RouterIndex from './api/routes.index.js'
 const PORT = process.env.PORT
-
-import cors from 'cors'
-import RouterIndex from './routes/api/routes.index.js'
+//middlewares
 import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
-import dealExpireCron from './crons/deal.crons.js'
-import ExpressMongoSanitize from 'express-mongo-sanitize'
+//crons
+import runCrons from './services/crons/crons.services.js'
 
+//create app
 const app = express()
 
+//initialize view engine
+app.set('view engine', 'ejs')
+
+//connect to database
 connectDB()
 
+//initialize mixpanel
 mixpanel.init(process.env.MIXPANEL_TOKEN, { host: 'api-eu.mixpanel.com' })
 
-// init middleware
-app.set('view engine', 'ejs')
+//initialize middlewares
 app.use(json({ extended: false }))
 app.use(express.static(__dirname + '/public'))
 app.use(cors())
@@ -38,10 +47,12 @@ app.use(
   })
 )
 
+//initialize api
 app.get('/', (req, res) => res.send('Foodie API Running'))
-
 app.use('/api', RouterIndex)
 
-dealExpireCron()
+//initialize crons
+runCrons()
 
+//start server
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`))

@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import User from './User.js'
 import { isMainThread } from 'node:worker_threads'
-import { prefixImageWithBaseUrl } from '../services/images/images.services.js'
+import { prefixImageWithBaseUrl } from '../utilities/images.js'
 
 const RestaurantSchema = new mongoose.Schema(
   {

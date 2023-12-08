@@ -1,6 +1,9 @@
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
-import { getUser, SendError, throwErr } from '../routes/utilities/utilities.js'
+
+import { SendError, throwErr } from '../utilities/error.js'
+import { getUser } from '../utilities/user.js'
+
 dotenv.config()
 
 const JWT_SECRET = process.env.JWT_SECRET
