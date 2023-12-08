@@ -1,6 +1,6 @@
 import { isBefore, isPast } from 'date-fns'
 import { object, string, array } from 'yup'
-import { matchesDateString } from '../routes/utilities/regex.js'
+import { matchesDateString } from '../utilities/regex.js'
 
 export const addDealSchema = object({
   body: object({
