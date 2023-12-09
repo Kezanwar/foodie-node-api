@@ -1,10 +1,10 @@
 import { Router } from 'express'
-import AuthRouter from './auth/auth.index.js'
-import RestRouter from './rest/rest.index.js'
-import CustRouter from './cust/cust.index.js'
-import OptionsRouter from './options/options.index.js'
+import AuthRouter from './auth/index.js'
+import RestRouter from './rest/index.js'
+import CustRouter from './cust/index.js'
+import OptionsRouter from './options/index.js'
 
-import PrototypeRouter from './prototype.router.js'
+import PrototypeRouter from './prototype.js'
 import { appEnv } from '../config/config.js'
 
 const router = Router()

@@ -7,8 +7,8 @@ dotenv.config()
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 
-import auth from '../../../middleware/auth.middleware.js'
-import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
+import auth from '../../../middleware/auth.js'
+import restRoleGuard from '../../../middleware/rest-role-guard.js'
 
 import Restaurant from '../../../models/Restaurant.js'
 
@@ -17,16 +17,16 @@ import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '../..
 import { email_addresses } from '../../../constants/email.js'
 import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '../../../constants/images.js'
 
-import transporter from '../../../services/email/email.services.js'
-import { workerService } from '../../../services/worker/worker.services.js'
-import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/aws.services.js'
+import transporter from '../../../services/email/email.js'
+import { workerService } from '../../../services/worker/worker.js'
+import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/aws.js'
 
-import validate from '../../../middleware/validation.middleware.js'
+import validate from '../../../middleware/validation.js'
 import {
   companyInfoSchema,
   restaurantDetailsSchema,
   restaurantSubmitApplicationSchema,
-} from '../../../validation/create-restaurant.validation.js'
+} from '../../../validation/create-restaurant.js'
 
 import { createImageName, createImgUUID } from '../../../utilities/images.js'
 import { SendError, throwErr } from '../../../utilities/error.js'

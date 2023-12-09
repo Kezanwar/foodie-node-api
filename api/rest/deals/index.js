@@ -14,12 +14,12 @@ import { RESTAURANT_ROLES } from '../../../constants/restaurant.js'
 import { DEALS_PER_LOCATION } from '../../../constants/deals.js'
 
 // middlewares
-import auth from '../../../middleware/auth.middleware.js'
-import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
-import validate from '../../../middleware/validation.middleware.js'
+import auth from '../../../middleware/auth.js'
+import restRoleGuard from '../../../middleware/rest-role-guard.js'
+import validate from '../../../middleware/validation.js'
 
 // validations
-import { addDealSchema, editDealSchema } from '../../../validation/deals.validation.js'
+import { addDealSchema, editDealSchema } from '../../../validation/deals.js'
 
 // utils
 import { SendError, throwErr } from '../../../utilities/error.js'

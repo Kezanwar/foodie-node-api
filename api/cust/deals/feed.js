@@ -3,7 +3,7 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import auth from '../../../middleware/auth.middleware.js'
+import auth from '../../../middleware/auth.js'
 
 import Location from '../../../models/Location.js'
 

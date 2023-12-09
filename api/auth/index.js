@@ -11,15 +11,15 @@ import bcrypt from 'bcryptjs'
 import User from '../../models/User.js'
 
 // middlewares
-import auth from '../../middleware/auth.middleware.js'
+import auth from '../../middleware/auth.js'
 
-import transporter from '../../services/email/email.services.js'
+import transporter from '../../services/email/email.js'
 
 import { AUTH_METHODS, JWT_SECRET } from '../../constants/auth.js'
 import { confirm_email_content, email_addresses } from '../../constants/email.js'
 
-import { loginUserSchema, registerUserSchema } from '../../validation/auth.validation.js'
-import validate from '../../middleware/validation.middleware.js'
+import { loginUserSchema, registerUserSchema } from '../../validation/auth.js'
+import validate from '../../middleware/validation.js'
 
 import { SendError, throwErr } from '../../utilities/error.js'
 import { findUserByEmail, findUserByEmailWithPassword } from '../../utilities/user.js'

@@ -5,8 +5,8 @@ dotenv.config()
 
 import { RESTAURANT_ROLES } from '../../../constants/restaurant.js'
 
-import auth from '../../../middleware/auth.middleware.js'
-import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
+import auth from '../../../middleware/auth.js'
+import restRoleGuard from '../../../middleware/rest-role-guard.js'
 
 import Deal from '../../../models/Deal.js'
 import Location from '../../../models/Location.js'

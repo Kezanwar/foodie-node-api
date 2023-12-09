@@ -1,7 +1,7 @@
 import { Router } from 'express'
 
-import FeedRouter from './deals.feed.js'
-import SearchRouter from './deals.search.js'
+import FeedRouter from './feed.js'
+import SearchRouter from './search.js'
 
 const router = Router()
 
