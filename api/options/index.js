@@ -9,7 +9,7 @@ import Cuisine from '../../models/Cuisine.js'
 import DietaryRequirement from '../../models/DietaryRequirement.js'
 
 // middlewares
-import auth from '../../middleware/auth.middleware.js'
+import auth from '../../middleware/auth.js'
 
 import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '../../constants/categories.js'
 
@@ -18,7 +18,7 @@ import {
   cacheGetDietaryRequirements,
   cachePutCuisines,
   cachePutDietaryRequirements,
-} from '../../services/cache/cache.services.js'
+} from '../../services/cache/cache.js'
 import { SendError } from '../../utilities/error.js'
 
 //* route GET api/auth/initialize

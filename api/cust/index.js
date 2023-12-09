@@ -1,8 +1,8 @@
 import { Router } from 'express'
 
-import DealsRouter from './deals/deals.index.js'
-import PreferencesRouter from './preferences/preferences.index.js'
-import FavouritesRouter from './favourites/favourites.index.js'
+import DealsRouter from './deals/index.js'
+import PreferencesRouter from './preferences/index.js'
+import FavouritesRouter from './favourites/index.js'
 
 const router = Router()
 

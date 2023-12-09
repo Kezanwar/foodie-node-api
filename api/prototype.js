@@ -15,7 +15,7 @@ dotenv.config()
 import { renderFile } from 'ejs'
 import { confirm_email_content, email_addresses } from '../constants/email.js'
 
-import transporter from '../services/email/email.services.js'
+import transporter from '../services/email/email.js'
 import { createOTP } from '../utilities/otp.js'
 import { SendError, throwErr } from '../utilities/error.js'
 

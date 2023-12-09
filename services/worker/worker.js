@@ -1,4 +1,4 @@
-import { worker } from './worker.init.js'
+import { worker } from './initialize.js'
 
 export const workerService = await worker.launchService({
   exceptionHandler({ error }) {

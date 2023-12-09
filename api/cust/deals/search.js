@@ -3,11 +3,11 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import auth from '../../../middleware/auth.middleware.js'
+import auth from '../../../middleware/auth.js'
 
 import Deal from '../../../models/Deal.js'
 
-import { workerService } from '../../../services/worker/worker.services.js'
+import { workerService } from '../../../services/worker/worker.js'
 
 import { SendError, throwErr } from '../../../utilities/error.js'
 

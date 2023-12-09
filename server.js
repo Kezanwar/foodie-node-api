@@ -15,14 +15,14 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 //db
-import connectDB from './services/db/db.services.js'
+import connectDB from './services/db/db.js'
 //api
-import RouterIndex from './api/routes.index.js'
+import api from './api/index.js'
 const PORT = process.env.PORT
 //middlewares
-import rateLimiterMiddlware from './middleware/rate-limit.middleware.js'
+import rateLimiterMiddlware from './middleware/rate-limit.js'
 //crons
-import runCrons from './services/crons/crons.services.js'
+import runCrons from './services/crons/crons.js'
 
 //create app
 const app = express()
@@ -49,7 +49,7 @@ app.use(
 
 //initialize api
 app.get('/', (req, res) => res.send('Foodie API Running'))
-app.use('/api', RouterIndex)
+app.use('/api', api)
 
 //initialize crons
 runCrons()

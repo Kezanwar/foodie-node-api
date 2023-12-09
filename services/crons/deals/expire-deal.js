@@ -1,9 +1,9 @@
 import * as cron from 'node-cron'
 import Deal from '../../../models/Deal.js'
 
-import { workerService } from '../../worker/worker.services.js'
+import { workerService } from '../../worker/worker.js'
 
-import { MIXPANEL_EVENTS, mixpanelTrack } from '../../mixpanel/mixpanel.services.js'
+import { MIXPANEL_EVENTS, mixpanelTrack } from '../../mixpanel/mixpanel.js'
 import Location from '../../../models/Location.js'
 
 // const dealExpireCron = () => {

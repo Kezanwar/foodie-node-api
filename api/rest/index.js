@@ -1,10 +1,10 @@
 import { Router } from 'express'
 
-import CreateRestaurantRouter from './create-restaurant/create-restaurant.index.js'
-import RestaurantRouter from './restaurant/restaurant.index.js'
-import LocationsRouter from './locations/locations.index.js'
-import DealsRouter from './deals/deals.index.js'
-import DashboardRouter from './dashboard/dashboard.index.js'
+import CreateRestaurantRouter from './create-restaurant/index.js'
+import RestaurantRouter from './restaurant/index.js'
+import LocationsRouter from './locations/index.js'
+import DealsRouter from './deals/index.js'
+import DashboardRouter from './dashboard/index.js'
 
 const router = Router()
 

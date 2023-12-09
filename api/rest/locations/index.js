@@ -9,18 +9,18 @@ import Location from '../../../models/Location.js'
 
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES } from '../../../constants/restaurant.js'
 
-import auth from '../../../middleware/auth.middleware.js'
-import validate from '../../../middleware/validation.middleware.js'
-import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
+import auth from '../../../middleware/auth.js'
+import validate from '../../../middleware/validation.js'
+import restRoleGuard from '../../../middleware/rest-role-guard.js'
 
-import { addLocationSchema, checkLocationSchema } from '../../../validation/locations.validation.js'
+import { addLocationSchema, checkLocationSchema } from '../../../validation/locations.js'
 
 import { findRestaurantsLocations, getLongLat, getTimezone } from '../../../utilities/locations.js'
 import { allCapsNoSpace } from '../../../utilities/strings.js'
 import { SendError, throwErr } from '../../../utilities/error.js'
 import { getID, removeDocumentValues } from '../../../utilities/document.js'
 
-import { workerService } from '../../../services/worker/worker.services.js'
+import { workerService } from '../../../services/worker/worker.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check

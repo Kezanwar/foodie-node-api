@@ -8,16 +8,16 @@ const upload = multer({ storage: storage })
 
 import Restaurant from '../../../models/Restaurant.js'
 
-import auth from '../../../middleware/auth.middleware.js'
+import auth from '../../../middleware/auth.js'
 
-import restRoleGuard from '../../../middleware/rest-role-guard.middleware.js'
+import restRoleGuard from '../../../middleware/rest-role-guard.js'
 import { RESTAURANT_ROLES } from '../../../constants/restaurant.js'
-import validate from '../../../middleware/validation.middleware.js'
-import { restaurantDetailsSchema } from '../../../validation/create-restaurant.validation.js'
+import validate from '../../../middleware/validation.js'
+import { restaurantDetailsSchema } from '../../../validation/create-restaurant.js'
 import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '../../../constants/images.js'
 import { createImageName } from '../../../utilities/images.js'
-import { workerService } from '../../../services/worker/worker.services.js'
-import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/aws.services.js'
+import { workerService } from '../../../services/worker/worker.js'
+import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/aws.js'
 import Deal from '../../../models/Deal.js'
 import { SendError, throwErr } from '../../../utilities/error.js'
 

@@ -2,7 +2,7 @@ import { Router } from 'express'
 const router = Router()
 import dotenv from 'dotenv'
 
-import auth from '../../../middleware/auth.middleware.js'
+import auth from '../../../middleware/auth.js'
 import { SendError } from '../../../utilities/error.js'
 
 dotenv.config()

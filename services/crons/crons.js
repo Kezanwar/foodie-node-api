@@ -1,4 +1,4 @@
-import expireDeals from './deals/expire-deal.cron.js'
+import expireDeals from './deals/expire-deal.js'
 
 const runCrons = () => {
   expireDeals()
