@@ -18,7 +18,7 @@ import {
   cacheGetDietaryRequirements,
   cachePutCuisines,
   cachePutDietaryRequirements,
-} from '../../services/cache/cache.js'
+} from '../../services/cache/index.js'
 import { SendError } from '../../utilities/error.js'
 
 //* route GET api/auth/initialize

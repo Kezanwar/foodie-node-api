@@ -7,7 +7,7 @@ import auth from '../../../middleware/auth.js'
 
 import Deal from '../../../models/Deal.js'
 
-import { workerService } from '../../../services/worker/worker.js'
+import { workerService } from '../../../services/worker/index.js'
 
 import { SendError, throwErr } from '../../../utilities/error.js'
 
