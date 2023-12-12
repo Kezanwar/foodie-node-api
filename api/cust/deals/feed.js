@@ -110,7 +110,7 @@ router.get('/', auth, async (req, res) => {
           deal: {
             name: '$deals.name',
             description: '$deals.description',
-            deal_id: '$deals._id',
+            id: '$deals._id',
             is_favourited: {
               $cond: { if: { $eq: [{ $size: '$deals.match_fav' }, 1] }, then: true, else: false },
             },
