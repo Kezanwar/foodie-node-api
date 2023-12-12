@@ -17,9 +17,9 @@ import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '../..
 import { email_addresses } from '../../../constants/email.js'
 import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '../../../constants/images.js'
 
-import transporter from '../../../services/email/email.js'
-import { workerService } from '../../../services/worker/worker.js'
-import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/aws.js'
+import transporter from '../../../services/email/index.js'
+import { workerService } from '../../../services/worker/index.js'
+import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/index.js'
 
 import validate from '../../../middleware/validation.js'
 import {

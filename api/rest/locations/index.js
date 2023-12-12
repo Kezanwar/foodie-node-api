@@ -20,7 +20,7 @@ import { allCapsNoSpace } from '../../../utilities/strings.js'
 import { SendError, throwErr } from '../../../utilities/error.js'
 import { getID, removeDocumentValues } from '../../../utilities/document.js'
 
-import { workerService } from '../../../services/worker/worker.js'
+import { workerService } from '../../../services/worker/index.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check

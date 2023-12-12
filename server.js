@@ -15,14 +15,14 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 //db
-import connectDB from './services/db/db.js'
+import connectDB from './services/db/index.js'
 //api
 import api from './api/index.js'
 const PORT = process.env.PORT
 //middlewares
 import rateLimiterMiddlware from './middleware/rate-limit.js'
 //crons
-import runCrons from './services/crons/crons.js'
+import runCrons from './services/crons/index.js'
 
 //create app
 const app = express()
