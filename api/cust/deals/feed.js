@@ -47,6 +47,8 @@ router.get('/', auth, async (req, res) => {
     const LONG = Number(long)
     const LAT = Number(lat)
 
+    console.log({ lat, long })
+
     const PAGE = page ? Number(page) : 0
 
     for (let n of [LONG, LAT, PAGE]) {
@@ -78,6 +80,7 @@ router.get('/', auth, async (req, res) => {
           from: 'deals', // Replace with the name of your linked collection
           localField: 'active_deals',
           foreignField: '_id',
+          let: { locationId: '$_id' },
           pipeline: [
             {
               $project: {
@@ -86,10 +89,7 @@ router.get('/', auth, async (req, res) => {
                     input: '$favourites',
                     as: 'fav',
                     cond: {
-                      $and: [
-                        { $eq: ['$$fav.user', req.user._id] },
-                        { $eq: ['$$fav.location_id', '$locations.location_id'] },
-                      ],
+                      $and: [{ $eq: ['$$fav.user', req.user._id] }, { $eq: ['$$fav.location_id', '$$locationId'] }],
                     },
                     limit: 1,
                   },
@@ -112,7 +112,11 @@ router.get('/', auth, async (req, res) => {
             description: '$deals.description',
             id: '$deals._id',
             is_favourited: {
-              $cond: { if: { $eq: [{ $size: '$deals.match_fav' }, 1] }, then: true, else: false },
+              $cond: {
+                if: { $eq: [{ $size: { $ifNull: ['$deals.match_fav', []] } }, 1] },
+                then: true,
+                else: false,
+              },
             },
           },
           restaurant: {
