@@ -8,7 +8,7 @@ import User from '../../../models/User.js'
 
 import { SendError, throwErr } from '../../../utilities/error.js'
 
-router.post('/favourite', auth, async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const {
     body: { location_id, deal_id },
     user,
@@ -52,7 +52,7 @@ router.post('/favourite', auth, async (req, res) => {
   }
 })
 
-router.patch('/favourite', auth, async (req, res) => {
+router.patch('/', auth, async (req, res) => {
   const {
     body: { location_id, deal_id },
     user,
