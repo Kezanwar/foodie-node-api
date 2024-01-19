@@ -52,7 +52,7 @@ router.post('/favourite', auth, async (req, res) => {
   }
 })
 
-router.post('/unfavourite', auth, async (req, res) => {
+router.patch('/favourite', auth, async (req, res) => {
   const {
     body: { location_id, deal_id },
     user,
