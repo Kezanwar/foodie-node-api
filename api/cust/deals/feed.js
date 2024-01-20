@@ -47,8 +47,6 @@ router.get('/', auth, async (req, res) => {
     const LONG = Number(long)
     const LAT = Number(lat)
 
-    console.log({ lat, long })
-
     const PAGE = page ? Number(page) : 0
 
     for (let n of [LONG, LAT, PAGE]) {
