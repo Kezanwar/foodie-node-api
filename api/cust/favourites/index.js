@@ -13,6 +13,7 @@ router.post('/', auth, async (req, res) => {
     body: { location_id, deal_id },
     user,
   } = req
+
   try {
     if (!deal_id || !location_id) throwErr('Deal/Location ID not passed', 401)
 
@@ -22,8 +23,8 @@ router.post('/', auth, async (req, res) => {
       {
         _id: deal_id,
         $and: [
-          { 'favourites.user': { $ne: newDealFavourite.user } },
-          { 'favourites.location_id': { $ne: newDealFavourite.location_id } },
+          { '$favourites.user': { $ne: newDealFavourite.user } },
+          { '$favourites.location_id': { $ne: newDealFavourite.location_id } },
         ],
       },
       { $addToSet: { favourites: { user: user._id, location_id } } }
@@ -39,14 +40,14 @@ router.post('/', auth, async (req, res) => {
       {
         _id: req.user._id,
         $and: [
-          { 'favourites.deal': { $ne: newUserFavourite.deal } },
-          { 'favourites.location_id': { $ne: newUserFavourite.location_id } },
+          { '$favourites.deal': { $ne: newUserFavourite.deal } },
+          { '$favourites.location_id': { $ne: newUserFavourite.location_id } },
         ],
       },
       { $addToSet: { favourites: { deal: deal_id, location_id } } }
     )
 
-    return res.json('Success')
+    return res.json({ deal_id, location_id, is_favourited: true })
   } catch (error) {
     SendError(res, error)
   }
@@ -65,7 +66,7 @@ router.patch('/', auth, async (req, res) => {
 
     await Promise.all([dealProm, userProm])
 
-    return res.json('Success')
+    return res.json({ deal_id, location_id, is_favourited: false })
   } catch (error) {
     SendError(res, error)
   }
