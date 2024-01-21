@@ -18,7 +18,7 @@ import transporter from '../../services/email/index.js'
 import { AUTH_METHODS, JWT_SECRET } from '../../constants/auth.js'
 import { confirm_email_content, email_addresses } from '../../constants/email.js'
 
-import { loginUserSchema, registerUserSchema } from '../../validation/auth.js'
+import { loginUserSchema, registerUserSchema } from '../../validation/auth/auth.js'
 import validate from '../../middleware/validation.js'
 
 import { SendError, throwErr } from '../../utilities/error.js'

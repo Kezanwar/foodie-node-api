@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import mongoose from 'mongoose'
+
 const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
@@ -19,11 +19,11 @@ import restRoleGuard from '../../../middleware/rest-role-guard.js'
 import validate from '../../../middleware/validation.js'
 
 // validations
-import { addDealSchema, editDealSchema } from '../../../validation/deals.js'
+import { addDealSchema, editDealSchema } from '../../../validation/restaurant/deals.js'
 
 // utils
 import { SendError, throwErr } from '../../../utilities/error.js'
-import { getID } from '../../../utilities/document.js'
+import { getID, makeMongoIDs } from '../../../utilities/document.js'
 import { capitalizeSentence } from '../../../utilities/strings.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
@@ -168,7 +168,7 @@ router.get(
         {
           $match: {
             'restaurant.id': restaurant._id,
-            _id: mongoose.Types.ObjectId(id),
+            _id: makeMongoIDs(id),
           },
         },
         {
@@ -258,7 +258,7 @@ router.get(
         {
           $match: {
             'restaurant.id': restaurant._id,
-            _id: mongoose.Types.ObjectId(id),
+            _id: makeMongoIDs(id),
           },
         },
         {

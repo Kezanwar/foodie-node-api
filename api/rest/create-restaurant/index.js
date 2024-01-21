@@ -26,7 +26,7 @@ import {
   companyInfoSchema,
   restaurantDetailsSchema,
   restaurantSubmitApplicationSchema,
-} from '../../../validation/create-restaurant.js'
+} from '../../../validation/restaurant/create-restaurant.js'
 
 import { createImageName, createImgUUID } from '../../../utilities/images.js'
 import { SendError, throwErr } from '../../../utilities/error.js'

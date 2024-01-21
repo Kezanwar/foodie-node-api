@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import mongoose from 'mongoose'
+
 const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
@@ -13,12 +13,12 @@ import auth from '../../../middleware/auth.js'
 import validate from '../../../middleware/validation.js'
 import restRoleGuard from '../../../middleware/rest-role-guard.js'
 
-import { addLocationSchema, checkLocationSchema } from '../../../validation/locations.js'
+import { addLocationSchema, checkLocationSchema } from '../../../validation/restaurant/locations.js'
 
 import { findRestaurantsLocations, getLongLat, getTimezone } from '../../../utilities/locations.js'
 import { allCapsNoSpace } from '../../../utilities/strings.js'
 import { SendError, throwErr } from '../../../utilities/error.js'
-import { getID, removeDocumentValues } from '../../../utilities/document.js'
+import { getID, makeMongoIDs, removeDocumentValues } from '../../../utilities/document.js'
 
 import { workerService } from '../../../services/worker/index.js'
 
@@ -296,7 +296,7 @@ router.patch(
           },
         },
         {
-          arrayFilters: [{ 'loc.location_id': mongoose.Types.ObjectId(id) }],
+          arrayFilters: [{ 'loc.location_id': makeMongoIDs(id) }],
         }
       )
 
