@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import mongoose from 'mongoose'
 
 export function getDocumentValues(arrayOfRequiredKeys, document) {
   if (!arrayOfRequiredKeys || !Array.isArray(arrayOfRequiredKeys || !document))
@@ -26,4 +27,9 @@ export function removeObjectValues(arrayOfUnrequiredKeys, object) {
 
 export const getID = (doc) => {
   return doc?._id?.toHexString ? doc?._id?.toHexString() : doc?.id?.toHexString() || doc?.id
+}
+
+export function makeMongoIDs(...args) {
+  if (args.length === 1) return mongoose.Types.ObjectId(args[0])
+  else return args.map((i) => mongoose.Types.ObjectId(i))
 }

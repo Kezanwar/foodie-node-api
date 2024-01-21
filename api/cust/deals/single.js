@@ -4,9 +4,9 @@ import dotenv from 'dotenv'
 import { SendError, throwErr } from '../../../utilities/error.js'
 import auth from '../../../middleware/auth.js'
 import Deal from '../../../models/Deal.js'
-import mongoose from 'mongoose'
 import validate from '../../../middleware/validation.js'
 import { singleDealSchema } from '../../../validation/customer/deal.js'
+import { makeMongoIDs } from '../../../utilities/document.js'
 dotenv.config()
 
 router.get('/', auth, validate(singleDealSchema), async (req, res) => {
@@ -14,8 +14,7 @@ router.get('/', auth, validate(singleDealSchema), async (req, res) => {
     body: { deal_id, location_id },
   } = req
 
-  const dealID = mongoose.Types.ObjectId(deal_id)
-  const locationID = mongoose.Types.ObjectId(location_id)
+  const [dealID, locationID] = makeMongoIDs(location_id, deal_id)
 
   try {
     const deal = await Deal.aggregate([
@@ -66,7 +65,6 @@ router.get('/', auth, validate(singleDealSchema), async (req, res) => {
       },
     ])
 
-    console.log(deal)
     if (!deal.length) throwErr('Deal not found', 404)
 
     res.json(deal[0])
