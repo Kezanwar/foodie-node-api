@@ -19,7 +19,7 @@ import restRoleGuard from '../../../middleware/rest-role-guard.js'
 import validate from '../../../middleware/validation.js'
 
 // validations
-import { addDealSchema, editDealSchema } from '../../../validation/deals.js'
+import { addDealSchema, editDealSchema } from '../../../validation/restaurant/deals.js'
 
 // utils
 import { SendError, throwErr } from '../../../utilities/error.js'

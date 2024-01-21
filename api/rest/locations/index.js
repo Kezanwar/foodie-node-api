@@ -13,7 +13,7 @@ import auth from '../../../middleware/auth.js'
 import validate from '../../../middleware/validation.js'
 import restRoleGuard from '../../../middleware/rest-role-guard.js'
 
-import { addLocationSchema, checkLocationSchema } from '../../../validation/locations.js'
+import { addLocationSchema, checkLocationSchema } from '../../../validation/restaurant/locations.js'
 
 import { findRestaurantsLocations, getLongLat, getTimezone } from '../../../utilities/locations.js'
 import { allCapsNoSpace } from '../../../utilities/strings.js'
