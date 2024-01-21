@@ -9,12 +9,12 @@ import { singleDealSchema } from '../../../validation/customer/deal.js'
 import { makeMongoIDs } from '../../../utilities/document.js'
 dotenv.config()
 
-router.get('/', auth, validate(singleDealSchema), async (req, res) => {
+router.get('/', auth, validate(singleDealSchema('query')), async (req, res) => {
   const {
-    body: { deal_id, location_id },
+    query: { deal_id, location_id },
   } = req
 
-  const [dealID, locationID] = makeMongoIDs(location_id, deal_id)
+  const [dealID, locationID] = makeMongoIDs(deal_id, location_id)
 
   try {
     const deal = await Deal.aggregate([
