@@ -9,9 +9,9 @@ import User from '../../../models/User.js'
 import { SendError, throwErr } from '../../../utilities/error.js'
 
 import validate from '../../../middleware/validation.js'
-import { singleDealSchema } from '../../../validation/customer/deal.js'
+import { favouriteDealSchema } from '../../../validation/customer/deal.js'
 
-router.post('/', auth, validate(singleDealSchema('body')), async (req, res) => {
+router.post('/', auth, validate(favouriteDealSchema), async (req, res) => {
   const {
     body: { location_id, deal_id },
     user,
@@ -56,7 +56,7 @@ router.post('/', auth, validate(singleDealSchema('body')), async (req, res) => {
   }
 })
 
-router.patch('/', auth, validate(singleDealSchema('body')), async (req, res) => {
+router.patch('/', auth, validate(favouriteDealSchema), async (req, res) => {
   const {
     body: { location_id, deal_id },
     user,
