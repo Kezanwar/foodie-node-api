@@ -328,7 +328,7 @@ router.post(
         start_date,
         end_date,
         name: capitalizeSentence(name),
-        description,
+        description: description.trim(),
         locations: locationsMap,
         restaurant: {
           id: restaurant._id,

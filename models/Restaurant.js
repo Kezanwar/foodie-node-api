@@ -4,6 +4,7 @@ import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import User from './User.js'
 import { isMainThread } from 'node:worker_threads'
 import { prefixImageWithBaseUrl } from '../utilities/images.js'
+import { FollowSchemaRestaurant } from './schemas/FollowSchema.js'
 
 const RestaurantSchema = new mongoose.Schema(
   {
@@ -52,12 +53,6 @@ const RestaurantSchema = new mongoose.Schema(
         },
       },
     },
-    // locations: [
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'location',
-    //   },
-    // ],
     contact_details: {
       // select: false,
       email: {
@@ -87,12 +82,7 @@ const RestaurantSchema = new mongoose.Schema(
         type: String,
       },
     },
-    followers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
-      },
-    ],
+    followers: [FollowSchemaRestaurant],
     cuisines: [CategorySchemaWithIndex],
     dietary_requirements: [CategorySchemaWithIndex],
     reviews: [
