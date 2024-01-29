@@ -5,15 +5,16 @@ import { SendError, throwErr } from '../../../utilities/error.js'
 import auth from '../../../middleware/auth.js'
 import Deal from '../../../models/Deal.js'
 import validate from '../../../middleware/validation.js'
-// import { singleDealSchema } from '../../../validation/customer/deal.js'
 import { makeMongoIDs } from '../../../utilities/document.js'
 import { calculateDistancePipeline } from '../../../utilities/distance-pipeline.js'
 import { singleDealSchema } from '../../../validation/customer/deal.js'
+import { workerService } from '../../../services/worker/index.js'
 
 dotenv.config()
 
 router.get('/', auth, validate(singleDealSchema), async (req, res) => {
   const {
+    user,
     query: { deal_id, location_id, long, lat },
   } = req
 
@@ -23,7 +24,7 @@ router.get('/', auth, validate(singleDealSchema), async (req, res) => {
 
     const [dealID, locationID] = makeMongoIDs(deal_id, location_id)
 
-    const deal = await Deal.aggregate([
+    const dealProm = Deal.aggregate([
       {
         $match: {
           _id: dealID,
@@ -43,16 +44,43 @@ router.get('/', auth, validate(singleDealSchema), async (req, res) => {
               0,
             ],
           },
-          match_fav: {
-            $filter: {
-              input: '$favourites',
-              as: 'fav',
-              cond: {
-                $and: [{ $eq: ['$$fav.user', req.user._id] }, { $eq: ['$$fav.location_id', locationID] }],
+        },
+      },
+      {
+        $lookup: {
+          from: 'locations', // Replace with the name of your linked collection
+          localField: 'matchedLocation.location_id',
+          foreignField: '_id',
+          as: 'loc',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                opening_times: 1,
+                address: 1,
+                phone_number: 1,
+                email: 1,
+                geometry: 1,
+                nickname: 1,
               },
-              limit: 1,
             },
-          },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'restaurants', // Replace with the name of your linked collection
+          localField: 'restaurant.id',
+          foreignField: '_id',
+          as: 'rest',
+          pipeline: [
+            {
+              $project: {
+                bio: 1,
+                booking_link: 1,
+              },
+            },
+          ],
         },
       },
 
@@ -60,23 +88,18 @@ router.get('/', auth, validate(singleDealSchema), async (req, res) => {
 
       {
         $project: {
-          is_favourited: {
-            $cond: {
-              if: { $eq: [{ $size: { $ifNull: ['$deals.match_fav', []] } }, 1] },
-              then: true,
-              else: false,
-            },
-          },
           restaurant: {
             id: '$restaurant.id',
             name: '$restaurant.name',
             avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
             cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
+            bio: { $arrayElemAt: ['$rest.bio', 0] },
+            booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
           },
           name: 1,
           distance_miles: 1,
           description: 1,
-          location: '$matchedLocation', // Get the first matched location
+          location: { $arrayElemAt: ['$loc', 0] },
           cuisines: 1,
           dietary_requirements: 1,
           is_expired: 1,
@@ -85,7 +108,17 @@ router.get('/', auth, validate(singleDealSchema), async (req, res) => {
       },
     ])
 
+    const followFavProm = workerService.call({
+      name: 'hasFavouritedDealAndFollowedRest',
+      params: [JSON.stringify(user), deal_id, location_id],
+    })
+
+    const [deal, followFav] = await Promise.all([dealProm, followFavProm])
+
     if (!deal.length) throwErr('Deal not found', 404)
+
+    deal[0].is_favourited = followFav.is_favourited
+    deal[0].is_following = followFav.is_following
 
     res.json(deal[0])
   } catch (error) {
