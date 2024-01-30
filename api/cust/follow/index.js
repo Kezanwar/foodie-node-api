@@ -9,17 +9,16 @@ import Restaurant from '../../../models/Restaurant.js'
 import { SendError, throwErr } from '../../../utilities/error.js'
 
 import validate from '../../../middleware/validation.js'
-import { favouriteDealSchema } from '../../../validation/customer/deal.js'
+import { followRestSchema } from '../../../validation/customer/follow.js'
 
-router.post('/', auth, async (req, res) => {
+router.post('/', validate(followRestSchema), auth, async (req, res) => {
   const {
     body: { location_id, rest_id },
     user,
   } = req
 
+  console.log('follow')
   try {
-    if (!rest_id || !location_id) throwErr('Restaurant/Location ID not passed', 401)
-
     const newRestFollower = { user: user._id, location_id }
 
     const updateDeal = await Restaurant.updateOne(
@@ -47,7 +46,7 @@ router.post('/', auth, async (req, res) => {
           { '$following.location_id': { $ne: newUserFollower.location_id } },
         ],
       },
-      { $addToSet: { following: { deal: rest_id, location_id } } }
+      { $addToSet: { following: { restaurant: rest_id, location_id } } }
     )
 
     return res.json({ rest_id, location_id, is_following: true })
@@ -56,20 +55,21 @@ router.post('/', auth, async (req, res) => {
   }
 })
 
-router.patch('/', auth, validate(favouriteDealSchema), async (req, res) => {
+router.patch('/', auth, validate(followRestSchema), async (req, res) => {
   const {
     body: { location_id, rest_id },
     user,
   } = req
-  try {
-    if (!rest_id || !location_id) throwErr('Restaurant/Location ID not passed', 401)
 
+  console.log('unfollow')
+
+  try {
     const restProm = Restaurant.updateOne({ _id: rest_id }, { $pull: { followers: { user: user._id, location_id } } })
     const userProm = User.updateOne({ _id: user._id }, { $pull: { following: { restaurant: rest_id, location_id } } })
 
     await Promise.all([restProm, userProm])
 
-    return res.json({ rest_id, location_id, is_favourited: false })
+    return res.json({ rest_id, location_id, is_following: false })
   } catch (error) {
     SendError(res, error)
   }

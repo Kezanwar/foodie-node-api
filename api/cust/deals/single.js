@@ -121,6 +121,8 @@ router.get('/', auth, validate(singleDealSchema), async (req, res) => {
     deal[0].is_following = followFav.is_following
 
     res.json(deal[0])
+
+    // TODO: Add a view to deal here after response has been sent using prom.then
   } catch (error) {
     SendError(res, error)
   }

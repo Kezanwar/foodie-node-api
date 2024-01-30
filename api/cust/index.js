@@ -12,6 +12,6 @@ const router = Router()
 router.use('/deals', DealsRouter)
 router.use('/preferences', PreferencesRouter)
 router.use('/favourites', FavouritesRouter)
-router.use('/follow', FollowRouter)
+router.use('/following', FollowRouter)
 
 export default router
