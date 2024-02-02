@@ -17,7 +17,6 @@ router.post('/', validate(followRestSchema), auth, async (req, res) => {
     user,
   } = req
 
-  console.log('follow')
   try {
     const newRestFollower = { user: user._id, location_id }
 
@@ -60,8 +59,6 @@ router.patch('/', auth, validate(followRestSchema), async (req, res) => {
     body: { location_id, rest_id },
     user,
   } = req
-
-  console.log('unfollow')
 
   try {
     const restProm = Restaurant.updateOne({ _id: rest_id }, { $pull: { followers: { user: user._id, location_id } } })
