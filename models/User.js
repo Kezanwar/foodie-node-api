@@ -67,7 +67,6 @@ UserSchema.methods.toClient = function () {
   delete returnToClient.following
   delete returnToClient.preferences
   delete returnToClient.auth_otp
-  delete returnToClient.auth_method
   delete returnToClient.password
   return returnToClient
 }
