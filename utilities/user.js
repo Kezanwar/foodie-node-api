@@ -1,4 +1,4 @@
-import User from '../models/User.js'
+import User from '#src/models/User.js'
 import { throwErr } from './error.js'
 
 export async function getUser(id) {

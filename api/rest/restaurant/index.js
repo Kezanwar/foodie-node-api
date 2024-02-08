@@ -6,20 +6,23 @@ dotenv.config()
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 
-import Restaurant from '../../../models/Restaurant.js'
+import Restaurant from '#src/models/Restaurant.js'
+import Deal from '#src/models/Deal.js'
 
-import auth from '../../../middleware/auth.js'
+import auth from '#src/middleware/auth.js'
+import restRoleGuard from '#src/middleware/rest-role-guard.js'
+import validate from '#src/middleware/validation.js'
 
-import restRoleGuard from '../../../middleware/rest-role-guard.js'
-import { RESTAURANT_ROLES } from '../../../constants/restaurant.js'
-import validate from '../../../middleware/validation.js'
-import { restaurantDetailsSchema } from '../../../validation/restaurant/create-restaurant.js'
-import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '../../../constants/images.js'
-import { createImageName } from '../../../utilities/images.js'
-import { workerService } from '../../../services/worker/index.js'
-import { bucketName, foodieS3Client, s3PutCommand } from '../../../services/aws/index.js'
-import Deal from '../../../models/Deal.js'
-import { SendError, throwErr } from '../../../utilities/error.js'
+import { restaurantDetailsSchema } from '#src/validation/restaurant/create-restaurant.js'
+
+import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '#src/constants/images.js'
+import { RESTAURANT_ROLES } from '#src/constants/restaurant.js'
+
+import { createImageName } from '#src/utilities/images.js'
+import { SendError, throwErr } from '#src/utilities/error.js'
+
+import { workerService } from '#src/services/worker/index.js'
+import { bucketName, foodieS3Client, s3PutCommand } from '#src/services/aws/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged

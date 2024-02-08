@@ -1,15 +1,15 @@
 import { Router } from 'express'
 const router = Router()
 
-import auth from '../../../middleware/auth.js'
+import auth from '#src/middleware/auth.js'
 
-import User from '../../../models/User.js'
-import Restaurant from '../../../models/Restaurant.js'
+import User from '#src/models/User.js'
+import Restaurant from '#src/models/Restaurant.js'
 
-import { SendError, throwErr } from '../../../utilities/error.js'
+import { SendError, throwErr } from '#src/utilities/error.js'
 
-import validate from '../../../middleware/validation.js'
-import { followRestSchema } from '../../../validation/customer/follow.js'
+import validate from '#src/middleware/validation.js'
+import { followRestSchema } from '#src/validation/customer/follow.js'
 
 router.post('/', validate(followRestSchema), auth, async (req, res) => {
   const {

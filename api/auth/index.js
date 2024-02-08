@@ -7,24 +7,22 @@ import axios from 'axios'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 
-// models
-import User from '../../models/User.js'
+import User from '#src/models/User.js'
 
-// middlewares
-import auth from '../../middleware/auth.js'
+import auth from '#src/middleware/auth.js'
 
-import transporter from '../../services/email/index.js'
+import { loginUserSchema, registerUserSchema } from '#src/validation/auth/auth.js'
+import validate from '#src/middleware/validation.js'
 
-import { AUTH_METHODS, JWT_SECRET } from '../../constants/auth.js'
-import { confirm_email_content, email_addresses } from '../../constants/email.js'
+import { SendError, throwErr } from '#src/utilities/error.js'
+import { findUserByEmail, findUserByEmailWithPassword } from '#src/utilities/user.js'
+import { capitalizeFirstLetter } from '#src/utilities/strings.js'
+import { createOTP } from '#src/utilities/otp.js'
 
-import { loginUserSchema, registerUserSchema } from '../../validation/auth/auth.js'
-import validate from '../../middleware/validation.js'
+import { AUTH_METHODS, JWT_SECRET } from '#src/constants/auth.js'
+import { confirm_email_content, email_addresses } from '#src/constants/email.js'
 
-import { SendError, throwErr } from '../../utilities/error.js'
-import { findUserByEmail, findUserByEmailWithPassword } from '../../utilities/user.js'
-import { capitalizeFirstLetter } from '../../utilities/strings.js'
-import { createOTP } from '../../utilities/otp.js'
+import transporter from '#src/services/email/index.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT

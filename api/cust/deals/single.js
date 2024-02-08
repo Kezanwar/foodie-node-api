@@ -1,14 +1,19 @@
 import { Router } from 'express'
 const router = Router()
 import dotenv from 'dotenv'
-import { SendError, throwErr } from '../../../utilities/error.js'
-import auth from '../../../middleware/auth.js'
-import Deal from '../../../models/Deal.js'
-import validate from '../../../middleware/validation.js'
-import { makeMongoIDs } from '../../../utilities/document.js'
-import { calculateDistancePipeline } from '../../../utilities/distance-pipeline.js'
-import { singleDealSchema } from '../../../validation/customer/deal.js'
-import { workerService } from '../../../services/worker/index.js'
+
+import Deal from '#src/models/Deal.js'
+
+import auth from '#src/middleware/auth.js'
+import validate from '#src/middleware/validation.js'
+
+import { singleDealSchema } from '#src/validation/customer/deal.js'
+
+import { makeMongoIDs } from '#src/utilities/document.js'
+import { SendError, throwErr } from '#src/utilities/error.js'
+import { calculateDistancePipeline } from '#src/utilities/distance-pipeline.js'
+
+import { workerService } from '#src/services/worker/index.js'
 
 dotenv.config()
 

@@ -4,23 +4,23 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import Deal from '../../../models/Deal.js'
-import Location from '../../../models/Location.js'
+import Deal from '#src/models/Deal.js'
+import Location from '#src/models/Location.js'
 
-import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES } from '../../../constants/restaurant.js'
+import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES } from '#src/constants/restaurant.js'
 
-import auth from '../../../middleware/auth.js'
-import validate from '../../../middleware/validation.js'
-import restRoleGuard from '../../../middleware/rest-role-guard.js'
+import auth from '#src/middleware/auth.js'
+import validate from '#src/middleware/validation.js'
+import restRoleGuard from '#src/middleware/rest-role-guard.js'
 
-import { addLocationSchema, checkLocationSchema } from '../../../validation/restaurant/locations.js'
+import { addLocationSchema, checkLocationSchema } from '#src/validation/restaurant/locations.js'
 
-import { findRestaurantsLocations, getLongLat, getTimezone } from '../../../utilities/locations.js'
-import { allCapsNoSpace } from '../../../utilities/strings.js'
-import { SendError, throwErr } from '../../../utilities/error.js'
-import { getID, makeMongoIDs, removeDocumentValues } from '../../../utilities/document.js'
+import { findRestaurantsLocations, getLongLat, getTimezone } from '#src/utilities/locations.js'
+import { allCapsNoSpace } from '#src/utilities/strings.js'
+import { SendError, throwErr } from '#src/utilities/error.js'
+import { getID, makeMongoIDs, removeDocumentValues } from '#src/utilities/document.js'
 
-import { workerService } from '../../../services/worker/index.js'
+import { workerService } from '#src/services/worker/index.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check

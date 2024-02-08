@@ -1,15 +1,16 @@
 import { Router } from 'express'
+
+import Deal from '#src/models/Deal.js'
+import User from '#src/models/User.js'
+
+import auth from '#src/middleware/auth.js'
+import validate from '#src/middleware/validation.js'
+
+import { favouriteDealSchema } from '#src/validation/customer/deal.js'
+
+import { SendError, throwErr } from '#src/utilities/error.js'
+
 const router = Router()
-
-import auth from '../../../middleware/auth.js'
-
-import Deal from '../../../models/Deal.js'
-import User from '../../../models/User.js'
-
-import { SendError, throwErr } from '../../../utilities/error.js'
-
-import validate from '../../../middleware/validation.js'
-import { favouriteDealSchema } from '../../../validation/customer/deal.js'
 
 router.post('/', auth, validate(favouriteDealSchema), async (req, res) => {
   const {

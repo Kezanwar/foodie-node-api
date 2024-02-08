@@ -3,11 +3,11 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import auth from '../../../middleware/auth.js'
+import Location from '#src/models/Location.js'
 
-import Location from '../../../models/Location.js'
+import auth from '#src/middleware/auth.js'
 
-import { SendError, throwErr } from '../../../utilities/error.js'
+import { SendError, throwErr } from '#src/utilities/error.js'
 
 const METER_TO_MILE_CONVERSION = 0.00062137
 
