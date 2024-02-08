@@ -1,7 +1,7 @@
-import { RESTAURANT_ROLES, RESTAURANT_STATUS } from '../constants/restaurant.js'
-import Restaurant from '../models/Restaurant.js'
-import { SendError, throwErr } from '../utilities/error.js'
-import { findRestaurantsLocations } from '../utilities/locations.js'
+import { RESTAURANT_ROLES, RESTAURANT_STATUS } from '#src/constants/restaurant.js'
+import Restaurant from '#src/models/Restaurant.js'
+import { SendError, throwErr } from '#src/utilities/error.js'
+import { findRestaurantsLocations } from '#src/utilities/locations.js'
 
 const restRoleGuard =
   (role, options = {}) =>

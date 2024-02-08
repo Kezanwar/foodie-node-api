@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 
-import { SendError, throwErr } from '../utilities/error.js'
-import { getUser } from '../utilities/user.js'
+import { SendError, throwErr } from '#src/utilities/error.js'
+import { getUser } from '#src/utilities/user.js'
 
 dotenv.config()
 

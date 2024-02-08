@@ -2,6 +2,11 @@
   "compilerOptions": {
     "module": "es6",
     "target": "es6",
-    "moduleResolution": "node"
-  }
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "#src/*.js": ["./*.js"]
+    }
+  },
+  "exclude": ["node_modules", "build"]
 }

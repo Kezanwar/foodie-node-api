@@ -2,24 +2,24 @@ import { Router } from 'express'
 
 const router = Router()
 import dotenv from 'dotenv'
-dotenv.config()
 
-// models
-import Cuisine from '../../models/Cuisine.js'
-import DietaryRequirement from '../../models/DietaryRequirement.js'
+import Cuisine from '#src/models/Cuisine.js'
+import DietaryRequirement from '#src/models/DietaryRequirement.js'
 
-// middlewares
-import auth from '../../middleware/auth.js'
-
-import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '../../constants/categories.js'
+import auth from '#src/middleware/auth.js'
 
 import {
   cacheGetCuisines,
   cacheGetDietaryRequirements,
   cachePutCuisines,
   cachePutDietaryRequirements,
-} from '../../services/cache/index.js'
-import { SendError } from '../../utilities/error.js'
+} from '#src/services/cache/index.js'
+
+import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#src/constants/categories.js'
+
+import { SendError } from '#src/utilities/error.js'
+
+dotenv.config()
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT

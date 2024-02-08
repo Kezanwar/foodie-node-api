@@ -1,9 +1,9 @@
 import { define } from 'nanolith'
-import { hasMultipleTimezones, findCountryPhoneCode } from '../../utilities/locations.js'
-import { getTimezonesToExpire, expireDate } from '../../utilities/date.js'
-import { resizeImg } from '../../utilities/images.js'
-import { filterDealsByDistance } from '../../utilities/deals.js'
-import { hasFavouritedDealAndFollowedRest } from '../../utilities/deals.js'
+import { hasMultipleTimezones, findCountryPhoneCode } from '#src/utilities/locations.js'
+import { getTimezonesToExpire, expireDate } from '#src/utilities/date.js'
+import { resizeImg } from '#src/utilities/images.js'
+import { filterDealsByDistance } from '#src/utilities/deals.js'
+import { hasFavouritedDealAndFollowedRest } from '#src/utilities/deals.js'
 
 export const worker = await define({
   hasMultipleTimezones,

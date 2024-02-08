@@ -4,9 +4,9 @@ dotenv.config()
 import _ from 'lodash'
 const { capitalize } = _
 
-import { countries } from '../constants/countries.js'
+import { countries } from '#src/constants/countries.js'
 
-import Location from '../models/Location.js'
+import Location from '#src/models/Location.js'
 
 import { throwErr } from './error.js'
 
