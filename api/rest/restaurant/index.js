@@ -6,23 +6,23 @@ dotenv.config()
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 
-import Restaurant from '#src/models/Restaurant.js'
-import Deal from '#src/models/Deal.js'
+import Restaurant from '#app/models/Restaurant.js'
+import Deal from '#app/models/Deal.js'
 
-import auth from '#src/middleware/auth.js'
-import restRoleGuard from '#src/middleware/rest-role-guard.js'
-import validate from '#src/middleware/validation.js'
+import auth from '#app/middleware/auth.js'
+import restRoleGuard from '#app/middleware/rest-role-guard.js'
+import validate from '#app/middleware/validation.js'
 
-import { restaurantDetailsSchema } from '#src/validation/restaurant/create-restaurant.js'
+import { restaurantDetailsSchema } from '#app/validation/restaurant/create-restaurant.js'
 
-import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '#src/constants/images.js'
-import { RESTAURANT_ROLES } from '#src/constants/restaurant.js'
+import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '#app/constants/images.js'
+import { RESTAURANT_ROLES } from '#app/constants/restaurant.js'
 
-import { createImageName } from '#src/utilities/images.js'
-import { SendError, throwErr } from '#src/utilities/error.js'
+import { createImageName } from '#app/utilities/images.js'
+import { SendError, throwErr } from '#app/utilities/error.js'
 
-import { workerService } from '#src/services/worker/index.js'
-import { bucketName, foodieS3Client, s3PutCommand } from '#src/services/aws/index.js'
+import { workerService } from '#app/services/worker/index.js'
+import { bucketName, foodieS3Client, s3PutCommand } from '#app/services/aws/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged

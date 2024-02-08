@@ -1,14 +1,14 @@
 import { Router } from 'express'
 
-import Deal from '#src/models/Deal.js'
-import User from '#src/models/User.js'
+import Deal from '#app/models/Deal.js'
+import User from '#app/models/User.js'
 
-import auth from '#src/middleware/auth.js'
-import validate from '#src/middleware/validation.js'
+import auth from '#app/middleware/auth.js'
+import validate from '#app/middleware/validation.js'
 
-import { favouriteDealSchema } from '#src/validation/customer/deal.js'
+import { favouriteDealSchema } from '#app/validation/customer/deal.js'
 
-import { SendError, throwErr } from '#src/utilities/error.js'
+import { SendError, throwErr } from '#app/utilities/error.js'
 
 const router = Router()
 

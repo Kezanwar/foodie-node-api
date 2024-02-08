@@ -5,7 +5,7 @@
     "moduleResolution": "node",
     "baseUrl": "./",
     "paths": {
-      "#src/*.js": ["./*.js"]
+      "#app/*.js": ["./*.js"]
     }
   },
   "exclude": ["node_modules", "build"]
