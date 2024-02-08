@@ -13,11 +13,11 @@ dotenv.config()
 
 // import Deal from '../../models/Deal.js'
 import { renderFile } from 'ejs'
-import { confirm_email_content, email_addresses } from '#src/constants/email.js'
+import { confirm_email_content, email_addresses } from '#app/constants/email.js'
 
-import transporter from '#src/services/email/index.js'
-import { createOTP } from '#src/utilities/otp.js'
-import { SendError, throwErr } from '#src/utilities/error.js'
+import transporter from '#app/services/email/index.js'
+import { createOTP } from '#app/utilities/otp.js'
+import { SendError, throwErr } from '#app/utilities/error.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged

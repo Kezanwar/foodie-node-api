@@ -7,7 +7,7 @@ import CustRouter from './cust/index.js'
 import OptionsRouter from './options/index.js'
 import PrototypeRouter from './prototype.js'
 
-import { appEnv } from '#src/config/config.js'
+import { appEnv } from '#app/config/config.js'
 
 const router = Router()
 

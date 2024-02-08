@@ -3,9 +3,9 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import auth from '#src/middleware/auth.js'
+import auth from '#app/middleware/auth.js'
 
-import { SendError } from '#src/utilities/error.js'
+import { SendError } from '#app/utilities/error.js'
 
 //* route PATCH api/account/profile
 //? @desc update first/last name

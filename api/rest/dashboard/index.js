@@ -3,15 +3,15 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import { RESTAURANT_ROLES } from '#src/constants/restaurant.js'
+import { RESTAURANT_ROLES } from '#app/constants/restaurant.js'
 
-import auth from '#src/middleware/auth.js'
-import restRoleGuard from '#src/middleware/rest-role-guard.js'
+import auth from '#app/middleware/auth.js'
+import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
-import Deal from '#src/models/Deal.js'
-import Location from '#src/models/Location.js'
+import Deal from '#app/models/Deal.js'
+import Location from '#app/models/Location.js'
 
-import { SendError } from '#src/utilities/error.js'
+import { SendError } from '#app/utilities/error.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged

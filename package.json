@@ -52,7 +52,7 @@
     "nodemon": "^2.0.15"
   },
   "imports": {
-    "#src/*.js": "./*.js"
+    "#app/*.js": "./*.js"
   },
   "eslintConfig": {
     "env": {

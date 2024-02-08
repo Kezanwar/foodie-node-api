@@ -7,31 +7,31 @@ dotenv.config()
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 
-import auth from '#src/middleware/auth.js'
-import restRoleGuard from '#src/middleware/rest-role-guard.js'
+import auth from '#app/middleware/auth.js'
+import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
-import Restaurant from '#src/models/Restaurant.js'
+import Restaurant from '#app/models/Restaurant.js'
 
-import { appEnv } from '#src/config/config.js'
-import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#src/constants/restaurant.js'
-import { email_addresses } from '#src/constants/email.js'
-import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '#src/constants/images.js'
+import { appEnv } from '#app/config/config.js'
+import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
+import { email_addresses } from '#app/constants/email.js'
+import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '#app/constants/images.js'
 
-import transporter from '#src/services/email/index.js'
-import { workerService } from '#src/services/worker/index.js'
-import { bucketName, foodieS3Client, s3PutCommand } from '#src/services/aws/index.js'
+import transporter from '#app/services/email/index.js'
+import { workerService } from '#app/services/worker/index.js'
+import { bucketName, foodieS3Client, s3PutCommand } from '#app/services/aws/index.js'
 
-import validate from '#src/middleware/validation.js'
+import validate from '#app/middleware/validation.js'
 import {
   companyInfoSchema,
   restaurantDetailsSchema,
   restaurantSubmitApplicationSchema,
-} from '#src/validation/restaurant/create-restaurant.js'
+} from '#app/validation/restaurant/create-restaurant.js'
 
-import { createImageName, createImgUUID } from '#src/utilities/images.js'
-import { SendError, throwErr } from '#src/utilities/error.js'
-import { findRestaurantsLocations } from '#src/utilities/locations.js'
-import { getID } from '#src/utilities/document.js'
+import { createImageName, createImgUUID } from '#app/utilities/images.js'
+import { SendError, throwErr } from '#app/utilities/error.js'
+import { findRestaurantsLocations } from '#app/utilities/locations.js'
+import { getID } from '#app/utilities/document.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged

@@ -3,21 +3,21 @@ import { Router } from 'express'
 const router = Router()
 import dotenv from 'dotenv'
 
-import Cuisine from '#src/models/Cuisine.js'
-import DietaryRequirement from '#src/models/DietaryRequirement.js'
+import Cuisine from '#app/models/Cuisine.js'
+import DietaryRequirement from '#app/models/DietaryRequirement.js'
 
-import auth from '#src/middleware/auth.js'
+import auth from '#app/middleware/auth.js'
 
 import {
   cacheGetCuisines,
   cacheGetDietaryRequirements,
   cachePutCuisines,
   cachePutDietaryRequirements,
-} from '#src/services/cache/index.js'
+} from '#app/services/cache/index.js'
 
-import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#src/constants/categories.js'
+import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.js'
 
-import { SendError } from '#src/utilities/error.js'
+import { SendError } from '#app/utilities/error.js'
 
 dotenv.config()
 

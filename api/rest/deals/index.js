@@ -6,25 +6,25 @@ dotenv.config()
 import { isBefore } from 'date-fns'
 
 // models
-import Deal from '#src/models/Deal.js'
-import Location from '#src/models/Location.js'
+import Deal from '#app/models/Deal.js'
+import Location from '#app/models/Location.js'
 
 // constants
-import { RESTAURANT_ROLES } from '#src/constants/restaurant.js'
-import { DEALS_PER_LOCATION } from '#src/constants/deals.js'
+import { RESTAURANT_ROLES } from '#app/constants/restaurant.js'
+import { DEALS_PER_LOCATION } from '#app/constants/deals.js'
 
 // middlewares
-import auth from '#src/middleware/auth.js'
-import restRoleGuard from '#src/middleware/rest-role-guard.js'
-import validate from '#src/middleware/validation.js'
+import auth from '#app/middleware/auth.js'
+import restRoleGuard from '#app/middleware/rest-role-guard.js'
+import validate from '#app/middleware/validation.js'
 
 // validations
-import { addDealSchema, editDealSchema } from '#src/validation/restaurant/deals.js'
+import { addDealSchema, editDealSchema } from '#app/validation/restaurant/deals.js'
 
 // utils
-import { SendError, throwErr } from '#src/utilities/error.js'
-import { getID, makeMongoIDs } from '#src/utilities/document.js'
-import { capitalizeSentence } from '#src/utilities/strings.js'
+import { SendError, throwErr } from '#app/utilities/error.js'
+import { getID, makeMongoIDs } from '#app/utilities/document.js'
+import { capitalizeSentence } from '#app/utilities/strings.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged

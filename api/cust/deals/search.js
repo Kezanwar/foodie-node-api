@@ -3,13 +3,13 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import Deal from '#src/models/Deal.js'
+import Deal from '#app/models/Deal.js'
 
-import auth from '#src/middleware/auth.js'
+import auth from '#app/middleware/auth.js'
 
-import { SendError, throwErr } from '#src/utilities/error.js'
+import { SendError, throwErr } from '#app/utilities/error.js'
 
-import { workerService } from '#src/services/worker/index.js'
+import { workerService } from '#app/services/worker/index.js'
 
 const METER_TO_MILE_CONVERSION = 0.00062137
 
