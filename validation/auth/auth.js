@@ -24,3 +24,9 @@ export const forgotPasswordUserSchema = object({
     email: string().email().required(),
   }),
 })
+
+export const changePasswordSchema = object({
+  body: object({
+    password: string().min(8).max(32).required(),
+  }),
+})
