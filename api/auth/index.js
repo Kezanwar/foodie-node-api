@@ -6,6 +6,7 @@ dotenv.config()
 import axios from 'axios'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import { addMinutes } from 'date-fns'
 
 import User from '#app/models/User.js'
 
@@ -23,6 +24,7 @@ import { AUTH_METHODS, JWT_SECRET } from '#app/constants/auth.js'
 import { confirm_email_content, email_addresses } from '#app/constants/email.js'
 
 import transporter from '#app/services/email/index.js'
+import { baseUrl, dashboardUrl } from '#app/config/config.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -369,30 +371,113 @@ router.patch('/confirm-email/resend-otp', auth, async (req, res) => {
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body
-    if (!email) throw new Error('No email attached')
+    if (!email) throwErr('No email attached', 400)
     const user = await findUserByEmail(email)
-    if (!user) throw new Error('Email address doesnt exist')
+    if (!user) throwErr('User doesnt exist', 400)
+    if (user.auth_method === AUTH_METHODS.google) throwErr('User signed up with Google', 400)
 
-    // const confirmEmailPayload = {
-    //   email: user.email,
-    // }
+    const confirmEmailPayload = {
+      email: user.email,
+    }
 
-    // jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: 360000 }, async (err, token) => {
-    //   if (err) throw new Error(err)
+    jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: '15m' }, async (err, token) => {
+      if (err) throwErr(err)
 
-    //   const { title, description } = confirm_email_content
-    //   const emailOptions = getEmailOptions(user.email, 'Confirm your email address!', 'action-email', {
-    //     user_name: user.first_name,
-    //     title: title,
-    //     description: description,
-    //     action_text: 'Confirm email',
-    //     action_href: `${process.env.BASE_URL}/auth/confirm-email/${token}`,
-    //   })
-    //   transporter.sendMail(emailOptions, (err, info) => {
-    //     if (err) console.log(err)
-    //     else console.log('email sent' + ' ' + info.response)
-    //   })
-    // })
+      renderFile(
+        process.cwd() + '/views/emails/action-email.ejs',
+        {
+          content:
+            'You requested a password change, please click the button below to change your password. This link expires in 15mins.',
+          title: 'Change Password Request',
+          receiver: user.first_name,
+          action_primary: { text: 'Change your password', url: `${baseUrl}/auth/change-password/${token}` },
+        },
+        (err, data) => {
+          if (err) {
+            throwErr('error creating email email')
+          } else {
+            const mainOptions = {
+              from: email_addresses.noreply,
+              to: user.email,
+              subject: confirm_email_content.title,
+              html: data,
+            }
+            transporter.sendMail(mainOptions, (err, info) => {
+              if (err) {
+                console.log(err)
+                throwErr('error sending change password email')
+              } else {
+                console.log('email sent: ' + info.response)
+              }
+            })
+          }
+        }
+      )
+    })
+
+    res.send('success')
+  } catch (error) {
+    SendError(res, error)
+  }
+})
+
+router.get('/change-password/:token', async (req, res) => {
+  const {
+    params: { token },
+  } = req
+  try {
+    if (!token) throwErr('No token provided')
+
+    const decoded = jwt.verify(token, JWT_SECRET)
+
+    if (!decoded?.email) {
+      throwErr('Token expired', 400)
+    }
+
+    let payload = {
+      email: decoded.email,
+    }
+
+    jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' }, async (err, token) => {
+      if (err) throwErr(err)
+
+      const expires = addMinutes(new Date(), 15).toISOString()
+
+      return res.redirect(`${dashboardUrl}/change-password?token=${token}&expires=${expires}`)
+    })
+  } catch (error) {
+    return res.redirect(`${dashboardUrl}/change-password?token=expired`)
+  }
+})
+
+router.patch('/change-password/:token', async (req, res) => {
+  const {
+    params: { token },
+    body: { password },
+  } = req
+
+  try {
+    if (!token) throwErr('No token provided')
+
+    const decoded = jwt.verify(token, JWT_SECRET)
+
+    if (!decoded?.email) {
+      throwErr('Token expired', 400)
+    }
+
+    const user = await findUserByEmail(decoded.email)
+
+    if (!user) {
+      throwErr('User doesnt exist', 400)
+    }
+
+    const salt = await bcrypt.genSalt(10)
+
+    user.password = await bcrypt.hash(password, salt)
+
+    await user.save()
+
+    res.json('success')
   } catch (error) {
     SendError(res, error)
   }
