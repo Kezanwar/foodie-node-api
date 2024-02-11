@@ -6,16 +6,16 @@ export const dashboardUrl =
   appEnv === 'development'
     ? 'http://localhost:3033'
     : appEnv === 'staging'
-    ? 'dashboard.thefoodiestaging.app'
+    ? 'https://dashboard.thefoodiestaging.app'
     : appEnv === 'production'
-    ? 'dashboard.thefoodie.app'
+    ? 'https://dashboard.thefoodie.app'
     : null
 
 export const landingUrl =
   appEnv === 'development'
     ? 'http://localhost:3000'
     : appEnv === 'staging'
-    ? 'thefoodiestaging.app'
+    ? 'https://thefoodiestaging.app'
     : appEnv === 'production'
-    ? 'thefoodie.app'
+    ? 'https://thefoodie.app'
     : null
