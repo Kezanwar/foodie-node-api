@@ -373,8 +373,10 @@ router.post('/forgot-password', async (req, res) => {
     const { email } = req.body
     if (!email) throwErr('No email attached', 400)
     const user = await findUserByEmail(email)
-    if (!user) throwErr('User doesnt exist', 400)
-    if (user.auth_method === AUTH_METHODS.google) throwErr('User signed up with Google', 400)
+    // eslint-disable-next-line quotes
+    if (!user) throwErr("Sorry, we can't locate a user with this email.", 400)
+    if (user.auth_method === AUTH_METHODS.google)
+      throwErr('This email address signed up with Google, please login via Google.', 400)
 
     const confirmEmailPayload = {
       email: user.email,
