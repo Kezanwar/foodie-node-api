@@ -7,6 +7,7 @@ const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 
 import Restaurant from '#app/models/Restaurant.js'
+import Location from '#app/models/Location.js'
 import Deal from '#app/models/Deal.js'
 
 import auth from '#app/middleware/auth.js'
@@ -157,7 +158,18 @@ router.patch(
         }
       )
 
-      await Promise.all([updateRestProm, updateDealsProm])
+      const updateLocationsProm = Location.updateMany(
+        {
+          'restaurant.id': restaurant._id,
+        },
+        {
+          $set: {
+            'restaurant.name': name,
+          },
+        }
+      )
+
+      await Promise.all([updateRestProm, updateDealsProm, updateLocationsProm])
 
       if (!restaurant.cover_photo || !restaurant.avatar) return throwErr('Must provide an Avatar and Cover Photo')
 
