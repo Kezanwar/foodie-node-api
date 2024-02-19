@@ -11,31 +11,17 @@ import { SendError, throwErr } from '#app/utilities/error.js'
 
 const METER_TO_MILE_CONVERSION = 0.00062137
 
-const LIMIT = 10 //20 results at a time
 const RADIUS_METRES = 20000 //20km
 
-const getQueryLocations = (cuisines, dietary_requirements) => {
+const getQueryLocations = () => {
   const defaults = { active_deals: { $ne: [], $exists: true } }
-  if (cuisines) {
-    defaults.cuisines = {
-      $elemMatch: {
-        slug: { $in: typeof cuisines === 'string' ? [cuisines] : cuisines },
-      },
-    }
-  }
-  if (dietary_requirements) {
-    defaults.dietary_requirements = {
-      $elemMatch: {
-        slug: { $in: typeof dietary_requirements === 'string' ? [dietary_requirements] : dietary_requirements },
-      },
-    }
-  }
+
   return defaults
 }
 
-router.get('/', auth, async (req, res) => {
+router.get('/popular-restaurants', auth, async (req, res) => {
   const {
-    query: { page, long, lat, cuisines, dietary_requirements },
+    query: { long, lat },
     // coords must be [long, lat]
   } = req
 
@@ -47,13 +33,11 @@ router.get('/', auth, async (req, res) => {
     const LONG = Number(long)
     const LAT = Number(lat)
 
-    const PAGE = page ? Number(page) : 0
-
-    for (let n of [LONG, LAT, PAGE]) {
+    for (let n of [LONG, LAT]) {
       if (isNaN(n)) throwErr('You must pass a number for Page, Long or Lat')
     }
 
-    const query = getQueryLocations(cuisines, dietary_requirements)
+    const query = getQueryLocations()
 
     const results = await Location.aggregate([
       {
@@ -67,61 +51,50 @@ router.get('/', auth, async (req, res) => {
         },
       },
       {
-        $skip: PAGE * LIMIT,
-      },
-
-      {
-        $limit: LIMIT,
-      },
-      {
         $lookup: {
-          from: 'deals', // Replace with the name of your linked collection
-          localField: 'active_deals',
+          from: 'restaurants', // Replace with the name of your linked collection
+          localField: 'restaurant.id',
           foreignField: '_id',
           let: { locationId: '$_id' },
           pipeline: [
             {
               $project: {
-                match_fav: {
+                followMatch: {
                   $filter: {
-                    input: '$favourites',
-                    as: 'fav',
+                    input: '$followers',
+                    as: 'foll',
                     cond: {
-                      $and: [{ $eq: ['$$fav.user', req.user._id] }, { $eq: ['$$fav.location_id', '$$locationId'] }],
+                      $eq: ['$$foll.location_id', '$$locationId'],
                     },
-                    limit: 1,
                   },
                 },
-                name: 1,
-                description: 1,
-                start_date: 1,
-                end_date: 1,
               },
             },
           ],
-          as: 'deals',
+          as: 'rest',
         },
       },
-      { $unwind: '$deals' },
+      {
+        $limit: 5,
+      },
+      {
+        $addFields: {
+          followCount: { $size: { $arrayElemAt: ['$rest.followMatch', 0] } },
+        },
+      },
+      {
+        $sort: {
+          followCount: -1,
+        },
+      },
       {
         $project: {
-          deal: {
-            name: '$deals.name',
-            description: '$deals.description',
-            id: '$deals._id',
-            is_favourited: {
-              $cond: {
-                if: { $eq: [{ $size: { $ifNull: ['$deals.match_fav', []] } }, 1] },
-                then: true,
-                else: false,
-              },
-            },
-          },
           restaurant: {
             id: '$restaurant.id',
             name: '$restaurant.name',
             avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
             cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
+            followers: '$followCount',
           },
           location: {
             id: '$_id',
@@ -130,9 +103,9 @@ router.get('/', auth, async (req, res) => {
           },
         },
       },
-    ]).sort({ 'location.distance_miles': 1 })
+    ])
 
-    return res.json({ nextCursor: results.length < LIMIT ? null : PAGE + 1, deals: results })
+    return res.json(results)
   } catch (error) {
     SendError(res, error)
   }
