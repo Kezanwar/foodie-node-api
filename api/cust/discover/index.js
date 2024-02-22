@@ -8,6 +8,7 @@ import Location from '#app/models/Location.js'
 import auth from '#app/middleware/auth.js'
 
 import { SendError, throwErr } from '#app/utilities/error.js'
+import { workerService } from '#app/services/worker/index.js'
 
 const METER_TO_MILE_CONVERSION = 0.00062137
 
@@ -19,7 +20,7 @@ const getQueryLocations = () => {
   return defaults
 }
 
-router.get('/popular-restaurants', auth, async (req, res) => {
+router.get('/', auth, async (req, res) => {
   const {
     query: { long, lat },
     // coords must be [long, lat]
@@ -34,7 +35,7 @@ router.get('/popular-restaurants', auth, async (req, res) => {
     const LAT = Number(lat)
 
     for (let n of [LONG, LAT]) {
-      if (isNaN(n)) throwErr('You must pass a number for Page, Long or Lat')
+      if (isNaN(n)) throwErr('You must pass a number for Long or Lat')
     }
 
     const query = getQueryLocations()
@@ -75,9 +76,6 @@ router.get('/popular-restaurants', auth, async (req, res) => {
         },
       },
       {
-        $limit: 5,
-      },
-      {
         $addFields: {
           followCount: { $size: { $arrayElemAt: ['$rest.followMatch', 0] } },
         },
@@ -95,6 +93,8 @@ router.get('/popular-restaurants', auth, async (req, res) => {
             avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
             cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
             followers: '$followCount',
+            cuisines: '$cuisines',
+            dietary: '$dietary_requirements',
           },
           location: {
             id: '$_id',
@@ -105,7 +105,12 @@ router.get('/popular-restaurants', auth, async (req, res) => {
       },
     ])
 
-    return res.json(results)
+    const resp = await workerService.call({
+      name: 'getPopularRestaurantsAndCuisines',
+      params: [JSON.stringify(results)],
+    })
+
+    return res.json(resp)
   } catch (error) {
     SendError(res, error)
   }

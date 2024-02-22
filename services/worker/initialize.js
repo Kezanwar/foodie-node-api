@@ -4,6 +4,7 @@ import { getTimezonesToExpire, expireDate } from '#app/utilities/date.js'
 import { resizeImg } from '#app/utilities/images.js'
 import { filterDealsByDistance } from '#app/utilities/deals.js'
 import { hasFavouritedDealAndFollowedRest } from '#app/utilities/deals.js'
+import { getPopularRestaurantsAndCuisines } from '#app/utilities/discover.js'
 
 export const worker = await define({
   hasMultipleTimezones,
@@ -13,7 +14,7 @@ export const worker = await define({
   expireDate,
   filterDealsByDistance,
   hasFavouritedDealAndFollowedRest,
-
+  getPopularRestaurantsAndCuisines,
   // Functions don't have to be directly defined within the
   // object, they can be defined elsewhere outside, or even
   // imported from a totally different module.
