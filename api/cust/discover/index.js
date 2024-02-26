@@ -136,9 +136,8 @@ router.get('/', auth, async (req, res) => {
     if (blogs) {
       resp.blogs = blogs
     } else {
-      const b = fetchedBlogs
       resp.blogs = fetchedBlogs
-      cachePutRecentBlogs(b)
+      cachePutRecentBlogs(fetchedBlogs)
     }
 
     return res.json(resp)

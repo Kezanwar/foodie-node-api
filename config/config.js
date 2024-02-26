@@ -12,9 +12,7 @@ export const dashboardUrl =
     : null
 
 export const landingUrl =
-  appEnv === 'development'
-    ? 'http://localhost:3000'
-    : appEnv === 'staging'
+  appEnv === 'staging' || appEnv === 'development'
     ? 'https://thefoodiestaging.app'
     : appEnv === 'production'
     ? 'https://thefoodie.app'
