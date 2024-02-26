@@ -10,15 +10,15 @@ export const getPopularRestaurantsAndCuisines = (locations) => {
     return acc
   }, [])
 
-  const sliced = l.slice(0, 6)
+  const restaurants = l.slice(0, 6)
 
-  for (let c of sliced) {
+  for (const c of restaurants) {
     delete c.restaurant.cuisines
     delete c.restaurant.dietary
   }
 
   return {
-    restaurants: sliced,
+    restaurants,
     cuisines,
   }
 }
