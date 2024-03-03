@@ -38,6 +38,21 @@ router.get('/:id', auth, validate(singleRestaurantSchema), async (req, res) => {
       },
       ...calculateDistancePipeline(LAT, LONG, '$geometry.coordinates', 'distance_miles'),
       {
+        $lookup: {
+          from: 'deals',
+          foreignField: '_id',
+          localField: 'active_deals',
+          pipeline: [
+            {
+              $project: {
+                name: 1,
+              },
+            },
+          ],
+          as: 'deals',
+        },
+      },
+      {
         $project: {
           nickname: 1,
           restaurant: 1,
@@ -47,8 +62,8 @@ router.get('/:id', auth, validate(singleRestaurantSchema), async (req, res) => {
           opening_times: 1,
           dietary_requirements: 1,
           cuisines: 1,
-          active_deals: 1,
           distance_miles: 1,
+          active_deals: '$deals',
         },
       },
     ])
