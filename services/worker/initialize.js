@@ -3,7 +3,7 @@ import { hasMultipleTimezones, findCountryPhoneCode } from '#app/utilities/locat
 import { getTimezonesToExpire, expireDate } from '#app/utilities/date.js'
 import { resizeImg } from '#app/utilities/images.js'
 import { filterDealsByDistance } from '#app/utilities/deals.js'
-import { hasFavouritedDealAndFollowedRest } from '#app/utilities/deals.js'
+import { checkSingleDealFollowAndFav, checkSingleRestaurantFollowAndFav } from '#app/utilities/deals.js'
 import { getPopularRestaurantsAndCuisines } from '#app/utilities/discover.js'
 
 export const worker = await define({
@@ -13,7 +13,8 @@ export const worker = await define({
   findCountryPhoneCode,
   expireDate,
   filterDealsByDistance,
-  hasFavouritedDealAndFollowedRest,
+  checkSingleDealFollowAndFav,
+  checkSingleRestaurantFollowAndFav,
   getPopularRestaurantsAndCuisines,
   // Functions don't have to be directly defined within the
   // object, they can be defined elsewhere outside, or even

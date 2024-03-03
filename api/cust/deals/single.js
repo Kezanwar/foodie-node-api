@@ -89,7 +89,7 @@ router.get('/', auth, validate(singleDealSchema), async (req, res) => {
         },
       },
 
-      ...calculateDistancePipeline(LAT, LONG, '$matchedLocation', 'distance_miles'),
+      ...calculateDistancePipeline(LAT, LONG, '$matchedLocation.geometry.coordinates', 'distance_miles'),
 
       {
         $project: {
@@ -114,7 +114,7 @@ router.get('/', auth, validate(singleDealSchema), async (req, res) => {
     ])
 
     const followFavProm = workerService.call({
-      name: 'hasFavouritedDealAndFollowedRest',
+      name: 'checkSingleDealFollowAndFav',
       params: [JSON.stringify(user), deal_id, location_id],
     })
 

@@ -2,7 +2,7 @@ const METER_TO_MILE_CONVERSION = 0.00062137
 const r = 6371 // km
 const p = Math.PI / 180
 
-export const calculateDistancePipeline = (LAT, LONG, locationField, newDistanceField) => {
+export const calculateDistancePipeline = (LAT, LONG, coordinatesPath, newDistanceField) => {
   return [
     {
       $addFields: {
@@ -12,7 +12,7 @@ export const calculateDistancePipeline = (LAT, LONG, locationField, newDistanceF
             {
               $subtract: [
                 {
-                  $arrayElemAt: [`${locationField}.geometry.coordinates`, 0],
+                  $arrayElemAt: [`${coordinatesPath}`, 0],
                 },
                 LONG,
               ],
@@ -26,7 +26,7 @@ export const calculateDistancePipeline = (LAT, LONG, locationField, newDistanceF
             {
               $subtract: [
                 {
-                  $arrayElemAt: [`${locationField}.geometry.coordinates`, 1],
+                  $arrayElemAt: [`${coordinatesPath}`, 1],
                 },
                 LAT,
               ],
@@ -56,7 +56,7 @@ export const calculateDistancePipeline = (LAT, LONG, locationField, newDistanceF
                   {
                     $multiply: [
                       {
-                        $arrayElemAt: [`${locationField}.geometry.coordinates`, 1],
+                        $arrayElemAt: [`${coordinatesPath}`, 1],
                       },
                       p,
                     ],
