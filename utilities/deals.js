@@ -17,10 +17,12 @@ export const checkSingleRestaurantFollowAndFav = (user, location) => {
   const l = JSON.parse(location)
 
   if (l?.active_deals) {
-    l.active_deals = l.active_deals.map((id) => {
+    l.active_deals = l.active_deals.map((deal) => {
       return {
-        id,
-        is_favourited: !!u.favourites.find((favourite) => favourite.deal === id && favourite.location_id === l._id),
+        ...deal,
+        is_favourited: !!u.favourites.find(
+          (favourite) => favourite.deal === deal._id && favourite.location_id === l._id
+        ),
       }
     })
   }
