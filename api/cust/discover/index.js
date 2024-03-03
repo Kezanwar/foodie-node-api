@@ -2,6 +2,7 @@ import { Router } from 'express'
 const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
+import axios from 'axios'
 
 import Location from '#app/models/Location.js'
 
@@ -10,15 +11,16 @@ import auth from '#app/middleware/auth.js'
 import { SendError, throwErr } from '#app/utilities/error.js'
 import { workerService } from '#app/services/worker/index.js'
 import { cacheGetRecentBlogs, cachePutRecentBlogs } from '#app/services/cache/index.js'
-import axios from 'axios'
+
 import { landingUrl } from '#app/config/config.js'
+import { removeTags } from '#app/utilities/regex.js'
 
 const fetchBlogs = async () => {
   return axios.get(`${landingUrl}/api/recent`).then((res) =>
     res.data.edges.map((d) => ({
       ...d.node,
+      excerpt: removeTags(d.node.excerpt),
       featuredImage: d.node.featuredImage.node.sourceUrl,
-      author: d.node.author.node,
     }))
   )
 }
@@ -36,7 +38,6 @@ const getQueryLocations = () => {
 router.get('/', auth, async (req, res) => {
   const {
     query: { long, lat },
-    // coords must be [long, lat]
   } = req
 
   //https://stackoverflow.com/questions/18883601/function-to-calculate-distance-between-two-coordinates

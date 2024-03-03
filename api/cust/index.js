@@ -5,6 +5,7 @@ import PreferencesRouter from './preferences/index.js'
 import FavouritesRouter from './favourites/index.js'
 import FollowRouter from './follow/index.js'
 import DiscoverRouter from './discover/index.js'
+import RestaurantRouter from './restaurant/index.js'
 
 const router = Router()
 
@@ -15,5 +16,6 @@ router.use('/preferences', PreferencesRouter)
 router.use('/favourites', FavouritesRouter)
 router.use('/following', FollowRouter)
 router.use('/discover', DiscoverRouter)
+router.use('/restaurant', RestaurantRouter)
 
 export default router
