@@ -53,9 +53,32 @@ router.get('/:id', auth, validate(singleRestaurantSchema), async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: 'restaurants',
+          foreignField: '_id',
+          localField: 'restaurant.id',
+          pipeline: [
+            {
+              $project: {
+                bio: 1,
+                booking_link: 1,
+              },
+            },
+          ],
+          as: 'rest',
+        },
+      },
+      {
         $project: {
           nickname: 1,
-          restaurant: 1,
+          restaurant: {
+            booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
+            bio: { $arrayElemAt: ['$rest.bio', 0] },
+            avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
+            cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
+            name: '$restaurant.name',
+            id: '$restaurant.id',
+          },
           address: 1,
           phone_number: 1,
           email: 1,
@@ -64,6 +87,7 @@ router.get('/:id', auth, validate(singleRestaurantSchema), async (req, res) => {
           cuisines: 1,
           distance_miles: 1,
           active_deals: '$deals',
+          geometry: 1,
         },
       },
     ])
