@@ -32,7 +32,7 @@
     "mailchimp-api-v3": "^1.15.0",
     "memory-cache": "^0.2.0",
     "mixpanel": "^0.17.0",
-    "mongoose": "^6.2.1",
+    "mongoose": "^8.2.2",
     "multer": "^1.4.5-lts.1",
     "nanolith": "^0.4.6",
     "node-cron": "^3.0.2",

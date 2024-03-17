@@ -5,9 +5,7 @@ const MONGO_URI = process.env.MONGO_URI
 
 const connectDB = async () => {
   try {
-    connect(MONGO_URI, {
-      useNewUrlParser: true,
-    })
+    connect(MONGO_URI)
     console.log('mongo-db connected 🚀😎')
   } catch (error) {
     console.error(error.message)

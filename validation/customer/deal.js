@@ -41,3 +41,24 @@ export const favouriteDealSchema = object({
       }),
   }),
 })
+
+export const searchFeedSchema = object({
+  query: object({
+    page: string()
+      .required('Page is required')
+      .test('Page must be able to cast to a number', function (val) {
+        return !isNaN(val)
+      }),
+    text: string().required(),
+    lat: string()
+      .required('Lat is required')
+      .test('Lat must be able to cast to a number', function (val) {
+        return !isNaN(val)
+      }),
+    long: string()
+      .required('Long is required')
+      .test('Long must be able to cast to a number', function (val) {
+        return !isNaN(val)
+      }),
+  }),
+})

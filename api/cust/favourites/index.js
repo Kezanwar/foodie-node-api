@@ -26,12 +26,8 @@ router.post('/', auth, validate(favouriteDealSchema), async (req, res) => {
     const updateDeal = await Deal.updateOne(
       {
         _id: deal_id,
-        $and: [
-          { '$favourites.user': { $ne: newDealFavourite.user } },
-          { '$favourites.location_id': { $ne: newDealFavourite.location_id } },
-        ],
       },
-      { $addToSet: { favourites: { user: user._id, location_id } } }
+      { $addToSet: { favourites: newDealFavourite } }
     )
 
     if (!updateDeal.modifiedCount) {
@@ -43,12 +39,8 @@ router.post('/', auth, validate(favouriteDealSchema), async (req, res) => {
     await User.updateOne(
       {
         _id: req.user._id,
-        $and: [
-          { '$favourites.deal': { $ne: newUserFavourite.deal } },
-          { '$favourites.location_id': { $ne: newUserFavourite.location_id } },
-        ],
       },
-      { $addToSet: { favourites: { deal: deal_id, location_id } } }
+      { $addToSet: { favourites: newUserFavourite } }
     )
 
     return res.json({ deal_id, location_id, is_favourited: true })

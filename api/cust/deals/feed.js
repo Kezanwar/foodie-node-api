@@ -69,7 +69,6 @@ router.get('/', auth, async (req, res) => {
       {
         $skip: PAGE * LIMIT,
       },
-
       {
         $limit: LIMIT,
       },

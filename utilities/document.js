@@ -30,6 +30,6 @@ export const getID = (doc) => {
 }
 
 export function makeMongoIDs(...args) {
-  if (args.length === 1) return mongoose.Types.ObjectId(args[0])
-  else return args.map((i) => mongoose.Types.ObjectId(i))
+  if (args.length === 1) return new mongoose.Types.ObjectId(args[0])
+  else return args.map((i) => new mongoose.Types.ObjectId(i))
 }
