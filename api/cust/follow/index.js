@@ -23,12 +23,8 @@ router.post('/', validate(followRestSchema), auth, async (req, res) => {
     const updateDeal = await Restaurant.updateOne(
       {
         _id: rest_id,
-        $and: [
-          { '$favourites.user': { $ne: newRestFollower.user } },
-          { '$favourites.location_id': { $ne: newRestFollower.location_id } },
-        ],
       },
-      { $addToSet: { followers: { user: user._id, location_id } } }
+      { $addToSet: { followers: newRestFollower } }
     )
 
     if (!updateDeal.modifiedCount) {
@@ -40,12 +36,8 @@ router.post('/', validate(followRestSchema), auth, async (req, res) => {
     await User.updateOne(
       {
         _id: req.user._id,
-        $and: [
-          { '$following.restaurant': { $ne: newUserFollower.restaurant } },
-          { '$following.location_id': { $ne: newUserFollower.location_id } },
-        ],
       },
-      { $addToSet: { following: { restaurant: rest_id, location_id } } }
+      { $addToSet: { following: newUserFollower } }
     )
 
     return res.json({ rest_id, location_id, is_following: true })
