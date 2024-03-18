@@ -26,12 +26,12 @@ router.get('/overview', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acce
   let currentDate = current_date ? new Date(current_date) : new Date()
 
   try {
-    const active_deals_prom = Deal.count({
+    const active_deals_prom = Deal.countDocuments({
       'restaurant.id': restaurant._id,
       $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
     })
 
-    const expired_deals_prom = Deal.count({
+    const expired_deals_prom = Deal.countDocuments({
       'restaurant.id': restaurant._id,
       $or: [{ is_expired: true }, { end_date: { $lte: currentDate } }],
     })
@@ -66,7 +66,7 @@ router.get('/overview', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acce
       },
     ])
 
-    const locationsProm = Location.count({ 'restaurant.id': restaurant._id })
+    const locationsProm = Location.countDocuments({ 'restaurant.id': restaurant._id })
 
     const [active_deals, expired_deals, impressions_views_favourites, locations] = await Promise.all([
       active_deals_prom,
