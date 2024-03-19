@@ -322,12 +322,13 @@ router.post(
         })
         .filter(Boolean)
 
-      if (!locationsMap?.length) throwErr('Error: No matching locations found', 400)
+      if (!locationsMap?.length || locations?.length !== locationsMap.length)
+        throwErr('Error: No matching locations found', 400)
 
       const deal = new Deal({
         start_date,
         end_date,
-        name: capitalizeSentence(name),
+        name: capitalizeSentence(name).trim(),
         description: description.trim(),
         locations: locationsMap,
         restaurant: {
@@ -346,7 +347,7 @@ router.post(
           'restaurant.id': restaurant._id,
           _id: { $in: locations },
         },
-        { $push: { active_deals: deal._id } }
+        { $push: { active_deals: { deal_id: deal._id, name: deal.name, description: deal.description } } }
       )
 
       await Promise.all([deal.save(), updateLocationsActiveDealProm])
@@ -370,16 +371,20 @@ router.patch(
       body: { name, description, end_date, locations },
     } = req
 
-    const locationsMap = locations
-      .map((id) => {
-        const mappedLoc = restLocations.find((rL) => getID(rL) === id)
-        return mappedLoc ? { location_id: id, geometry: mappedLoc.geometry, nickname: mappedLoc.nickname } : false
-      })
-      .filter(Boolean)
-
-    if (!locationsMap?.length) throwErr('Error: No matching locations found', 400)
-
     try {
+      const trimmedName = name.trim()
+      const trimmedDescription = description.trim()
+
+      const locationsMap = locations
+        .map((id) => {
+          const mappedLoc = restLocations.find((rL) => getID(rL) === id)
+          return mappedLoc ? { location_id: id, geometry: mappedLoc.geometry, nickname: mappedLoc.nickname } : false
+        })
+        .filter(Boolean)
+
+      if (!locationsMap?.length || locationsMap.length !== locations.length)
+        throwErr('Error: No matching locations found', 400)
+
       const deal = await Deal.findById(id)
       if (!deal) throwErr('Deal not found', 400)
       if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to edit this deal', 400)
@@ -403,7 +408,7 @@ router.patch(
               'restaurant.id': restaurant._id,
               _id: { $in: locationsToRemove },
             },
-            { $pull: { active_deals: deal._id } }
+            { $pull: { active_deals: { deal_id: deal._id } } }
           )
         )
       }
@@ -422,13 +427,40 @@ router.patch(
               'restaurant.id': restaurant._id,
               _id: { $in: locationsToAdd },
             },
-            { $push: { active_deals: deal._id } }
+            { $push: { active_deals: { deal_id: deal._id, name: trimmedName, description: trimmedDescription } } }
           )
         )
       }
 
-      deal.name = name
-      deal.description = description
+      const locationsToUpdate = locations.reduce((acc, newL) => {
+        if (!locationsToRemove.find((removeL) => removeL === newL)) {
+          if (!locationsToAdd.find((addL) => addL === newL)) {
+            acc.push(newL)
+          }
+        }
+        return acc
+      }, [])
+
+      if (locationsToUpdate?.length) {
+        proms.push(
+          Location.updateMany(
+            {
+              'restaurant.id': restaurant._id,
+              _id: { $in: locationsToUpdate },
+              active_deals: { $elemMatch: { deal_id: deal._id } },
+            },
+            {
+              $set: {
+                'active_deals.$.name': trimmedName,
+                'active_deals.$.description': trimmedDescription,
+              },
+            }
+          )
+        )
+      }
+
+      deal.name = trimmedName
+      deal.description = trimmedDescription
       deal.end_date = end_date
       deal.locations = locationsMap
 
@@ -461,9 +493,9 @@ router.post(
           {
             'restaurant.id': restaurant._id,
           },
-          { $pull: { active_deals: deal._id } }
+          { $pull: { active_deals: { deal_id: deal._id } } }
         ),
-        deal.delete(),
+        deal.deleteOne(),
       ])
 
       return res.status(200).json('Success')
@@ -504,7 +536,7 @@ router.patch(
           {
             'restaurant.id': restaurant._id,
           },
-          { $pull: { active_deals: deal._id } }
+          { $pull: { active_deals: { deal_id: deal._id } } }
         ),
         deal.save(),
       ])

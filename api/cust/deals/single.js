@@ -98,7 +98,7 @@ router.get('/', auth, validate(singleDealSchema), async (req, res) => {
             name: '$restaurant.name',
             avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
             cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
-            bio: { $arrayElemAt: ['$rest.bio', 0] },
+            bio: '$restaurant.bio',
             booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
           },
           name: 1,

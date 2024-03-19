@@ -91,6 +91,9 @@ const LocationSchema = new mongoose.Schema(
       name: {
         type: String,
       },
+      bio: {
+        type: String,
+      },
       avatar: {
         type: String,
       },
@@ -102,8 +105,16 @@ const LocationSchema = new mongoose.Schema(
     dietary_requirements: [CategorySchemaWithIndex],
     active_deals: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'deal',
+        deal_id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'deal',
+        },
+        name: {
+          type: String,
+        },
+        description: {
+          type: String,
+        },
       },
     ],
   },
