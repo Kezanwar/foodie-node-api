@@ -41,7 +41,7 @@ router.get('/:id', auth, validate(singleRestaurantSchema), async (req, res) => {
         $lookup: {
           from: 'deals',
           foreignField: '_id',
-          localField: 'active_deals',
+          localField: 'active_deals.deal_id',
           pipeline: [
             {
               $project: {

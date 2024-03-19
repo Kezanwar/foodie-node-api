@@ -109,6 +109,7 @@ router.post(
         timezone,
         restaurant: {
           id: restaurant._id,
+          bio: restaurant.bio,
           name: restaurant.name,
           avatar: restaurant.avatar,
           cover_photo: restaurant.cover_photo,

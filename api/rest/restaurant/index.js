@@ -165,6 +165,7 @@ router.patch(
         {
           $set: {
             'restaurant.name': name,
+            'restaurant.bio': bio,
           },
         }
       )

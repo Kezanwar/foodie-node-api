@@ -5,7 +5,7 @@ dotenv.config()
 
 import auth from '#app/middleware/auth.js'
 
-import { SendError, throwErr } from '#app/utilities/error.js'
+import { SendError } from '#app/utilities/error.js'
 
 import Location from '#app/models/Location.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
@@ -20,8 +20,6 @@ router.get('/', auth, validate(searchFeedSchema), async (req, res) => {
     query: { page, long, lat, text },
     // coords must be [long, lat]
   } = req
-
-  //https://stackoverflow.com/questions/18883601/function-to-calculate-distance-between-two-coordinates
 
   try {
     const LONG = Number(long)
@@ -69,7 +67,7 @@ router.get('/', auth, validate(searchFeedSchema), async (req, res) => {
       {
         $lookup: {
           from: 'deals', // Replace with the name of your linked collection
-          localField: 'active_deals',
+          localField: 'active_deals.deal_id',
           foreignField: '_id',
           let: { locationId: '$_id' },
           pipeline: [

@@ -75,7 +75,7 @@ router.get('/', auth, async (req, res) => {
       {
         $lookup: {
           from: 'deals', // Replace with the name of your linked collection
-          localField: 'active_deals',
+          localField: 'active_deals.deal_id',
           foreignField: '_id',
           let: { locationId: '$_id' },
           pipeline: [
