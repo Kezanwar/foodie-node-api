@@ -3,16 +3,19 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
+import Location from '#app/models/Location.js'
+
 import auth from '#app/middleware/auth.js'
+import validate from '#app/middleware/validation.js'
 
 import { SendError } from '#app/utilities/error.js'
-
-import Location from '#app/models/Location.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
-import validate from '#app/middleware/validation.js'
+
 import { searchFeedSchema } from '#app/validation/customer/deal.js'
 
-const LIMIT = 10 //20 results at a time
+import { workerService } from '#app/services/worker/index.js'
+
+const LIMIT = 10 //10 results at a time
 const RADIUS_METRES = 20000 //20km
 
 router.get('/', auth, validate(searchFeedSchema), async (req, res) => {
@@ -58,12 +61,12 @@ router.get('/', auth, validate(searchFeedSchema), async (req, res) => {
         },
       },
       ...calculateDistancePipeline(LAT, LONG, '$geometry.coordinates', 'distance_miles'),
-      {
-        $skip: PAGE * LIMIT,
-      },
-      {
-        $limit: LIMIT,
-      },
+      // {
+      //   $skip: PAGE * LIMIT,
+      // },
+      // {
+      //   $limit: LIMIT,
+      // },
       {
         $lookup: {
           from: 'deals', // Replace with the name of your linked collection
@@ -111,8 +114,11 @@ router.get('/', auth, validate(searchFeedSchema), async (req, res) => {
           restaurant: {
             id: '$restaurant.id',
             name: '$restaurant.name',
+            bio: '$restaurant.bio',
             avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
             cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
+            cuisines: '$cuisines',
+            dietary: '$dietary_requirements',
           },
           location: {
             id: '$_id',
@@ -121,9 +127,14 @@ router.get('/', auth, validate(searchFeedSchema), async (req, res) => {
           },
         },
       },
-    ]).sort({ 'location.distance_miles': 1 })
+    ])
 
-    return res.json({ nextCursor: results < LIMIT ? undefined : PAGE + 1, deals: results })
+    const sorted = await workerService.call({
+      name: 'orderSearchDealsByTextMatchRelevance',
+      params: [JSON.stringify(results), text],
+    })
+
+    return res.json({ nextCursor: results < LIMIT ? undefined : PAGE + 1, deals: sorted })
   } catch (error) {
     SendError(res, error)
   }
