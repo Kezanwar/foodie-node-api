@@ -1,3 +1,4 @@
+import { expAsPerc } from './numbers.js'
 import { getStringSimilarity } from './strings.js'
 
 export const filterDealsByDistance = (deals, distance) =>
@@ -37,11 +38,56 @@ export const checkSingleRestaurantFollowAndFav = (user, location) => {
 export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
   const parsedDeals = JSON.parse(deals)
   const sorted = []
+
+  const restuarant_map = {}
+
   for (let d of parsedDeals) {
-    d.match = Math.max(getStringSimilarity(search, d.deal.name), getStringSimilarity(search, d.deal.description))
-    if (!sorted.length || sorted[sorted.length - 1].match > d.match) {
+    if (!restuarant_map[d.restaurant.id]) {
+      restuarant_map[d.restaurant.id] = {
+        cuisine: getCuisineDietaryMatch(search, d.restaurant.cuisines),
+        dietary: getCuisineDietaryMatch(search, d.restaurant.dietary),
+      }
+    }
+
+    const deal_name = getStringSimilarity(search, d.deal.name)
+
+    if (deal_name > 0.95) {
+      d.match = deal_name
+    } else {
+      const deal_description = getStringSimilarity(search, d.deal.description)
+
+      if (deal_description > 0.95) {
+        d.match = deal_description
+      } else {
+        d.match = expAsPerc(
+          deal_name,
+          deal_description,
+          getStringSimilarity(search, d.restaurant.bio),
+          getStringSimilarity(search, d.restaurant.name),
+          restuarant_map[d.restaurant.id].cuisine,
+          restuarant_map[d.restaurant.id].dietary
+        )
+      }
+    }
+
+    delete d.restaurant.bio
+    delete d.restaurant.cuisines
+    delete d.restaurant.dietary
+
+    if (sorted[0]?.match > d.match) {
       sorted.push(d)
     } else sorted.unshift(d)
   }
+
   return sorted
+}
+
+const getCuisineDietaryMatch = (search, arr) => {
+  return arr.reduce((acc, curr) => {
+    const calc = getStringSimilarity(search, curr.name)
+    if (acc < calc) {
+      acc = calc
+    }
+    return acc
+  }, 0)
 }
