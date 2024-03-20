@@ -56,20 +56,19 @@ function calcEditDistance(s1, s2) {
   return costs[s2.length]
 }
 
-export const matchBodyStringSimilarity = (needle, haystack) => {
-  const arr = haystack.split(' ').reduce((acc, curr) => {
+export const getStringSimilarity = (needle, haystack) => {
+  return haystack.split(' ').reduce((acc, curr) => {
     const calc = stringSimilarity(needle, curr)
-    if (!acc.length || acc[acc.length - 1] < stringSimilarity(needle, curr)) {
-      acc.push(calc)
+    if (acc < calc) {
+      acc = calc
     }
     return acc
-  }, [])
-  return Math.max(...arr)
+  }, 0)
 }
 
 export const testLevenshstein = () => {
   const needle = 'Banana'
   const haystack =
-    'Bacon ipsum dolor amet pancetta shankle sirloin jerky pork drumstick. Short ribs bresaola chicken pastrami shank landjaeger pork chop t-bone jowl tri-tip chuck sirloin. Frankfurter chuck cow, sausage t-bone strip steak shankle ground round andouille pork loin porchetta boudin. Picanha shoulder sirloin venison shankle biltong fatback porchetta pastrami NBananapork chop ground round drumstick kevin. Ham chuck pork loin salami shank hamburger ball tip pork chop cupim, ground round boudin turducken. Sausage pork chop buffalo boudin, venison frankfurter meatball burgdoggen tail pork belly jowl porchetta prosciutto doner. Ball tip cupim landjaeger shankle tail buffalo meatloaf turducken.'
-  console.log(matchBodyStringSimilarity(needle, haystack))
+    'Bacon ipsum dolor amet pancetta shankle sirloin jerky pork drumstick. Short ribs bresaola chicken pastrami shank landjaeger pork chop t-bone jowl tri-tip chuck sirloin. Frankfurter chuck cow, sausage t-bone strip steak shankle ground round andouille pork loin porchetta boudin. Picanha shoulder sirloin venison shankle biltong fatback porchetta pastrami NBananapork chop ground round drumstick kevin. Ham chuck pork loin salami shank hamburger ball tip pork chop cupim, ground round boudin turducken. Sausage pork chop buffalo boudin, grey frankfurter meatball burgdoggen tail pork belly jowl porchetta prosciutto doner. Ball tip cupim landjaeger shankle tail buffalo meatloaf turducken.'
+  console.log(getStringSimilarity(needle, haystack))
 }

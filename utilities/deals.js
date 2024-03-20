@@ -1,4 +1,4 @@
-import { matchBodyStringSimilarity } from './strings.js'
+import { getStringSimilarity } from './strings.js'
 
 export const filterDealsByDistance = (deals, distance) =>
   JSON.parse(deals).filter((deal) => deal.location.distance_miles <= distance)
@@ -38,10 +38,7 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
   const parsedDeals = JSON.parse(deals)
   const sorted = []
   for (let d of parsedDeals) {
-    d.match = Math.max(
-      matchBodyStringSimilarity(search, d.deal.name),
-      matchBodyStringSimilarity(search, d.deal.description)
-    )
+    d.match = Math.max(getStringSimilarity(search, d.deal.name), getStringSimilarity(search, d.deal.description))
     if (!sorted.length || sorted[sorted.length - 1].match > d.match) {
       sorted.push(d)
     } else sorted.unshift(d)
