@@ -62,8 +62,6 @@ export const getStringSimilaritySingleWord = (needle, haystack) => {
   return haystack.split(' ').reduce((acc, curr) => {
     const calc = stringSimilarity(needle, curr)
 
-    console.log(curr, calc)
-
     if (acc < calc) {
       acc = calc
     }
