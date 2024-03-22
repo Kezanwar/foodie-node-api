@@ -42,13 +42,6 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
   const restuarant_map = {}
 
   for (let d of parsedDeals) {
-    if (!restuarant_map[d.restaurant.id]) {
-      restuarant_map[d.restaurant.id] = {
-        cuisine: getCuisineDietaryMatch(search, d.restaurant.cuisines),
-        dietary: getCuisineDietaryMatch(search, d.restaurant.dietary),
-      }
-    }
-
     const deal_name = getStringSimilarity(search, d.deal.name)
 
     if (deal_name > 0.95) {
@@ -59,6 +52,13 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
       if (deal_description > 0.95) {
         d.match = deal_description
       } else {
+        if (!restuarant_map?.[d.restaurant.id]) {
+          restuarant_map[d.restaurant.id] = {
+            cuisine: getCuisineDietaryMatch(search, d.restaurant.cuisines),
+            dietary: getCuisineDietaryMatch(search, d.restaurant.dietary),
+          }
+        }
+
         d.match = expAsPerc(
           deal_name,
           deal_description,

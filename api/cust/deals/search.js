@@ -15,20 +15,16 @@ import { searchFeedSchema } from '#app/validation/customer/deal.js'
 
 import { workerService } from '#app/services/worker/index.js'
 
-const LIMIT = 10 //10 results at a time
 const RADIUS_METRES = 20000 //20km
 
 router.get('/', auth, validate(searchFeedSchema), async (req, res) => {
   const {
-    query: { page, long, lat, text },
-    // coords must be [long, lat]
+    query: { long, lat, text },
   } = req
 
   try {
     const LONG = Number(long)
     const LAT = Number(lat)
-
-    const PAGE = page ? Number(page) : 0
 
     const results = await Location.aggregate([
       {
@@ -61,12 +57,6 @@ router.get('/', auth, validate(searchFeedSchema), async (req, res) => {
         },
       },
       ...calculateDistancePipeline(LAT, LONG, '$geometry.coordinates', 'distance_miles'),
-      // {
-      //   $skip: PAGE * LIMIT,
-      // },
-      // {
-      //   $limit: LIMIT,
-      // },
       {
         $lookup: {
           from: 'deals', // Replace with the name of your linked collection
@@ -134,7 +124,7 @@ router.get('/', auth, validate(searchFeedSchema), async (req, res) => {
       params: [JSON.stringify(results), text],
     })
 
-    return res.json({ nextCursor: results < LIMIT ? undefined : PAGE + 1, deals: sorted })
+    return res.json({ nextCursor: undefined, deals: sorted })
   } catch (error) {
     SendError(res, error)
   }
