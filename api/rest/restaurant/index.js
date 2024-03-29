@@ -10,7 +10,7 @@ import Restaurant from '#app/models/Restaurant.js'
 import Location from '#app/models/Location.js'
 import Deal from '#app/models/Deal.js'
 
-import auth from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
 import validate from '#app/middleware/validation.js'
 
@@ -29,7 +29,7 @@ import { bucketName, foodieS3Client, s3PutCommand } from '#app/services/aws/inde
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
 //! @access authenticated & no restauaant || restaurant
 
-router.get('/', auth, async (req, res) => {
+router.get('/', authWithCache, async (req, res) => {
   const { user } = req
 
   try {
@@ -48,7 +48,7 @@ router.get('/', auth, async (req, res) => {
 
 router.patch(
   '/edit',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
   upload.fields([
     { name: 'avatar', maxCount: 1 },

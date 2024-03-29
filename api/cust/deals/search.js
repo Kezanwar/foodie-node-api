@@ -5,7 +5,7 @@ dotenv.config()
 
 import Location from '#app/models/Location.js'
 
-import auth from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validation.js'
 
 import { SendError } from '#app/utilities/error.js'
@@ -17,7 +17,7 @@ import { workerService } from '#app/services/worker/index.js'
 
 const RADIUS_METRES = 20000 //20km
 
-router.get('/', auth, validate(searchFeedSchema), async (req, res) => {
+router.get('/', authWithCache, validate(searchFeedSchema), async (req, res) => {
   const {
     query: { long, lat, text },
   } = req

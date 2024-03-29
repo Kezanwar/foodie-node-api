@@ -3,7 +3,7 @@ import { Router } from 'express'
 import Deal from '#app/models/Deal.js'
 import User from '#app/models/User.js'
 
-import auth, { authWithFavFollow } from '#app/middleware/auth.js'
+import { authWithCache, authWithFavFollow } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validation.js'
 
 import { favouriteDealSchema } from '#app/validation/customer/deal.js'
@@ -12,7 +12,7 @@ import { SendError, throwErr } from '#app/utilities/error.js'
 
 const router = Router()
 
-router.post('/', auth, validate(favouriteDealSchema), async (req, res) => {
+router.post('/', authWithCache, validate(favouriteDealSchema), async (req, res) => {
   const {
     body: { location_id, deal_id },
     user,
@@ -49,7 +49,7 @@ router.post('/', auth, validate(favouriteDealSchema), async (req, res) => {
   }
 })
 
-router.patch('/', auth, validate(favouriteDealSchema), async (req, res) => {
+router.patch('/', authWithCache, validate(favouriteDealSchema), async (req, res) => {
   const {
     body: { location_id, deal_id },
     user,

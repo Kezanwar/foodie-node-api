@@ -7,7 +7,7 @@ dotenv.config()
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 
-import auth from '#app/middleware/auth.js'
+import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
 import Restaurant from '#app/models/Restaurant.js'
@@ -32,12 +32,13 @@ import { createImageName, createImgUUID } from '#app/utilities/images.js'
 import { SendError, throwErr } from '#app/utilities/error.js'
 import { findRestaurantsLocations } from '#app/utilities/locations.js'
 import { getID } from '#app/utilities/document.js'
+import { redis } from '#app/server.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
 //! @access authenticated & no restauant || restaurant
 
-router.post('/company-info', auth, validate(companyInfoSchema), async (req, res) => {
+router.post('/company-info', authNoCache, validate(companyInfoSchema), async (req, res) => {
   const { company_name, company_number, company_address } = req.body
   try {
     const user = req.user
@@ -67,7 +68,7 @@ router.post('/company-info', auth, validate(companyInfoSchema), async (req, res)
       await newRest.save()
 
       user.restaurant = { id: newRest.id, role: RESTAURANT_ROLES.SUPER_ADMIN }
-      await user.save()
+      await Promise.all([user.save(), redis.setUserByID(user)])
 
       return res.status(200).json(newRest.toClient())
     } else {
@@ -103,7 +104,7 @@ router.post('/company-info', auth, validate(companyInfoSchema), async (req, res)
 
 router.post(
   '/details',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
   upload.fields([
     { name: 'avatar', maxCount: 1 },
@@ -235,7 +236,7 @@ router.post(
 
 router.post(
   '/locations',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
   async (req, res) => {
     const { restaurant } = req
@@ -279,7 +280,7 @@ router.post(
 
 router.post(
   '/submit-application',
-  auth,
+  authWithCache,
   validate(restaurantSubmitApplicationSchema),
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
   async (req, res) => {

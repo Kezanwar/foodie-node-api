@@ -9,7 +9,7 @@ import Location from '#app/models/Location.js'
 
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES } from '#app/constants/restaurant.js'
 
-import auth from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validation.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
@@ -28,7 +28,7 @@ import { workerService } from '#app/services/worker/index.js'
 
 router.post(
   '/check',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { getLocations: true }),
   validate(checkLocationSchema),
   async (req, res) => {
@@ -60,7 +60,7 @@ router.post(
 
 router.post(
   '/add',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { getLocations: true }),
   validate(addLocationSchema),
   async (req, res) => {
@@ -134,7 +134,7 @@ router.post(
 
 router.post(
   '/delete/:id',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { getLocations: true }),
   async (req, res) => {
     const {
@@ -180,7 +180,7 @@ router.post(
 
 router.post(
   '/edit/check/:id',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { getLocations: true }),
   validate(checkLocationSchema),
   async (req, res) => {
@@ -220,7 +220,7 @@ router.post(
 
 router.patch(
   '/edit/:id',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { getLocations: true }),
   validate(addLocationSchema),
   async (req, res) => {
@@ -312,7 +312,7 @@ router.patch(
   }
 )
 
-router.get('/', auth, restRoleGuard(RESTAURANT_ROLES.USER, { getLocations: true }), async (req, res) => {
+router.get('/', authWithCache, restRoleGuard(RESTAURANT_ROLES.USER, { getLocations: true }), async (req, res) => {
   const { locations } = req
   try {
     res.status(200).json(locations)

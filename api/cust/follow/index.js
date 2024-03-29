@@ -1,7 +1,7 @@
 import { Router } from 'express'
 const router = Router()
 
-import auth from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 
 import User from '#app/models/User.js'
 import Restaurant from '#app/models/Restaurant.js'
@@ -11,7 +11,7 @@ import { SendError, throwErr } from '#app/utilities/error.js'
 import validate from '#app/middleware/validation.js'
 import { followRestSchema } from '#app/validation/customer/follow.js'
 
-router.post('/', validate(followRestSchema), auth, async (req, res) => {
+router.post('/', validate(followRestSchema), authWithCache, async (req, res) => {
   const {
     body: { location_id, rest_id },
     user,
@@ -46,7 +46,7 @@ router.post('/', validate(followRestSchema), auth, async (req, res) => {
   }
 })
 
-router.patch('/', auth, validate(followRestSchema), async (req, res) => {
+router.patch('/', authWithCache, validate(followRestSchema), async (req, res) => {
   const {
     body: { location_id, rest_id },
     user,

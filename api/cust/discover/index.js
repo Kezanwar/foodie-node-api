@@ -6,7 +6,7 @@ import axios from 'axios'
 
 import Location from '#app/models/Location.js'
 
-import auth from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 
 import { SendError, throwErr } from '#app/utilities/error.js'
 import { workerService } from '#app/services/worker/index.js'
@@ -35,7 +35,7 @@ const getQueryLocations = () => {
   return defaults
 }
 
-router.get('/', auth, async (req, res) => {
+router.get('/', authWithCache, async (req, res) => {
   const {
     query: { long, lat },
   } = req

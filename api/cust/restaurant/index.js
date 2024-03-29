@@ -3,7 +3,7 @@ const router = Router()
 import dotenv from 'dotenv'
 import { isValidObjectId } from 'mongoose'
 
-import auth from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validation.js'
 
 import Location from '#app/models/Location.js'
@@ -17,7 +17,7 @@ import { singleRestaurantSchema } from '#app/validation/customer/restaurant.js'
 
 dotenv.config()
 
-router.get('/:id', auth, validate(singleRestaurantSchema), async (req, res) => {
+router.get('/:id', authWithCache, validate(singleRestaurantSchema), async (req, res) => {
   const user = req.user
   const id = req.params?.id
 

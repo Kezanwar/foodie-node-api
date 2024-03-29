@@ -6,7 +6,7 @@ const MONGO_URI = process.env.MONGO_URI
 const connectDB = async () => {
   try {
     connect(MONGO_URI)
-    console.log('mongo-db connected 🚀😎')
+    console.log('mongo-db connected 🚀')
   } catch (error) {
     console.error(error.message)
     // Exit proccess with failure

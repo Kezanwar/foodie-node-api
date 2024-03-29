@@ -23,6 +23,7 @@ const PORT = process.env.PORT
 import rateLimiterMiddlware from './middleware/rate-limit.js'
 //crons
 import runCrons from './services/crons/index.js'
+import { createRedis } from './services/cache/redis.js'
 
 //create app
 const app = express()
@@ -32,6 +33,9 @@ app.set('view engine', 'ejs')
 
 //connect to database
 connectDB()
+
+//create redis client and export for use around the app
+export const redis = await createRedis()
 
 //initialize mixpanel
 mixpanel.init(process.env.MIXPANEL_TOKEN, { host: 'api-eu.mixpanel.com' })

@@ -5,7 +5,7 @@ dotenv.config()
 
 import Location from '#app/models/Location.js'
 
-import auth from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 
 import { SendError, throwErr } from '#app/utilities/error.js'
 
@@ -33,7 +33,7 @@ const getQueryLocations = (cuisines, dietary_requirements) => {
   return defaults
 }
 
-router.get('/', auth, async (req, res) => {
+router.get('/', authWithCache, async (req, res) => {
   const {
     query: { page, long, lat, cuisines, dietary_requirements },
     // coords must be [long, lat]
