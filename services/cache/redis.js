@@ -16,18 +16,28 @@ export const createRedis = async () => {
 }
 
 class RedisCache {
+  #client = null
+
   constructor(redis) {
-    this.client = redis
+    this.#client = redis
+  }
+
+  #getID(doc) {
+    return doc._id.toHexString()
   }
 
   async getUserByID(id) {
-    const user = await this.client.get(id)
+    const user = await this.#client.get(id)
     if (user) {
       return User.hydrate(JSON.parse(user))
     } else return null
   }
 
   async setUserByID(user) {
-    await this.client.set(user._id.toHexString(), JSON.stringify(user))
+    await this.#client.set(this.#getID(user), JSON.stringify(user))
+  }
+
+  async removeUserByID(user) {
+    await this.#client.del(this.#getID(user))
   }
 }

@@ -28,7 +28,6 @@ export async function authWithCache(req, res, next) {
     const userFromCache = await redis.getUserByID(decoded.user.id)
 
     if (userFromCache) {
-      console.log('is cached user')
       req.user = userFromCache
     } else {
       //  attach dedcoded user in token to req.user in req object
