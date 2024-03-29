@@ -3,16 +3,17 @@ import { Router } from 'express'
 import Deal from '#app/models/Deal.js'
 import User from '#app/models/User.js'
 
-import auth, { authWithFavFollow } from '#app/middleware/auth.js'
+import { authWithCache, authWithFavFollow } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validation.js'
 
 import { favouriteDealSchema } from '#app/validation/customer/deal.js'
 
 import { SendError, throwErr } from '#app/utilities/error.js'
+import { redis } from '#app/server.js'
 
 const router = Router()
 
-router.post('/', auth, validate(favouriteDealSchema), async (req, res) => {
+router.post('/', authWithCache, validate(favouriteDealSchema), async (req, res) => {
   const {
     body: { location_id, deal_id },
     user,
@@ -36,12 +37,14 @@ router.post('/', auth, validate(favouriteDealSchema), async (req, res) => {
 
     const newUserFavourite = { deal: deal_id, location_id }
 
-    await User.updateOne(
+    const userProm = User.updateOne(
       {
         _id: req.user._id,
       },
       { $addToSet: { favourites: newUserFavourite } }
     )
+
+    await Promise.all([userProm, redis.removeUserByID(user)])
 
     return res.json({ deal_id, location_id, is_favourited: true })
   } catch (error) {
@@ -49,7 +52,7 @@ router.post('/', auth, validate(favouriteDealSchema), async (req, res) => {
   }
 })
 
-router.patch('/', auth, validate(favouriteDealSchema), async (req, res) => {
+router.patch('/', authWithCache, validate(favouriteDealSchema), async (req, res) => {
   const {
     body: { location_id, deal_id },
     user,
@@ -60,7 +63,7 @@ router.patch('/', auth, validate(favouriteDealSchema), async (req, res) => {
     const dealProm = Deal.updateOne({ _id: deal_id }, { $pull: { favourites: { user: user._id, location_id } } })
     const userProm = User.updateOne({ _id: req.user._id }, { $pull: { favourites: { deal: deal_id, location_id } } })
 
-    await Promise.all([dealProm, userProm])
+    await Promise.all([dealProm, userProm, redis.removeUserByID(user)])
 
     return res.json({ deal_id, location_id, is_favourited: false })
   } catch (error) {

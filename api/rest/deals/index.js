@@ -14,7 +14,7 @@ import { RESTAURANT_ROLES } from '#app/constants/restaurant.js'
 import { DEALS_PER_LOCATION } from '#app/constants/deals.js'
 
 // middlewares
-import auth from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
 import validate from '#app/middleware/validation.js'
 
@@ -30,129 +30,139 @@ import { capitalizeSentence } from '#app/utilities/strings.js'
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
 //! @access authenticated & no restauant || restaurant
 
-router.get('/active', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }), async (req, res) => {
-  const {
-    restaurant,
-    query: { current_date },
-  } = req
-  try {
-    let currentDate = current_date ? new Date(current_date) : new Date()
+router.get(
+  '/active',
+  authWithCache,
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
+  async (req, res) => {
+    const {
+      restaurant,
+      query: { current_date },
+    } = req
+    try {
+      let currentDate = current_date ? new Date(current_date) : new Date()
 
-    const query = await Deal.aggregate([
-      {
-        $match: {
-          'restaurant.id': restaurant._id,
-          $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
-        },
-      },
-      {
-        $addFields: {
-          unique_views: {
-            $sum: {
-              $size: { $setUnion: [[], '$views'] },
-            },
-          },
-          views: { $size: '$views' },
-          favourites: { $size: '$favourites' },
-          id: '$_id',
-          days_left: {
-            $cond: {
-              if: { $lt: ['$start_date', currentDate] },
-              then: {
-                $dateDiff: {
-                  startDate: currentDate,
-                  endDate: '$end_date',
-                  unit: 'day',
-                },
-              },
-              else: {
-                $dateDiff: {
-                  startDate: '$start_date',
-                  endDate: '$end_date',
-                  unit: 'day',
-                },
-              },
-            },
-          },
-          days_active: {
-            $cond: {
-              if: { $lt: ['$start_date', currentDate] },
-              then: {
-                $dateDiff: {
-                  startDate: '$start_date',
-                  endDate: currentDate,
-                  unit: 'day',
-                },
-              },
-              else: 0,
-            },
+      const query = await Deal.aggregate([
+        {
+          $match: {
+            'restaurant.id': restaurant._id,
+            $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
           },
         },
-      },
-      {
-        $unset: ['locations', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt', 'description'],
-      },
-    ]).sort({ updatedAt: -1 })
+        {
+          $addFields: {
+            unique_views: {
+              $sum: {
+                $size: { $setUnion: [[], '$views'] },
+              },
+            },
+            views: { $size: '$views' },
+            favourites: { $size: '$favourites' },
+            id: '$_id',
+            days_left: {
+              $cond: {
+                if: { $lt: ['$start_date', currentDate] },
+                then: {
+                  $dateDiff: {
+                    startDate: currentDate,
+                    endDate: '$end_date',
+                    unit: 'day',
+                  },
+                },
+                else: {
+                  $dateDiff: {
+                    startDate: '$start_date',
+                    endDate: '$end_date',
+                    unit: 'day',
+                  },
+                },
+              },
+            },
+            days_active: {
+              $cond: {
+                if: { $lt: ['$start_date', currentDate] },
+                then: {
+                  $dateDiff: {
+                    startDate: '$start_date',
+                    endDate: currentDate,
+                    unit: 'day',
+                  },
+                },
+                else: 0,
+              },
+            },
+          },
+        },
+        {
+          $unset: ['locations', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt', 'description'],
+        },
+      ]).sort({ updatedAt: -1 })
 
-    res.json(query)
-  } catch (error) {
-    SendError(res, error)
+      res.json(query)
+    } catch (error) {
+      SendError(res, error)
+    }
   }
-})
+)
 
-router.get('/expired', auth, restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }), async (req, res) => {
-  const {
-    restaurant,
-    query: { current_date },
-  } = req
-  try {
-    let currentDate = current_date ? new Date(current_date) : new Date()
-    const agg = await Deal.aggregate([
-      {
-        $match: {
-          'restaurant.id': restaurant._id,
-          $or: [{ is_expired: true }, { end_date: { $lte: currentDate } }],
-        },
-      },
-      {
-        $addFields: {
-          unique_views: {
-            $sum: {
-              $size: { $setUnion: [[], '$views'] },
-            },
+router.get(
+  '/expired',
+  authWithCache,
+  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
+  async (req, res) => {
+    const {
+      restaurant,
+      query: { current_date },
+    } = req
+    try {
+      let currentDate = current_date ? new Date(current_date) : new Date()
+      const agg = await Deal.aggregate([
+        {
+          $match: {
+            'restaurant.id': restaurant._id,
+            $or: [{ is_expired: true }, { end_date: { $lte: currentDate } }],
           },
-          views: { $size: '$views' },
-          favourites: { $size: '$favourites' },
-          id: '$_id',
-          days_active: {
-            $cond: {
-              if: { $lt: ['$start_date', currentDate] },
-              then: {
-                $dateDiff: {
-                  startDate: '$start_date',
-                  endDate: '$end_date',
-                  unit: 'day',
-                },
+        },
+        {
+          $addFields: {
+            unique_views: {
+              $sum: {
+                $size: { $setUnion: [[], '$views'] },
               },
-              else: 0,
+            },
+            views: { $size: '$views' },
+            favourites: { $size: '$favourites' },
+            id: '$_id',
+            days_active: {
+              $cond: {
+                if: { $lt: ['$start_date', currentDate] },
+                then: {
+                  $dateDiff: {
+                    startDate: '$start_date',
+                    endDate: '$end_date',
+                    unit: 'day',
+                  },
+                },
+                else: 0,
+              },
             },
           },
         },
-      },
-      {
-        $unset: ['locations', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt', 'description'],
-      },
-    ]).sort({ updatedAt: -1 })
+        {
+          $unset: ['locations', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt', 'description'],
+        },
+      ]).sort({ updatedAt: -1 })
 
-    res.json(agg)
-  } catch (error) {
-    SendError(res, error)
+      res.json(agg)
+    } catch (error) {
+      SendError(res, error)
+    }
   }
-})
+)
 
 router.get(
   '/single/:id',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
   async (req, res) => {
     const {
@@ -245,7 +255,7 @@ router.get(
 
 router.get(
   '/use-template/:id',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
   async (req, res) => {
     const {
@@ -290,7 +300,7 @@ router.get(
 
 router.post(
   '/add',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true, getLocations: true }),
   validate(addDealSchema),
   async (req, res) => {
@@ -360,7 +370,7 @@ router.post(
 
 router.patch(
   '/edit/:id',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true, getLocations: true }),
   validate(editDealSchema),
   async (req, res) => {
@@ -475,7 +485,7 @@ router.patch(
 )
 router.post(
   '/delete/:id',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
   async (req, res) => {
     const {
@@ -507,7 +517,7 @@ router.post(
 
 router.patch(
   '/expire/:id',
-  auth,
+  authWithCache,
   restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
   async (req, res) => {
     const {

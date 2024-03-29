@@ -5,14 +5,13 @@ import { SendError, throwErr } from '#app/utilities/error.js'
 import { getUser } from '#app/utilities/user.js'
 import User from '#app/models/User.js'
 import { makeMongoIDs } from '#app/utilities/document.js'
+import { redis } from '#app/server.js'
 
 dotenv.config()
 
 const JWT_SECRET = process.env.JWT_SECRET
 
-// Custom middleware for PRIVATE AND PROTECTED ROUTES, which will allow us to verify a json webtoken sent in the req headers and log the user in if so
-
-async function auth(req, res, next) {
+export async function authWithCache(req, res, next) {
   // Get token from header
   const token = req.header('x-auth-token')
   // check if no token
@@ -25,10 +24,43 @@ async function auth(req, res, next) {
     const decoded = jwt.verify(token, JWT_SECRET)
 
     if (!decoded) throwErr('token not valid')
-    //  attach dedcoded user in token to req.user in req object
-    const User = await getUser(decoded.user.id)
 
-    req.user = User
+    const userFromCache = await redis.getUserByID(decoded.user.id)
+
+    if (userFromCache) {
+      req.user = userFromCache
+    } else {
+      //  attach dedcoded user in token to req.user in req object
+      const userFromDB = await getUser(decoded.user.id)
+      await redis.setUserByID(userFromDB)
+      req.user = userFromDB
+    }
+
+    //  call next to continue to the next middleware with the new validated user in req object
+    next()
+  } catch (err) {
+    // if token is invalid or expired
+    SendError(res, err)
+  }
+}
+export async function authNoCache(req, res, next) {
+  // Get token from header
+  const token = req.header('x-auth-token')
+  // check if no token
+  if (!token) {
+    return res.status(401).json({ msg: 'No token, authorization denied' })
+  }
+
+  try {
+    // verify token
+    const decoded = jwt.verify(token, JWT_SECRET)
+
+    if (!decoded) throwErr('token not valid')
+
+    //  attach dedcoded user in token to req.user in req object
+    const userFromDB = await getUser(decoded.user.id)
+
+    req.user = userFromDB
 
     //  call next to continue to the next middleware with the new validated user in req object
     next()
@@ -124,5 +156,3 @@ export async function authWithFavFollow(req, res, next) {
     SendError(res, err)
   }
 }
-
-export default auth

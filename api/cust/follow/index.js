@@ -1,7 +1,7 @@
 import { Router } from 'express'
 const router = Router()
 
-import auth from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 
 import User from '#app/models/User.js'
 import Restaurant from '#app/models/Restaurant.js'
@@ -10,8 +10,9 @@ import { SendError, throwErr } from '#app/utilities/error.js'
 
 import validate from '#app/middleware/validation.js'
 import { followRestSchema } from '#app/validation/customer/follow.js'
+import { redis } from '#app/server.js'
 
-router.post('/', validate(followRestSchema), auth, async (req, res) => {
+router.post('/', validate(followRestSchema), authWithCache, async (req, res) => {
   const {
     body: { location_id, rest_id },
     user,
@@ -33,12 +34,14 @@ router.post('/', validate(followRestSchema), auth, async (req, res) => {
 
     const newUserFollower = { restaurant: rest_id, location_id }
 
-    await User.updateOne(
+    const userProm = User.updateOne(
       {
         _id: req.user._id,
       },
       { $addToSet: { following: newUserFollower } }
     )
+
+    await Promise.all([userProm, redis.removeUserByID(user)])
 
     return res.json({ rest_id, location_id, is_following: true })
   } catch (error) {
@@ -46,7 +49,7 @@ router.post('/', validate(followRestSchema), auth, async (req, res) => {
   }
 })
 
-router.patch('/', auth, validate(followRestSchema), async (req, res) => {
+router.patch('/', authWithCache, validate(followRestSchema), async (req, res) => {
   const {
     body: { location_id, rest_id },
     user,
@@ -56,7 +59,7 @@ router.patch('/', auth, validate(followRestSchema), async (req, res) => {
     const restProm = Restaurant.updateOne({ _id: rest_id }, { $pull: { followers: { user: user._id, location_id } } })
     const userProm = User.updateOne({ _id: user._id }, { $pull: { following: { restaurant: rest_id, location_id } } })
 
-    await Promise.all([restProm, userProm])
+    await Promise.all([restProm, userProm, redis.removeUserByID(user)])
 
     return res.json({ rest_id, location_id, is_following: false })
   } catch (error) {

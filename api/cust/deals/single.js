@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 
 import Deal from '#app/models/Deal.js'
 
-import auth from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validation.js'
 
 import { singleDealSchema } from '#app/validation/customer/deal.js'
@@ -17,7 +17,7 @@ import { workerService } from '#app/services/worker/index.js'
 
 dotenv.config()
 
-router.get('/', auth, validate(singleDealSchema), async (req, res) => {
+router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
   const {
     user,
     query: { deal_id, location_id, long, lat },

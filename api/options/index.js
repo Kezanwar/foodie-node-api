@@ -7,7 +7,7 @@ import Cuisine from '#app/models/Cuisine.js'
 import DietaryRequirement from '#app/models/DietaryRequirement.js'
 import Memory from '#app/services/cache/memory.js'
 
-import auth from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 
 import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.js'
 
@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
   }
 })
 
-router.get('/set-cuisines', auth, async (req, res) => {
+router.get('/set-cuisines', authWithCache, async (req, res) => {
   try {
     await Cuisine.deleteMany({})
 
@@ -83,7 +83,7 @@ router.get('/set-cuisines', auth, async (req, res) => {
   }
 })
 
-router.get('/set-dietary-reqs', auth, async (req, res) => {
+router.get('/set-dietary-reqs', authWithCache, async (req, res) => {
   try {
     await DietaryRequirement.deleteMany({})
 

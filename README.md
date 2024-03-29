@@ -31,7 +31,6 @@ MIXPANEL_TOKEN=example
 GOOGLE_CLIENT_ID=example
 GOOGLE_CLIENT_SECRET=example
 GOOGLE_REGISTER_EMAIL_PW_SECRET=example
-REDIS_PORT="http://localhost:6379/"
 ```
 
 Install node_modules

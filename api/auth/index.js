@@ -10,7 +10,7 @@ import { addMinutes } from 'date-fns'
 
 import User from '#app/models/User.js'
 
-import auth from '#app/middleware/auth.js'
+import { authNoCache } from '#app/middleware/auth.js'
 
 import { loginUserSchema, registerUserSchema } from '#app/validation/auth/auth.js'
 import validate from '#app/middleware/validation.js'
@@ -25,12 +25,13 @@ import { confirm_email_content, email_addresses } from '#app/constants/email.js'
 
 import transporter from '#app/services/email/index.js'
 import { baseUrl, dashboardUrl } from '#app/config/config.js'
+import { redis } from '#app/server.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
 // @access auth
 
-router.get('/initialize', auth, async (req, res) => {
+router.get('/initialize', authNoCache, async (req, res) => {
   try {
     const user = req.user
     if (!user) throw new Error('User doesnt exist')
@@ -182,7 +183,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
     user.password = await bcrypt.hash(password, salt)
 
     // save the new user to DB using mongoose
-    await user.save()
+    await Promise.all([user.save(), redis.setUserByID(user)])
 
     // send OTP in email to user for them to confirm their email from either rest dashboard or
     // customer mobile app
@@ -274,7 +275,7 @@ router.post('/register-google', async (req, res) => {
     user.password = await bcrypt.hash(password, salt)
 
     // save the new user to DB using mongoose
-    await user.save()
+    await Promise.all([user.save(), redis.setUserByID(user)])
 
     //  call jwt sign method, poss in the payload, the jwtsecret from our config we created, an argument for optional extra parameters such as expiry, a call back function which allows us to handle any errors that occur or send the response back to user.
     const authIdPayload = {
@@ -302,7 +303,7 @@ router.post('/register-google', async (req, res) => {
 //? @desc CONFIRM EMAIL ADDRESS
 //! @access auth (requires token from confirm email button)
 
-router.post('/confirm-email/:otp', auth, async (req, res) => {
+router.post('/confirm-email/:otp', authNoCache, async (req, res) => {
   const { otp } = req.params
   const user = req.user
   try {
@@ -310,7 +311,7 @@ router.post('/confirm-email/:otp', auth, async (req, res) => {
 
     if (otp === user.auth_otp) {
       user.email_confirmed = true
-      await user.save()
+      await Promise.all([user.save(), redis.setUserByID(user)])
     } else throwErr('Incorrect OTP please try again', 401)
 
     return res.json('success')
@@ -323,11 +324,11 @@ router.post('/confirm-email/:otp', auth, async (req, res) => {
 //? @desc CONFIRM EMAIL ADDRESS
 //! @access auth
 
-router.patch('/confirm-email/resend-otp', auth, async (req, res) => {
+router.patch('/confirm-email/resend-otp', authNoCache, async (req, res) => {
   const user = req.user
   try {
     user.auth_otp = createOTP()
-    await user.save()
+    await Promise.all([user.save(), redis.setUserByID(user)])
 
     renderFile(
       process.cwd() + '/views/emails/action-email.ejs',
@@ -477,7 +478,7 @@ router.patch('/change-password/:token', async (req, res) => {
 
     user.password = await bcrypt.hash(password, salt)
 
-    await user.save()
+    await Promise.all([user.save(), redis.setUserByID(user)])
 
     res.json('success')
   } catch (error) {
