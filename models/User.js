@@ -4,7 +4,7 @@ import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import { FavouriteSchemaUser } from './schemas/FavouriteSchema.js'
 import { FollowSchemaUser } from './schemas/FollowSchema.js'
 
-const UserSchema = Schema(
+const UserSchema = new Schema(
   {
     first_name: {
       type: String,

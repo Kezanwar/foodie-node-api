@@ -114,7 +114,7 @@ router.get('/', auth, async (req, res) => {
               dietary: '$dietary_requirements',
             },
             location: {
-              id: '$_id',
+              _id: '$_id',
               nickname: '$nickname',
               distance_miles: '$distance_miles',
             },
