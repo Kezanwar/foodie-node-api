@@ -96,8 +96,8 @@ export const getStringSimilarity = (needle, haystack) => {
 }
 
 export const testLevenshstein = () => {
-  const needle = '2 for 1'
+  const needle = 'banana for kez'
   const haystack =
-    'Banana ipsum dolor amet pancetta shankle sirloin jerky pork drumstick. 2 for 2 bresaola chicken pastrami shank landjaeger pork chop t-bone jowl tri-tip chuck sirloin. Frankfurter chuck cow, sausage t-bone strip steak shankle ground round andouille pork loin porchetta boudin. Picanha shoulder sirloin venison shankle biltong fatback porchetta pastrami NBananapork chop ground round drumstick kevin. Ham chuck pork loin salami shank hamburger ball tip pork chop cupim, ground round boudin turducken. Sausage pork chop buffalo boudin, grey frankfurter meatball burgdoggen tail pork belly jowl porchetta prosciutto doner. Ball tip cupim landjaeger shankle tail buffalo meatloaf turducken.'
+    'Banag ipsum dolor amet pancetta shankle sirloin jerky pork drumstick. 2 for 1 bresaola chicken pastrami shank landjaeger pork chop t-bone jowl tri-tip chuck sirloin. Frankfurter chuck cow, sausage t-bone strip steak shankle ground round andouille pork loin porchetta boudin. Picanha shoulder sirloin venison shankle biltong fatback porchetta pastrami NBananapork chop ground round drumstick kevin. Ham chuck pork loin salami shank hamburger ball tip pork chop cupim, ground round boudin turducken. Sausage pork chop buffalo boudin, grey frankfurter meatball burgdoggen tail pork belly jowl porchetta prosciutto doner. Ball tip cupim landjaeger shankle tail buffalo meatloaf turducken.'
   console.log(getStringSimilarity(needle, haystack))
 }

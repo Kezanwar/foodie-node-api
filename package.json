@@ -37,6 +37,7 @@
     "nanolith": "^0.4.6",
     "node-cron": "^3.0.2",
     "nodemailer": "^6.8.0",
+    "redis": "^4.6.13",
     "request": "^2.88.2",
     "sharp": "^0.31.1",
     "yup": "^1.0.0"

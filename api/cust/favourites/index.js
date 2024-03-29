@@ -3,7 +3,7 @@ import { Router } from 'express'
 import Deal from '#app/models/Deal.js'
 import User from '#app/models/User.js'
 
-import auth from '#app/middleware/auth.js'
+import auth, { authWithFavFollow } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validation.js'
 
 import { favouriteDealSchema } from '#app/validation/customer/deal.js'
@@ -63,6 +63,17 @@ router.patch('/', auth, validate(favouriteDealSchema), async (req, res) => {
     await Promise.all([dealProm, userProm])
 
     return res.json({ deal_id, location_id, is_favourited: false })
+  } catch (error) {
+    SendError(res, error)
+  }
+})
+
+router.get('/', authWithFavFollow, async (req, res) => {
+  const {
+    results: { following, favourites },
+  } = req
+  try {
+    return res.json({ following, favourites })
   } catch (error) {
     SendError(res, error)
   }
