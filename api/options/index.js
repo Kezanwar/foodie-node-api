@@ -5,15 +5,9 @@ import dotenv from 'dotenv'
 
 import Cuisine from '#app/models/Cuisine.js'
 import DietaryRequirement from '#app/models/DietaryRequirement.js'
+import Memory from '#app/services/cache/memory.js'
 
 import auth from '#app/middleware/auth.js'
-
-import {
-  cacheGetCuisines,
-  cacheGetDietaryRequirements,
-  cachePutCuisines,
-  cachePutDietaryRequirements,
-} from '#app/services/cache/index.js'
 
 import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.js'
 
@@ -27,8 +21,8 @@ dotenv.config()
 
 router.get('/', async (req, res) => {
   try {
-    let resAllCuisines = cacheGetCuisines()
-    let resAllDietaries = cacheGetDietaryRequirements()
+    let resAllCuisines = Memory.getCuisineOptions()
+    let resAllDietaries = Memory.getDietaryOptions()
 
     if (!resAllCuisines) {
       const allCuisines = await Cuisine.find().lean()
@@ -36,7 +30,7 @@ router.get('/', async (req, res) => {
         name,
         slug,
       }))
-      cachePutCuisines(resAllCuisines)
+      Memory.setCuisineOptions(resAllCuisines)
     }
 
     if (!resAllDietaries) {
@@ -45,7 +39,7 @@ router.get('/', async (req, res) => {
         name,
         slug,
       }))
-      cachePutDietaryRequirements(resAllDietaries)
+      Memory.setDietaryOptions(resAllDietaries)
     }
 
     res.status(200).json({ cuisines: resAllCuisines, dietary_requirements: resAllDietaries })

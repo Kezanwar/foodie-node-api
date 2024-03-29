@@ -10,10 +10,10 @@ import auth from '#app/middleware/auth.js'
 
 import { SendError, throwErr } from '#app/utilities/error.js'
 import { workerService } from '#app/services/worker/index.js'
-import { cacheGetRecentBlogs, cachePutRecentBlogs } from '#app/services/cache/index.js'
 
 import { landingUrl } from '#app/config/config.js'
 import { removeTags } from '#app/utilities/regex.js'
+import memory from '#app/services/cache/memory.js'
 
 const fetchBlogs = async () => {
   return axios.get(`${landingUrl}/api/recent`).then((res) =>
@@ -54,7 +54,7 @@ router.get('/', auth, async (req, res) => {
 
     const query = getQueryLocations()
 
-    let blogs = cacheGetRecentBlogs()
+    let blogs = memory.getRecentBlogs()
 
     const request = [
       Location.aggregate([
@@ -138,7 +138,7 @@ router.get('/', auth, async (req, res) => {
       resp.blogs = blogs
     } else {
       resp.blogs = fetchedBlogs
-      cachePutRecentBlogs(fetchedBlogs)
+      memory.setRecentBlogs(fetchedBlogs)
     }
 
     return res.json(resp)
