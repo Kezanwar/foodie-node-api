@@ -19,10 +19,6 @@ export async function authWithCache(req, res, next) {
     return res.status(401).json({ msg: 'No token, authorization denied' })
   }
 
-  console.count()
-  console.log('-------')
-  console.log('auth with cache....')
-
   try {
     // verify token
     const decoded = jwt.verify(token, JWT_SECRET)
@@ -32,12 +28,8 @@ export async function authWithCache(req, res, next) {
     const userFromCache = await redis.getUserByID(decoded.user.id)
 
     if (userFromCache) {
-      console.log('is user from redis')
-      console.log('-------')
       req.user = userFromCache
     } else {
-      console.log('is user from mongoDB')
-      console.log('-------')
       //  attach dedcoded user in token to req.user in req object
       const userFromDB = await getUser(decoded.user.id)
       await redis.setUserByID(userFromDB)
