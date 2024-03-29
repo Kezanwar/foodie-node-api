@@ -7,9 +7,10 @@ Foodies Node API serving as a backend for the Restaurant Dashboard and Customer 
 Development points to MongoDB Atlas (staging db) and a local Redis Docker Image.
 
 Install Node v18.15.0
+
 Install Docker
 
-Create .env in root using this example
+Create an .env file in the root using this example
 
 ```
 APP_ENV=example
@@ -42,7 +43,7 @@ npm install
 Create Redis DB
 
 ```
-bash cmd/make-redish.sh
+bash cmd/make-redis.sh
 ```
 
 Start Server and Redis
