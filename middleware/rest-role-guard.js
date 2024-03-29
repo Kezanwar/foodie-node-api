@@ -12,9 +12,6 @@ const restRoleGuard =
       }
       const user = req.user
 
-      console.log('---USER---')
-      console.log(user)
-
       if (!user.email_confirmed)
         throwErr('Access denied - Please confirm your email before accessing these resources', 403)
 
