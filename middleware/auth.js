@@ -1,15 +1,15 @@
-import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
+
+import { redis } from '#app/server.js'
+import jwt from '#app/services/jwt/index.js'
+
+import User from '#app/models/User.js'
 
 import { SendError, throwErr } from '#app/utilities/error.js'
 import { getUser } from '#app/utilities/user.js'
-import User from '#app/models/User.js'
 import { makeMongoIDs } from '#app/utilities/document.js'
-import { redis } from '#app/server.js'
 
 dotenv.config()
-
-const JWT_SECRET = process.env.JWT_SECRET
 
 export async function authWithCache(req, res, next) {
   // Get token from header
@@ -21,7 +21,7 @@ export async function authWithCache(req, res, next) {
 
   try {
     // verify token
-    const decoded = jwt.verify(token, JWT_SECRET)
+    const decoded = jwt.verify(token)
 
     if (!decoded) throwErr('token not valid')
 
@@ -53,7 +53,7 @@ export async function authNoCache(req, res, next) {
 
   try {
     // verify token
-    const decoded = jwt.verify(token, JWT_SECRET)
+    const decoded = jwt.verify(token)
 
     if (!decoded) throwErr('token not valid')
 
@@ -80,7 +80,7 @@ export async function authWithFavFollow(req, res, next) {
 
   try {
     // verify token
-    const decoded = jwt.verify(token, JWT_SECRET)
+    const decoded = jwt.verify(token)
 
     if (!decoded) throwErr('token not valid')
     //  attach dedcoded user in token to req.user in req object
