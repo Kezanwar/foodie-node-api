@@ -4,28 +4,27 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 import axios from 'axios'
-import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { addMinutes } from 'date-fns'
 
+import { redis } from '#app/server.js'
+import jwt from '#app/services/jwt/index.js'
+import transporter from '#app/services/email/index.js'
 import User from '#app/models/User.js'
 
 import { authNoCache } from '#app/middleware/auth.js'
-
-import { loginUserSchema, registerUserSchema } from '#app/validation/auth/auth.js'
 import validate from '#app/middleware/validation.js'
+import { loginUserSchema, registerUserSchema } from '#app/validation/auth/auth.js'
 
 import { SendError, throwErr } from '#app/utilities/error.js'
 import { findUserByEmail, findUserByEmailWithPassword } from '#app/utilities/user.js'
 import { capitalizeFirstLetter } from '#app/utilities/strings.js'
 import { createOTP } from '#app/utilities/otp.js'
 
-import { AUTH_METHODS, JWT_SECRET } from '#app/constants/auth.js'
+import { AUTH_METHODS } from '#app/constants/auth.js'
 import { confirm_email_content, email_addresses } from '#app/constants/email.js'
 
-import transporter from '#app/services/email/index.js'
 import { baseUrl, dashboardUrl } from '#app/config/config.js'
-import { redis } from '#app/server.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -85,15 +84,13 @@ router.post(
         },
       }
 
-      //  call jwt sign method, poss in the payload, the jwtsecret from our config we created, an argument for optional extra parameters such as expiry, a call back function which allows us to handle any errors that occur or send the response back to user.
+      const token = jwt.sign30Days(payload)
 
-      jwt.sign(payload, JWT_SECRET, { expiresIn: 360000 }, (err, token) => {
-        if (err) throw new Error(err)
-        const userResponse = user.toClient()
-        res.json({
-          accessToken: token,
-          user: userResponse,
-        })
+      const userResponse = user.toClient()
+
+      res.json({
+        accessToken: token,
+        user: userResponse,
       })
     } catch (err) {
       console.error(err)
@@ -133,15 +130,13 @@ router.post(
         },
       }
 
-      //  call jwt sign method, poss in the payload, the jwtsecret from our config we created, an argument for optional extra parameters such as expiry, a call back function which allows us to handle any errors that occur or send the response back to user.
+      const access_token = jwt.sign30Days(payload)
 
-      jwt.sign(payload, JWT_SECRET, { expiresIn: 360000 }, (err, token) => {
-        if (err) throw new Error(err)
-        const userResponse = user.toClient()
-        res.json({
-          accessToken: token,
-          user: userResponse,
-        })
+      const userResponse = user.toClient()
+
+      res.json({
+        accessToken: access_token,
+        user: userResponse,
       })
     } catch (err) {
       console.error(err)
@@ -218,20 +213,19 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       }
     )
 
-    //  call jwt sign method, poss in the payload, the jwtsecret from our config we created, an argument for optional extra parameters such as expiry, a call back function which allows us to handle any errors that occur or send the response back to user.
-    const authIdPayload = {
+    const payload = {
       user: {
         id: user.id,
       },
     }
 
-    jwt.sign(authIdPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
-      if (err) throw new Error(err)
-      const userResponse = user.toClient()
-      return res.json({
-        accessToken: token,
-        user: userResponse,
-      })
+    const access_token = jwt.sign365Days(payload)
+
+    const userResponse = user.toClient()
+
+    res.json({
+      accessToken: access_token,
+      user: userResponse,
     })
   } catch (err) {
     console.error(err)
@@ -277,21 +271,19 @@ router.post('/register-google', async (req, res) => {
     // save the new user to DB using mongoose
     await Promise.all([user.save(), redis.setUserByID(user)])
 
-    //  call jwt sign method, poss in the payload, the jwtsecret from our config we created, an argument for optional extra parameters such as expiry, a call back function which allows us to handle any errors that occur or send the response back to user.
-    const authIdPayload = {
+    const payload = {
       user: {
         id: user.id,
       },
     }
 
-    jwt.sign(authIdPayload, JWT_SECRET, { expiresIn: '365d' }, async (err, token) => {
-      if (err) throw new Error(err)
+    const access_token = jwt.sign365Days(payload)
 
-      const userResponse = user.toClient()
-      return res.json({
-        accessToken: token,
-        user: userResponse,
-      })
+    const userResponse = user.toClient()
+
+    res.json({
+      accessToken: access_token,
+      user: userResponse,
     })
   } catch (err) {
     console.error(err)
@@ -383,40 +375,38 @@ router.post('/forgot-password', async (req, res) => {
       email: user.email,
     }
 
-    jwt.sign(confirmEmailPayload, JWT_SECRET, { expiresIn: '15m' }, async (err, token) => {
-      if (err) throwErr(err)
+    const token = jwt.sign15Mins(confirmEmailPayload)
 
-      renderFile(
-        process.cwd() + '/views/emails/action-email.ejs',
-        {
-          content:
-            'You requested a password change, please click the button below to change your password. This link expires in 15mins.',
-          title: 'Change Password Request',
-          receiver: user.first_name,
-          action_primary: { text: 'Change your password', url: `${baseUrl}/auth/change-password/${token}` },
-        },
-        (err, data) => {
-          if (err) {
-            throwErr('error creating email email')
-          } else {
-            const mainOptions = {
-              from: email_addresses.noreply,
-              to: user.email,
-              subject: confirm_email_content.title,
-              html: data,
-            }
-            transporter.sendMail(mainOptions, (err, info) => {
-              if (err) {
-                console.log(err)
-                throwErr('error sending change password email')
-              } else {
-                console.log('email sent: ' + info.response)
-              }
-            })
+    renderFile(
+      process.cwd() + '/views/emails/action-email.ejs',
+      {
+        content:
+          'You requested a password change, please click the button below to change your password. This link expires in 15mins.',
+        title: 'Change Password Request',
+        receiver: user.first_name,
+        action_primary: { text: 'Change your password', url: `${baseUrl}/auth/change-password/${token}` },
+      },
+      (err, data) => {
+        if (err) {
+          throwErr('error creating email email')
+        } else {
+          const mainOptions = {
+            from: email_addresses.noreply,
+            to: user.email,
+            subject: confirm_email_content.title,
+            html: data,
           }
+          transporter.sendMail(mainOptions, (err, info) => {
+            if (err) {
+              console.log(err)
+              throwErr('error sending change password email')
+            } else {
+              console.log('email sent: ' + info.response)
+            }
+          })
         }
-      )
-    })
+      }
+    )
 
     res.send('success')
   } catch (error) {
@@ -431,23 +421,21 @@ router.get('/change-password/:token', async (req, res) => {
   try {
     if (!token) throwErr('No token provided')
 
-    const decoded = jwt.verify(token, JWT_SECRET)
+    const decoded = jwt.verify(token)
 
     if (!decoded?.email) {
       throwErr('Token expired', 400)
     }
 
-    let payload = {
+    const payload = {
       email: decoded.email,
     }
 
-    jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' }, async (err, token) => {
-      if (err) throwErr(err)
+    const forward_token = jwt.sign15Mins(payload)
 
-      const expires = addMinutes(new Date(), 15).toISOString()
+    const expires = addMinutes(new Date(), 15).toISOString()
 
-      return res.redirect(`${dashboardUrl}/change-password?token=${token}&expires=${expires}`)
-    })
+    return res.redirect(`${dashboardUrl}/change-password?token=${forward_token}&expires=${expires}`)
   } catch (error) {
     return res.redirect(`${dashboardUrl}/change-password?token=expired`)
   }
@@ -462,7 +450,7 @@ router.patch('/change-password/:token', async (req, res) => {
   try {
     if (!token) throwErr('No token provided')
 
-    const decoded = jwt.verify(token, JWT_SECRET)
+    const decoded = jwt.verify(token)
 
     if (!decoded?.email) {
       throwErr('Token expired', 400)
