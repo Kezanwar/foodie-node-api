@@ -62,7 +62,7 @@ router.post(
         throwErr('Invalid credentials', 400)
       }
 
-      if (user?.auth_method !== AUTH_METHODS.JWT) {
+      if (user?.auth_method !== AUTH_METHODS.jwt) {
         throwErr('User signed up using Google')
       }
 
@@ -170,7 +170,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       last_name: capitalizeFirstLetter(last_name),
       email: email.toLowerCase(),
       password,
-      auth_method: AUTH_METHODS.JWT,
+      auth_method: AUTH_METHODS.jwt,
       auth_otp: createOTP(),
       email_confirmed: false,
     })
