@@ -1,11 +1,13 @@
 import dotenv from 'dotenv'
 
+import { redis } from '#app/server.js'
+import jwt from '#app/services/jwt/index.js'
+
+import User from '#app/models/User.js'
+
 import { SendError, throwErr } from '#app/utilities/error.js'
 import { getUser } from '#app/utilities/user.js'
-import User from '#app/models/User.js'
 import { makeMongoIDs } from '#app/utilities/document.js'
-import { redis } from '#app/server.js'
-import jwt from '../services/jwt/index.js'
 
 dotenv.config()
 
