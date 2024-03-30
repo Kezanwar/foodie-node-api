@@ -3,14 +3,14 @@ import dotenv from 'dotenv'
 import User from '#app/models/User.js'
 dotenv.config()
 
-// this fn is called in server and exports result back here as redis
+// this fn is called in server and exports result back here as Redis
 export const createRedis = async () => {
   try {
     const r = await createClient({ url: process.env.REDIS_URL }).connect()
-    console.log('redis connected 🚀')
+    console.log('Redis connected 🚀')
     return new RedisCache(r)
   } catch (error) {
-    console.log('Error: redis failed to connect...')
+    console.log('Error: Redis failed to connect...')
     process.exit(1)
   }
 }
@@ -18,8 +18,8 @@ export const createRedis = async () => {
 class RedisCache {
   #client = null
 
-  constructor(redis) {
-    this.#client = redis
+  constructor(Redis) {
+    this.#client = Redis
   }
 
   #getID(doc) {

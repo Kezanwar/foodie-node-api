@@ -7,8 +7,8 @@ import axios from 'axios'
 import bcrypt from 'bcryptjs'
 import { addMinutes } from 'date-fns'
 
-import { redis } from '#app/server.js'
-import jwt from '#app/services/jwt/index.js'
+import { Redis } from '#app/server.js'
+import JWT from '#app/services/jwt/index.js'
 import transporter from '#app/services/email/index.js'
 import User from '#app/models/User.js'
 
@@ -20,6 +20,7 @@ import { SendError, throwErr } from '#app/utilities/error.js'
 import { findUserByEmail, findUserByEmailWithPassword } from '#app/utilities/user.js'
 import { capitalizeFirstLetter } from '#app/utilities/strings.js'
 import { createOTP } from '#app/utilities/otp.js'
+import { Email } from '#app/services/email/index.js'
 
 import { AUTH_METHODS } from '#app/constants/auth.js'
 import { confirm_email_content, email_addresses } from '#app/constants/email.js'
@@ -84,7 +85,7 @@ router.post(
         },
       }
 
-      const token = jwt.sign30Days(payload)
+      const token = JWT.sign30Days(payload)
 
       const userResponse = user.toClient()
 
@@ -130,7 +131,7 @@ router.post(
         },
       }
 
-      const access_token = jwt.sign30Days(payload)
+      const access_token = JWT.sign30Days(payload)
 
       const userResponse = user.toClient()
 
@@ -151,6 +152,8 @@ router.post(
 
 router.post('/register', validate(registerUserSchema), async (req, res) => {
   // generating errors from validator and handling them with res
+
+  let sendEmail = false
 
   try {
     // destructuring from req.body
@@ -177,41 +180,10 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
     // encrypt users password with the salt
     user.password = await bcrypt.hash(password, salt)
 
-    // save the new user to DB using mongoose
-    await Promise.all([user.save(), redis.setUserByID(user)])
+    // save the new user to DB using mongoose and send OTP email
+    await Promise.all([user.save(), Redis.setUserByID(user)])
 
-    // send OTP in email to user for them to confirm their email from either rest dashboard or
-    // customer mobile app
-
-    renderFile(
-      process.cwd() + '/views/emails/action-email.ejs',
-      {
-        content: `${confirm_email_content.description} 
-        <p class="otp"><strong>${user.auth_otp}</strong><p>`,
-        title: confirm_email_content.title,
-        receiver: user.first_name,
-      },
-      (err, data) => {
-        if (err) {
-          throwErr('error creating email email')
-        } else {
-          const mainOptions = {
-            from: email_addresses.noreply,
-            to: user.email,
-            subject: confirm_email_content.title,
-            html: data,
-          }
-          transporter.sendMail(mainOptions, (err, info) => {
-            if (err) {
-              console.log(err)
-              throwErr('error sending enmail email')
-            } else {
-              console.log('email sent: ' + info.response)
-            }
-          })
-        }
-      }
-    )
+    sendEmail = user
 
     const payload = {
       user: {
@@ -219,7 +191,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       },
     }
 
-    const access_token = jwt.sign365Days(payload)
+    const access_token = JWT.sign365Days(payload)
 
     const userResponse = user.toClient()
 
@@ -230,6 +202,12 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
   } catch (err) {
     console.error(err)
     SendError(res, err)
+  }
+
+  if (sendEmail) {
+    Email.sendOTPEmail(sendEmail)
+      .then(() => {})
+      .catch((err) => console.log(err))
   }
 })
 
@@ -269,7 +247,7 @@ router.post('/register-google', async (req, res) => {
     user.password = await bcrypt.hash(password, salt)
 
     // save the new user to DB using mongoose
-    await Promise.all([user.save(), redis.setUserByID(user)])
+    await Promise.all([user.save(), Redis.setUserByID(user)])
 
     const payload = {
       user: {
@@ -277,7 +255,7 @@ router.post('/register-google', async (req, res) => {
       },
     }
 
-    const access_token = jwt.sign365Days(payload)
+    const access_token = JWT.sign365Days(payload)
 
     const userResponse = user.toClient()
 
@@ -303,7 +281,7 @@ router.post('/confirm-email/:otp', authNoCache, async (req, res) => {
 
     if (otp === user.auth_otp) {
       user.email_confirmed = true
-      await Promise.all([user.save(), redis.setUserByID(user)])
+      await Promise.all([user.save(), Redis.setUserByID(user)])
     } else throwErr('Incorrect OTP please try again', 401)
 
     return res.json('success')
@@ -320,37 +298,7 @@ router.patch('/confirm-email/resend-otp', authNoCache, async (req, res) => {
   const user = req.user
   try {
     user.auth_otp = createOTP()
-    await Promise.all([user.save(), redis.setUserByID(user)])
-
-    renderFile(
-      process.cwd() + '/views/emails/action-email.ejs',
-      {
-        content: `${confirm_email_content.description} 
-        <p class="otp"><strong>${user.auth_otp}</strong><p>`,
-        title: confirm_email_content.title,
-        receiver: user.first_name,
-      },
-      (err, data) => {
-        if (err) {
-          throwErr('error creating email email')
-        } else {
-          const mainOptions = {
-            from: email_addresses.noreply,
-            to: user.email,
-            subject: confirm_email_content.title,
-            html: data,
-          }
-          transporter.sendMail(mainOptions, (err, info) => {
-            if (err) {
-              console.log(err)
-              throwErr('error sending email email')
-            } else {
-              console.log('email sent: ' + info.response)
-            }
-          })
-        }
-      }
-    )
+    await Promise.all([user.save(), Redis.setUserByID(user), Email.sendOTPEmail(user)])
     res.status(200).send({ message: 'success' })
   } catch (error) {
     SendError(res, error)
@@ -375,7 +323,7 @@ router.post('/forgot-password', async (req, res) => {
       email: user.email,
     }
 
-    const token = jwt.sign15Mins(confirmEmailPayload)
+    const token = JWT.sign15Mins(confirmEmailPayload)
 
     renderFile(
       process.cwd() + '/views/emails/action-email.ejs',
@@ -421,7 +369,7 @@ router.get('/change-password/:token', async (req, res) => {
   try {
     if (!token) throwErr('No token provided')
 
-    const decoded = jwt.verify(token)
+    const decoded = JWT.verify(token)
 
     if (!decoded?.email) {
       throwErr('Token expired', 400)
@@ -431,7 +379,7 @@ router.get('/change-password/:token', async (req, res) => {
       email: decoded.email,
     }
 
-    const forward_token = jwt.sign15Mins(payload)
+    const forward_token = JWT.sign15Mins(payload)
 
     const expires = addMinutes(new Date(), 15).toISOString()
 
@@ -450,7 +398,7 @@ router.patch('/change-password/:token', async (req, res) => {
   try {
     if (!token) throwErr('No token provided')
 
-    const decoded = jwt.verify(token)
+    const decoded = JWT.verify(token)
 
     if (!decoded?.email) {
       throwErr('Token expired', 400)
@@ -466,7 +414,7 @@ router.patch('/change-password/:token', async (req, res) => {
 
     user.password = await bcrypt.hash(password, salt)
 
-    await Promise.all([user.save(), redis.setUserByID(user)])
+    await Promise.all([user.save(), Redis.setUserByID(user)])
 
     res.json('success')
   } catch (error) {

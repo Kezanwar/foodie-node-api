@@ -32,6 +32,6 @@ class MemoryCache {
   }
 }
 
-const memory = new MemoryCache()
+const Memory = new MemoryCache()
 
-export default memory
+export default Memory

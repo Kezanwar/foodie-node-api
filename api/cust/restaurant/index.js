@@ -12,7 +12,7 @@ import { makeMongoIDs } from '#app/utilities/document.js'
 import { SendError, throwErr } from '#app/utilities/error.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
-import { workerService } from '#app/services/worker/index.js'
+import WorkerService from '#app/services/worker/index.js'
 import { singleRestaurantSchema } from '#app/validation/customer/restaurant.js'
 
 dotenv.config()
@@ -94,7 +94,7 @@ router.get('/:id', authWithCache, validate(singleRestaurantSchema), async (req, 
 
     if (!location.length) throwErr('Location not found', 404)
 
-    const resp = await workerService.call({
+    const resp = await WorkerService.call({
       name: 'checkSingleRestaurantFollowAndFav',
       params: [JSON.stringify(user), JSON.stringify(location[0])],
     })

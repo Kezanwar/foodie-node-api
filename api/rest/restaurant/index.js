@@ -22,7 +22,7 @@ import { RESTAURANT_ROLES } from '#app/constants/restaurant.js'
 import { createImageName } from '#app/utilities/images.js'
 import { SendError, throwErr } from '#app/utilities/error.js'
 
-import { workerService } from '#app/services/worker/index.js'
+import WorkerService from '#app/services/worker/index.js'
 import { bucketName, foodieS3Client, s3PutCommand } from '#app/services/aws/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
@@ -107,13 +107,13 @@ router.patch(
               imageNames[item] = imageName
               let buffer = img.buffer
               if (item === RESTAURANT_IMAGES.avatar) {
-                buffer = await workerService.call({
+                buffer = await WorkerService.call({
                   name: 'resizeImg',
                   params: [buffer, { width: 500 }],
                 })
               }
               if (item === RESTAURANT_IMAGES.cover_photo) {
-                buffer = await workerService.call({
+                buffer = await WorkerService.call({
                   name: 'resizeImg',
                   params: [buffer, { width: 1000 }],
                 })

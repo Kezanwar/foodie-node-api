@@ -9,7 +9,7 @@ import validate from '#app/middleware/validation.js'
 import { favouriteDealSchema } from '#app/validation/customer/deal.js'
 
 import { SendError, throwErr } from '#app/utilities/error.js'
-import { redis } from '#app/server.js'
+import { Redis } from '#app/server.js'
 
 const router = Router()
 
@@ -44,7 +44,7 @@ router.post('/', authWithCache, validate(favouriteDealSchema), async (req, res) 
       { $addToSet: { favourites: newUserFavourite } }
     )
 
-    await Promise.all([userProm, redis.removeUserByID(user)])
+    await Promise.all([userProm, Redis.removeUserByID(user)])
 
     return res.json({ deal_id, location_id, is_favourited: true })
   } catch (error) {
@@ -63,7 +63,7 @@ router.patch('/', authWithCache, validate(favouriteDealSchema), async (req, res)
     const dealProm = Deal.updateOne({ _id: deal_id }, { $pull: { favourites: { user: user._id, location_id } } })
     const userProm = User.updateOne({ _id: req.user._id }, { $pull: { favourites: { deal: deal_id, location_id } } })
 
-    await Promise.all([dealProm, userProm, redis.removeUserByID(user)])
+    await Promise.all([dealProm, userProm, Redis.removeUserByID(user)])
 
     return res.json({ deal_id, location_id, is_favourited: false })
   } catch (error) {

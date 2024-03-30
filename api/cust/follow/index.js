@@ -10,7 +10,7 @@ import { SendError, throwErr } from '#app/utilities/error.js'
 
 import validate from '#app/middleware/validation.js'
 import { followRestSchema } from '#app/validation/customer/follow.js'
-import { redis } from '#app/server.js'
+import { Redis } from '#app/server.js'
 
 router.post('/', validate(followRestSchema), authWithCache, async (req, res) => {
   const {
@@ -41,7 +41,7 @@ router.post('/', validate(followRestSchema), authWithCache, async (req, res) => 
       { $addToSet: { following: newUserFollower } }
     )
 
-    await Promise.all([userProm, redis.removeUserByID(user)])
+    await Promise.all([userProm, Redis.removeUserByID(user)])
 
     return res.json({ rest_id, location_id, is_following: true })
   } catch (error) {
@@ -59,7 +59,7 @@ router.patch('/', authWithCache, validate(followRestSchema), async (req, res) =>
     const restProm = Restaurant.updateOne({ _id: rest_id }, { $pull: { followers: { user: user._id, location_id } } })
     const userProm = User.updateOne({ _id: user._id }, { $pull: { following: { restaurant: rest_id, location_id } } })
 
-    await Promise.all([restProm, userProm, redis.removeUserByID(user)])
+    await Promise.all([restProm, userProm, Redis.removeUserByID(user)])
 
     return res.json({ rest_id, location_id, is_following: false })
   } catch (error) {
