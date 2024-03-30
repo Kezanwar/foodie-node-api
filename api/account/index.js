@@ -9,7 +9,7 @@ import validate from '#app/middleware/validation.js'
 import { patchProfileSchema } from '#app/validation/account/account.js'
 
 import { SendError } from '#app/utilities/error.js'
-import { redis } from '#app/server.js'
+import { Redis } from '#app/server.js'
 
 //* route PATCH api/account/profile
 //? @desc update first/last name
@@ -23,7 +23,7 @@ router.patch('/profile', authNoCache, validate(patchProfileSchema), async (req, 
   try {
     user.first_name = first_name
     user.last_name = last_name
-    await Promise.all([user.save(), redis.setUserByID(user)])
+    await Promise.all([user.save(), Redis.setUserByID(user)])
     res.json(user.toClient())
   } catch (error) {
     SendError(res, error)

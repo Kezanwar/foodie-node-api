@@ -20,7 +20,7 @@ import { allCapsNoSpace } from '#app/utilities/strings.js'
 import { SendError, throwErr } from '#app/utilities/error.js'
 import { getID, makeMongoIDs, removeDocumentValues } from '#app/utilities/document.js'
 
-import { workerService } from '#app/services/worker/index.js'
+import WorkerService from '#app/services/worker/index.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check
@@ -83,7 +83,7 @@ router.post(
       const firstChar = phone_number.charAt(0)
 
       if (firstChar !== '+' && firstChar !== '0') {
-        const code = await workerService.call({
+        const code = await WorkerService.call({
           name: 'findCountryPhoneCode',
           params: [address.country],
         })
@@ -91,7 +91,7 @@ router.post(
       }
 
       if (firstChar === '0') {
-        const code = await workerService.call({
+        const code = await WorkerService.call({
           name: 'findCountryPhoneCode',
           params: [address.country],
         })
@@ -256,7 +256,7 @@ router.patch(
       const firstChar = phone_number.charAt(0)
 
       if (firstChar !== '+' && firstChar !== '0') {
-        const code = await workerService.call({
+        const code = await WorkerService.call({
           name: 'findCountryPhoneCode',
           params: [address.country],
         })
@@ -264,7 +264,7 @@ router.patch(
       }
 
       if (firstChar === '0') {
-        const code = await workerService.call({
+        const code = await WorkerService.call({
           name: 'findCountryPhoneCode',
           params: [address.country],
         })

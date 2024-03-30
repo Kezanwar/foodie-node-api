@@ -35,7 +35,7 @@ app.set('view engine', 'ejs')
 connectDB()
 
 //create redis client and export for use around the app
-export const redis = await createRedis()
+export const Redis = await createRedis()
 
 //initialize mixpanel
 mixpanel.init(process.env.MIXPANEL_TOKEN, { host: 'api-eu.mixpanel.com' })

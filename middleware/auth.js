@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
 
-import { redis } from '#app/server.js'
-import jwt from '#app/services/jwt/index.js'
+import { Redis } from '#app/server.js'
+import JWT from '#app/services/jwt/index.js'
 
 import User from '#app/models/User.js'
 
@@ -21,18 +21,18 @@ export async function authWithCache(req, res, next) {
 
   try {
     // verify token
-    const decoded = jwt.verify(token)
+    const decoded = JWT.verify(token)
 
     if (!decoded) throwErr('token not valid')
 
-    const userFromCache = await redis.getUserByID(decoded.user.id)
+    const userFromCache = await Redis.getUserByID(decoded.user.id)
 
     if (userFromCache) {
       req.user = userFromCache
     } else {
       //  attach dedcoded user in token to req.user in req object
       const userFromDB = await getUser(decoded.user.id)
-      await redis.setUserByID(userFromDB)
+      await Redis.setUserByID(userFromDB)
       req.user = userFromDB
     }
 
@@ -53,7 +53,7 @@ export async function authNoCache(req, res, next) {
 
   try {
     // verify token
-    const decoded = jwt.verify(token)
+    const decoded = JWT.verify(token)
 
     if (!decoded) throwErr('token not valid')
 
@@ -80,7 +80,7 @@ export async function authWithFavFollow(req, res, next) {
 
   try {
     // verify token
-    const decoded = jwt.verify(token)
+    const decoded = JWT.verify(token)
 
     if (!decoded) throwErr('token not valid')
     //  attach dedcoded user in token to req.user in req object

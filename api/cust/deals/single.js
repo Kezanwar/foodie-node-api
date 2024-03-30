@@ -13,7 +13,7 @@ import { makeMongoIDs } from '#app/utilities/document.js'
 import { SendError, throwErr } from '#app/utilities/error.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
-import { workerService } from '#app/services/worker/index.js'
+import WorkerService from '#app/services/worker/index.js'
 
 dotenv.config()
 
@@ -113,7 +113,7 @@ router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
       },
     ])
 
-    const followFavProm = workerService.call({
+    const followFavProm = WorkerService.call({
       name: 'checkSingleDealFollowAndFav',
       params: [JSON.stringify(user), deal_id, location_id],
     })

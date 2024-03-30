@@ -9,11 +9,11 @@ import Location from '#app/models/Location.js'
 import { authWithCache } from '#app/middleware/auth.js'
 
 import { SendError, throwErr } from '#app/utilities/error.js'
-import { workerService } from '#app/services/worker/index.js'
+import WorkerService from '#app/services/worker/index.js'
 
 import { landingUrl } from '#app/config/config.js'
 import { removeTags } from '#app/utilities/regex.js'
-import memory from '#app/services/cache/memory.js'
+import Memory from '#app/services/cache/memory.js'
 
 const fetchBlogs = async () => {
   return axios.get(`${landingUrl}/api/recent`).then((res) =>
@@ -54,7 +54,7 @@ router.get('/', authWithCache, async (req, res) => {
 
     const query = getQueryLocations()
 
-    let blogs = memory.getRecentBlogs()
+    let blogs = Memory.getRecentBlogs()
 
     const request = [
       Location.aggregate([
@@ -129,7 +129,7 @@ router.get('/', authWithCache, async (req, res) => {
 
     const [results, fetchedBlogs] = await Promise.all(request)
 
-    const resp = await workerService.call({
+    const resp = await WorkerService.call({
       name: 'getPopularRestaurantsAndCuisines',
       params: [JSON.stringify(results)],
     })
@@ -138,7 +138,7 @@ router.get('/', authWithCache, async (req, res) => {
       resp.blogs = blogs
     } else {
       resp.blogs = fetchedBlogs
-      memory.setRecentBlogs(fetchedBlogs)
+      Memory.setRecentBlogs(fetchedBlogs)
     }
 
     return res.json(resp)

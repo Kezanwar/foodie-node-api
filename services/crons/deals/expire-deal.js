@@ -1,7 +1,7 @@
 import * as cron from 'node-cron'
 import Deal from '#app/models/Deal.js'
 
-import { workerService } from '#app/services/worker/index.js'
+import WorkerService from '#app/services/worker/index.js'
 
 import { MIXPANEL_EVENTS, mixpanelTrack } from '#app/services/mixpanel/index.js'
 import Location from '#app/models/Location.js'
@@ -10,7 +10,7 @@ import Location from '#app/models/Location.js'
 //   cron.schedule(
 //     '0 * * * *',
 //     async () => {
-//       const result = await workerService.call({
+//       const result = await WorkerService.call({
 //         name: 'getTimezonesToExpire',
 //       })
 //       const { minusGMT, plusGMT } = result
@@ -42,7 +42,7 @@ const expireDeals = () => {
   cron.schedule(
     '0 * * * *',
     async () => {
-      const expireDate = await workerService.call({
+      const expireDate = await WorkerService.call({
         name: 'expireDate',
       })
       const filter = { end_date: { $lte: expireDate }, is_expired: false }

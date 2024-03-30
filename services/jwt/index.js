@@ -21,6 +21,6 @@ class JWTService {
   }
 }
 
-const jwt = new JWTService()
+const JWT = new JWTService()
 
-export default jwt
+export default JWT

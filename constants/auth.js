@@ -4,6 +4,6 @@ dotenv.config()
 export const JWT_SECRET = process.env.JWT_SECRET
 
 export const AUTH_METHODS = {
-  jwt: 'jwt',
+  JWT: 'JWT',
   google: 'google',
 }

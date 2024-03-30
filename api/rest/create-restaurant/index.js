@@ -18,7 +18,7 @@ import { email_addresses } from '#app/constants/email.js'
 import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '#app/constants/images.js'
 
 import transporter from '#app/services/email/index.js'
-import { workerService } from '#app/services/worker/index.js'
+import WorkerService from '#app/services/worker/index.js'
 import { bucketName, foodieS3Client, s3PutCommand } from '#app/services/aws/index.js'
 
 import validate from '#app/middleware/validation.js'
@@ -32,7 +32,7 @@ import { createImageName, createImgUUID } from '#app/utilities/images.js'
 import { SendError, throwErr } from '#app/utilities/error.js'
 import { findRestaurantsLocations } from '#app/utilities/locations.js'
 import { getID } from '#app/utilities/document.js'
-import { redis } from '#app/server.js'
+import { Redis } from '#app/server.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -68,7 +68,7 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
       await newRest.save()
 
       user.restaurant = { id: newRest.id, role: RESTAURANT_ROLES.SUPER_ADMIN }
-      await Promise.all([user.save(), redis.setUserByID(user)])
+      await Promise.all([user.save(), Redis.setUserByID(user)])
 
       return res.status(200).json(newRest.toClient())
     } else {
@@ -175,13 +175,13 @@ router.post(
               imageNames[item] = imageName
               let buffer = img.buffer
               if (item === RESTAURANT_IMAGES.avatar) {
-                buffer = await workerService.call({
+                buffer = await WorkerService.call({
                   name: 'resizeImg',
                   params: [buffer, { width: 500 }],
                 })
               }
               if (item === RESTAURANT_IMAGES.cover_photo) {
-                buffer = await workerService.call({
+                buffer = await WorkerService.call({
                   name: 'resizeImg',
                   params: [buffer, { width: 1000 }],
                 })
