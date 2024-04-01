@@ -2,12 +2,14 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import dotenv from 'dotenv'
 dotenv.config()
 
-export const bucketName = process.env.BUCKET_NAME
+const bucketName = process.env.BUCKET_NAME
 const bucketRegion = process.env.BUCKET_REGION
 const S3AccessKey = process.env.S3_ACCESS_KEY
 const S3SecretKey = process.env.S3_SECRET_KEY
 
-export const foodieS3Client = new S3Client({
+export const S3BaseUrl = process.env.S3_BUCKET_BASE_URL
+
+const S3 = new S3Client({
   credentials: {
     accessKeyId: S3AccessKey,
     secretAccessKey: S3SecretKey,
@@ -15,6 +17,18 @@ export const foodieS3Client = new S3Client({
   region: bucketRegion,
 })
 
-export function s3PutCommand(params) {
-  return new PutObjectCommand(params)
+class AWSService {
+  saveImage(name, buffer) {
+    const pc = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: name,
+      Body: buffer,
+      ContentType: 'image/jpeg',
+    })
+    return S3.send(pc)
+  }
 }
+
+const AWS = new AWSService()
+
+export default AWS

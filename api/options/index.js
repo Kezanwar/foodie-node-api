@@ -11,7 +11,7 @@ import { authWithCache } from '#app/middleware/auth.js'
 
 import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.js'
 
-import { SendError } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
 
 dotenv.config()
 
@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
 
     res.status(200).json({ cuisines: resAllCuisines, dietary_requirements: resAllDietaries })
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 
@@ -79,7 +79,7 @@ router.get('/set-cuisines', authWithCache, async (req, res) => {
 
     res.status(200).json(recats)
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 
@@ -114,7 +114,7 @@ router.get('/set-dietary-reqs', authWithCache, async (req, res) => {
 
     res.status(200).json(recats)
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 

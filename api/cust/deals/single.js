@@ -10,10 +10,11 @@ import validate from '#app/middleware/validation.js'
 import { singleDealSchema } from '#app/validation/customer/deal.js'
 
 import { makeMongoIDs } from '#app/utilities/document.js'
-import { SendError, throwErr } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 import WorkerService from '#app/services/worker/index.js'
+import { S3BaseUrl } from '#app/services/aws/index.js'
 
 dotenv.config()
 
@@ -96,8 +97,8 @@ router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
           restaurant: {
             id: '$restaurant.id',
             name: '$restaurant.name',
-            avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
-            cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
             bio: '$restaurant.bio',
             booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
           },
@@ -120,7 +121,7 @@ router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
 
     const [deal, followFav] = await Promise.all([dealProm, followFavProm])
 
-    if (!deal.length) throwErr('Deal not found', 404)
+    if (!deal.length) Err.throw('Deal not found', 404)
 
     deal[0].is_favourited = followFav.is_favourited
     deal[0].is_following = followFav.is_following
@@ -129,7 +130,7 @@ router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
 
     // TODO: Add a view to deal here after response has been sent using prom.then
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 

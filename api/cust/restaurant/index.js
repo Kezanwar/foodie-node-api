@@ -9,11 +9,12 @@ import validate from '#app/middleware/validation.js'
 import Location from '#app/models/Location.js'
 
 import { makeMongoIDs } from '#app/utilities/document.js'
-import { SendError, throwErr } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 import WorkerService from '#app/services/worker/index.js'
 import { singleRestaurantSchema } from '#app/validation/customer/restaurant.js'
+import { S3BaseUrl } from '#app/services/aws/index.js'
 
 dotenv.config()
 
@@ -28,7 +29,7 @@ router.get('/:id', authWithCache, validate(singleRestaurantSchema), async (req, 
 
   try {
     if (!isValidObjectId(id)) {
-      throwErr('Location not found', 404)
+      Err.throw('Location not found', 404)
     }
     const location = await Location.aggregate([
       {
@@ -74,8 +75,8 @@ router.get('/:id', authWithCache, validate(singleRestaurantSchema), async (req, 
           restaurant: {
             booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
             bio: { $arrayElemAt: ['$rest.bio', 0] },
-            avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
-            cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
             name: '$restaurant.name',
             id: '$restaurant.id',
           },
@@ -92,7 +93,7 @@ router.get('/:id', authWithCache, validate(singleRestaurantSchema), async (req, 
       },
     ])
 
-    if (!location.length) throwErr('Location not found', 404)
+    if (!location.length) Err.throw('Location not found', 404)
 
     const resp = await WorkerService.call({
       name: 'checkSingleRestaurantFollowAndFav',
@@ -101,7 +102,7 @@ router.get('/:id', authWithCache, validate(singleRestaurantSchema), async (req, 
 
     res.json(resp)
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 

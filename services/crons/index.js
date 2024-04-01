@@ -1,7 +1,15 @@
-import expireDeals from './deals/expire-deal.js'
+import * as cron from 'node-cron'
+import expireDeals from './deals/expire.js'
 
-const runCrons = () => {
-  expireDeals()
+class CronService {
+  #expireDeals() {
+    cron.schedule('0 * * * *', expireDeals, { scheduled: true })
+  }
+  run() {
+    this.#expireDeals()
+  }
 }
 
-export default runCrons
+const Crons = new CronService()
+
+export default Crons

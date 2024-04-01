@@ -11,7 +11,7 @@ import restRoleGuard from '#app/middleware/rest-role-guard.js'
 import Deal from '#app/models/Deal.js'
 import Location from '#app/models/Location.js'
 
-import { SendError } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -87,7 +87,7 @@ router.get(
         .status(200)
         .json({ active_deals, expired_deals, impressions_views_favourites, booking_clicks, followers, locations })
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )

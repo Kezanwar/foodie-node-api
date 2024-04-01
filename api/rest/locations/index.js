@@ -17,7 +17,7 @@ import { addLocationSchema, checkLocationSchema } from '#app/validation/restaura
 
 import { findRestaurantsLocations, getLongLat, getTimezone } from '#app/utilities/locations.js'
 import { allCapsNoSpace } from '#app/utilities/strings.js'
-import { SendError, throwErr } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
 import { getID, makeMongoIDs, removeDocumentValues } from '#app/utilities/document.js'
 
 import WorkerService from '#app/services/worker/index.js'
@@ -42,18 +42,18 @@ router.post(
         (l) => allCapsNoSpace(l.address.postcode) === allCapsNoSpace(address.postcode)
       )
 
-      if (alreadyExists) throwErr(`Error: A Location already exists for ${address.postcode} `, 401)
+      if (alreadyExists) Err.throw(`Error: A Location already exists for ${address.postcode} `, 401)
 
       const long_lat = await getLongLat(address)
       if (!long_lat)
-        throwErr(
+        Err.throw(
           'Error: Cannot find a geolocation for the location provided, please check the address and try again',
           422
         )
 
       res.status(200).json({ long_lat })
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -74,7 +74,7 @@ router.post(
         (l) => allCapsNoSpace(l.address.postcode) === allCapsNoSpace(address.postcode)
       )
 
-      if (alreadyExists) throwErr(`Error: A Location already exists for ${address.postcode} `, 401)
+      if (alreadyExists) Err.throw(`Error: A Location already exists for ${address.postcode} `, 401)
 
       const timezone = await getTimezone(long_lat)
 
@@ -127,7 +127,7 @@ router.post(
           removeDocumentValues(['cuisines', 'dietary_requirements', 'restaurant', 'active_deals'], newLocation),
         ])
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -143,11 +143,11 @@ router.post(
       params: { id },
     } = req
     try {
-      if (!id) throwErr('Location ID is required', 401)
+      if (!id) Err.throw('Location ID is required', 401)
 
       const rLocToDelete = locations.find((rl) => getID(rl) === id)
 
-      if (!rLocToDelete) throwErr('Location not found', 401)
+      if (!rLocToDelete) Err.throw('Location not found', 401)
 
       await Location.deleteOne({ _id: id })
 
@@ -173,7 +173,7 @@ router.post(
 
       res.status(200).json([...locations.filter((rl) => getID(rl) !== id)])
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -194,26 +194,26 @@ router.post(
         (l) => getID(l) !== id && allCapsNoSpace(l.address.postcode) === allCapsNoSpace(address.postcode)
       )
 
-      if (alreadyExists) throwErr(`Error: A Location already exists for ${address.postcode}`, 401)
+      if (alreadyExists) Err.throw(`Error: A Location already exists for ${address.postcode}`, 401)
 
       const editLocation = locations.find((l) => getID(l) === id)
 
       if (!editLocation) {
-        throwErr('Error: No location found')
+        Err.throw('Error: No location found')
         return
       }
 
       const long_lat = await getLongLat(address)
 
       if (!long_lat)
-        throwErr(
+        Err.throw(
           'Error: Cannot find a geolocation for the location provided, please check the address and try again',
           422
         )
 
       res.status(200).json({ long_lat })
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -232,7 +232,7 @@ router.patch(
     } = req
     try {
       if (!id) {
-        throwErr('Error: No ID found')
+        Err.throw('Error: No ID found')
         return
       }
 
@@ -240,12 +240,12 @@ router.patch(
         (l) => getID(l) !== id && allCapsNoSpace(l.address.postcode) === allCapsNoSpace(address.postcode)
       )
 
-      if (alreadyExists) throwErr(`Error: A Location already exists for ${address.postcode}`, 401)
+      if (alreadyExists) Err.throw(`Error: A Location already exists for ${address.postcode}`, 401)
 
       const editLocation = locations.find((l) => getID(l) === id)
 
       if (!editLocation) {
-        throwErr('Error: No location found')
+        Err.throw('Error: No location found')
         return
       }
 
@@ -307,7 +307,7 @@ router.patch(
 
       res.status(200).json(newLocs)
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -317,7 +317,7 @@ router.get('/', authWithCache, restRoleGuard(RESTAURANT_ROLES.USER, { getLocatio
   try {
     res.status(200).json(locations)
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 
