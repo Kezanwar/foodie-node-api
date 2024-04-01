@@ -7,7 +7,8 @@ import Location from '#app/models/Location.js'
 
 import { authWithCache } from '#app/middleware/auth.js'
 
-import { SendError, throwErr } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
+import { S3BaseUrl } from '#app/services/aws/index.js'
 
 const METER_TO_MILE_CONVERSION = 0.00062137
 
@@ -42,7 +43,7 @@ router.get('/', authWithCache, async (req, res) => {
   //https://stackoverflow.com/questions/18883601/function-to-calculate-distance-between-two-coordinates
 
   try {
-    if (!long || !lat) throwErr('No coordinates', 400)
+    if (!long || !lat) Err.throw('No coordinates', 400)
 
     const LONG = Number(long)
     const LAT = Number(lat)
@@ -50,7 +51,7 @@ router.get('/', authWithCache, async (req, res) => {
     const PAGE = page ? Number(page) : 0
 
     for (let n of [LONG, LAT, PAGE]) {
-      if (isNaN(n)) throwErr('You must pass a number for Page, Long or Lat')
+      if (isNaN(n)) Err.throw('You must pass a number for Page, Long or Lat')
     }
 
     const query = getQueryLocations(cuisines, dietary_requirements)
@@ -119,8 +120,8 @@ router.get('/', authWithCache, async (req, res) => {
           restaurant: {
             id: '$restaurant.id',
             name: '$restaurant.name',
-            avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
-            cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
           },
           location: {
             id: '$_id',
@@ -133,7 +134,7 @@ router.get('/', authWithCache, async (req, res) => {
 
     return res.json({ nextCursor: results.length < LIMIT ? null : PAGE + 1, deals: results })
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 

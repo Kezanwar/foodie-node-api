@@ -1,6 +1,6 @@
 import { RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
 import Restaurant from '#app/models/Restaurant.js'
-import { SendError, throwErr } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
 import { findRestaurantsLocations } from '#app/utilities/locations.js'
 
 const restRoleGuard =
@@ -8,22 +8,22 @@ const restRoleGuard =
   async (req, res, next) => {
     try {
       if (!role || !Object.values(RESTAURANT_ROLES).some((rRole) => role === rRole)) {
-        throwErr('restRoleGuard middleware expects a restaurant role as the argument', 500)
+        Err.throw('restRoleGuard middleware expects a restaurant role as the argument', 500)
       }
       const user = req.user
 
       if (!user.email_confirmed)
-        throwErr('Access denied - Please confirm your email before accessing these resources', 403)
+        Err.throw('Access denied - Please confirm your email before accessing these resources', 403)
 
       let uRest = user?.restaurant
       let uRestID = uRest?.id
       let uRole = uRest?.role
 
       if (!uRest || !uRestID) {
-        throwErr('Access denied - User has no restaurant associated with them', 403)
+        Err.throw('Access denied - User has no restaurant associated with them', 403)
       }
 
-      if (!uRole) throwErr('Access denied - User has no role on this restaurant', 403)
+      if (!uRole) Err.throw('Access denied - User has no role on this restaurant', 403)
 
       const restaurantProm = Restaurant.findById(uRestID).select('+super_admin')
 
@@ -35,7 +35,7 @@ const restRoleGuard =
 
       const [restaurant, locations] = await Promise.all(proms)
 
-      if (!restaurant) throwErr('Access denied - restaurant not found', 403)
+      if (!restaurant) Err.throw('Access denied - restaurant not found', 403)
 
       const { acceptedOnly, applicationOnly } = options
 
@@ -46,7 +46,7 @@ const restRoleGuard =
           case RESTAURANT_STATUS.LIVE:
           case RESTAURANT_STATUS.DISABLED:
           case RESTAURANT_STATUS.APPLICATION_PROCESSING:
-            throwErr('Unable to access these resources', 401)
+            Err.throw('Unable to access these resources', 401)
             break
           default:
             break
@@ -60,7 +60,7 @@ const restRoleGuard =
           case RESTAURANT_STATUS.APPLICATION_PROCESSING:
           case RESTAURANT_STATUS.APPLICATION_REJECTED:
           case RESTAURANT_STATUS.APPLICATION_PENDING:
-            throwErr('Unable to access these resources', 401)
+            Err.throw('Unable to access these resources', 401)
             break
           default:
             break
@@ -94,7 +94,7 @@ const restRoleGuard =
 
       if (!canAccess) {
         // eslint-disable-next-line quotes
-        throwErr("Access denied - users permissions can't access this route", 403)
+        Err.throw("Access denied - users permissions can't access this route", 403)
       } else if (canAccess) {
         if (locations) {
           req.locations = locations
@@ -103,9 +103,9 @@ const restRoleGuard =
         return next()
       }
       // eslint-disable-next-line quotes
-      else throwErr('Unexpected error: Please contact Foodie Admin')
+      else Err.throw('Unexpected error: Please contact Foodie Admin')
     } catch (err) {
-      SendError(res, err)
+      Err.send(res, error)
       return
     }
   }

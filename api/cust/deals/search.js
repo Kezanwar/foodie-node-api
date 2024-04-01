@@ -8,12 +8,13 @@ import Location from '#app/models/Location.js'
 import { authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validation.js'
 
-import { SendError } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 import { searchFeedSchema } from '#app/validation/customer/deal.js'
 
 import WorkerService from '#app/services/worker/index.js'
+import { S3BaseUrl } from '#app/services/aws/index.js'
 
 const RADIUS_METRES = 20000 //20km
 
@@ -105,8 +106,8 @@ router.get('/', authWithCache, validate(searchFeedSchema), async (req, res) => {
             id: '$restaurant.id',
             name: '$restaurant.name',
             bio: '$restaurant.bio',
-            avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
-            cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
             cuisines: '$cuisines',
             dietary: '$dietary_requirements',
           },
@@ -126,7 +127,7 @@ router.get('/', authWithCache, validate(searchFeedSchema), async (req, res) => {
 
     return res.json({ nextCursor: undefined, deals: sorted })
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 

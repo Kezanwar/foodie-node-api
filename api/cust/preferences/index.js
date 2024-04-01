@@ -3,7 +3,7 @@ const router = Router()
 import dotenv from 'dotenv'
 
 import { authNoCache, authWithCache } from '#app/middleware/auth.js'
-import { SendError } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
 import { Redis } from '#app/server.js'
 
 dotenv.config()
@@ -13,7 +13,7 @@ router.get('/', authWithCache, async (req, res) => {
     const user = req.user
     return res.json({ preferences: user.preferences })
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 
@@ -26,7 +26,7 @@ router.post('/add', authNoCache, async (req, res) => {
     await Promise.all([user.save(), Redis.setUserByID(user)])
     return res.json({ preferences: user.preferences })
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 

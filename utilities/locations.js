@@ -8,12 +8,12 @@ import { countries } from '#app/constants/countries.js'
 
 import Location from '#app/models/Location.js'
 
-import { throwErr } from './error.js'
+import Err from '#app/services/error/index.js'
 
 export const getLongLat = async (address) => {
   try {
     if (!address.postcode || !address.address_line_1)
-      throwErr('Need postcode and address line 1 to get geographical data', 500)
+      Err.throw('Need postcode and address line 1 to get geographical data', 500)
 
     const sPostcode = address.postcode.toUpperCase()
     const sAddresLine1 = capitalize(address.address_line_1)
@@ -67,7 +67,7 @@ export const getLongLat = async (address) => {
 
     return undefined
   } catch (error) {
-    throwErr(error, 500)
+    Err.throw(error, 500)
   }
 }
 
@@ -123,7 +123,7 @@ export async function findRestaurantsLocations(
   rest_id,
   select = '-cuisines -dietary_requirements -restaurant -active_deals'
 ) {
-  if (!rest_id) throwErr('No Restaurant / Locations found')
+  if (!rest_id) Err.throw('No Restaurant / Locations found')
   if (!select) {
     const locationsNoSelect = await Location.find({ 'restaurant.id': rest_id })
     return locationsNoSelect

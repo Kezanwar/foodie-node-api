@@ -3,7 +3,7 @@ import dotenv from 'dotenv'
 import User from '#app/models/User.js'
 dotenv.config()
 
-// this fn is called in server and exports result back here as Redis
+// this fn is called in server and exports Redis Cache for use around the app
 export const createRedis = async () => {
   try {
     const r = await createClient({ url: process.env.REDIS_URL }).connect()

@@ -3,8 +3,8 @@ import mongoose from 'mongoose'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import User from './User.js'
 import { isMainThread } from 'node:worker_threads'
-import { prefixImageWithBaseUrl } from '#app/utilities/images.js'
 import { FollowSchemaRestaurant } from './schemas/FollowSchema.js'
+import IMG from '#app/services/image/index.js'
 
 const RestaurantSchema = new mongoose.Schema(
   {
@@ -162,8 +162,9 @@ RestaurantSchema.methods.toClient = function () {
   delete returnToClient.booking_clicks
   delete returnToClient.followers
   delete returnToClient.payment_details
-  if (returnToClient.avatar) returnToClient.avatar = prefixImageWithBaseUrl(returnToClient.avatar)
-  if (returnToClient.cover_photo) returnToClient.cover_photo = prefixImageWithBaseUrl(returnToClient.cover_photo)
+  if (returnToClient.avatar) returnToClient.avatar = IMG.prefixImageWithBaseUrlRest(returnToClient.avatar)
+  if (returnToClient.cover_photo)
+    returnToClient.cover_photo = IMG.prefixImageWithBaseUrlRest(returnToClient.cover_photo)
   return returnToClient
 }
 

@@ -1,15 +1,12 @@
-import dotenv from 'dotenv'
-
 import { Redis } from '#app/server.js'
 import JWT from '#app/services/jwt/index.js'
+import Err from '#app/services/error/index.js'
 
 import User from '#app/models/User.js'
 
-import { SendError, throwErr } from '#app/utilities/error.js'
 import { getUser } from '#app/utilities/user.js'
 import { makeMongoIDs } from '#app/utilities/document.js'
-
-dotenv.config()
+import { S3BaseUrl } from '../services/aws/index.js'
 
 export async function authWithCache(req, res, next) {
   // Get token from header
@@ -23,7 +20,7 @@ export async function authWithCache(req, res, next) {
     // verify token
     const decoded = JWT.verify(token)
 
-    if (!decoded) throwErr('token not valid')
+    if (!decoded) Err.throw('token not valid')
 
     const userFromCache = await Redis.getUserByID(decoded.user.id)
 
@@ -40,7 +37,7 @@ export async function authWithCache(req, res, next) {
     next()
   } catch (err) {
     // if token is invalid or expired
-    SendError(res, err)
+    Err.send(res, err)
   }
 }
 export async function authNoCache(req, res, next) {
@@ -55,7 +52,7 @@ export async function authNoCache(req, res, next) {
     // verify token
     const decoded = JWT.verify(token)
 
-    if (!decoded) throwErr('token not valid')
+    if (!decoded) Err.throw('token not valid')
 
     //  attach dedcoded user in token to req.user in req object
     const userFromDB = await getUser(decoded.user.id)
@@ -66,7 +63,7 @@ export async function authNoCache(req, res, next) {
     next()
   } catch (err) {
     // if token is invalid or expired
-    SendError(res, err)
+    Err.send(res, err)
   }
 }
 
@@ -82,10 +79,10 @@ export async function authWithFavFollow(req, res, next) {
     // verify token
     const decoded = JWT.verify(token)
 
-    if (!decoded) throwErr('token not valid')
+    if (!decoded) Err.throw('token not valid')
     //  attach dedcoded user in token to req.user in req object
 
-    if (!decoded.user.id) throwErr('no ID passed')
+    if (!decoded.user.id) Err.throw('no ID passed')
     const userReq = await User.aggregate([
       {
         $match: {
@@ -125,8 +122,8 @@ export async function authWithFavFollow(req, res, next) {
                 restaurant: {
                   id: '$restaurant.id',
                   name: '$restaurant.name',
-                  avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
-                  cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
+                  avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+                  cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
                 },
               },
             },
@@ -145,7 +142,7 @@ export async function authWithFavFollow(req, res, next) {
 
     const [user] = userReq
 
-    if (!user) throwErr('User doesnt exist', 401)
+    if (!user) Err.throw('User doesnt exist', 401)
 
     req.results = user
 
@@ -153,6 +150,6 @@ export async function authWithFavFollow(req, res, next) {
     next()
   } catch (err) {
     // if token is invalid or expired
-    SendError(res, err)
+    Err.send(res, err)
   }
 }

@@ -6,7 +6,7 @@ import { authWithCache } from '#app/middleware/auth.js'
 import User from '#app/models/User.js'
 import Restaurant from '#app/models/Restaurant.js'
 
-import { SendError, throwErr } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
 
 import validate from '#app/middleware/validation.js'
 import { followRestSchema } from '#app/validation/customer/follow.js'
@@ -29,7 +29,7 @@ router.post('/', validate(followRestSchema), authWithCache, async (req, res) => 
     )
 
     if (!updateDeal.modifiedCount) {
-      throwErr('Restaurant not found or you already follow this restaurant', 401)
+      Err.throw('Restaurant not found or you already follow this restaurant', 401)
     }
 
     const newUserFollower = { restaurant: rest_id, location_id }
@@ -45,7 +45,7 @@ router.post('/', validate(followRestSchema), authWithCache, async (req, res) => 
 
     return res.json({ rest_id, location_id, is_following: true })
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 
@@ -63,7 +63,7 @@ router.patch('/', authWithCache, validate(followRestSchema), async (req, res) =>
 
     return res.json({ rest_id, location_id, is_following: false })
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 

@@ -22,7 +22,8 @@ const PORT = process.env.PORT
 //middlewares
 import rateLimiterMiddlware from './middleware/rate-limit.js'
 //crons
-import runCrons from './services/crons/index.js'
+import Crons from './services/crons/index.js'
+//redis
 import { createRedis } from './services/cache/redis.js'
 
 //create app
@@ -56,7 +57,7 @@ app.get('/', (req, res) => res.send('Foodie API Running'))
 app.use('/api', api)
 
 //initialize crons
-runCrons()
+Crons.run()
 
 //start server
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`))

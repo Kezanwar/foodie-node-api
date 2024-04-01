@@ -8,12 +8,13 @@ import Location from '#app/models/Location.js'
 
 import { authWithCache } from '#app/middleware/auth.js'
 
-import { SendError, throwErr } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
 import WorkerService from '#app/services/worker/index.js'
+import Memory from '#app/services/cache/memory.js'
 
 import { landingUrl } from '#app/config/config.js'
 import { removeTags } from '#app/utilities/regex.js'
-import Memory from '#app/services/cache/memory.js'
+import { S3BaseUrl } from '#app/services/aws/index.js'
 
 const fetchBlogs = async () => {
   return axios.get(`${landingUrl}/api/recent`).then((res) =>
@@ -43,13 +44,13 @@ router.get('/', authWithCache, async (req, res) => {
   //https://stackoverflow.com/questions/18883601/function-to-calculate-distance-between-two-coordinates
 
   try {
-    if (!long || !lat) throwErr('No coordinates', 400)
+    if (!long || !lat) Err.throw('No coordinates', 400)
 
     const LONG = Number(long)
     const LAT = Number(lat)
 
     for (let n of [LONG, LAT]) {
-      if (isNaN(n)) throwErr('You must pass a number for Long or Lat')
+      if (isNaN(n)) Err.throw('You must pass a number for Long or Lat')
     }
 
     const query = getQueryLocations()
@@ -107,8 +108,8 @@ router.get('/', authWithCache, async (req, res) => {
             restaurant: {
               id: '$restaurant.id',
               name: '$restaurant.name',
-              avatar: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.avatar'] },
-              cover_photo: { $concat: [process.env.S3_BUCKET_BASE_URL, '$restaurant.cover_photo'] },
+              avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+              cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
               followers: '$followCount',
               cuisines: '$cuisines',
               dietary: '$dietary_requirements',
@@ -143,7 +144,7 @@ router.get('/', authWithCache, async (req, res) => {
 
     return res.json(resp)
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 

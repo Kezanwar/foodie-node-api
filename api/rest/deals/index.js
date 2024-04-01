@@ -22,7 +22,7 @@ import validate from '#app/middleware/validation.js'
 import { addDealSchema, editDealSchema } from '#app/validation/restaurant/deals.js'
 
 // utils
-import { SendError, throwErr } from '#app/utilities/error.js'
+import Err from '#app/services/error/index.js'
 import { getID, makeMongoIDs } from '#app/utilities/document.js'
 import { capitalizeSentence } from '#app/utilities/strings.js'
 
@@ -100,7 +100,7 @@ router.get(
 
       res.json(query)
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -155,7 +155,7 @@ router.get(
 
       res.json(agg)
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -244,11 +244,11 @@ router.get(
       ])
 
       if (!deal?.length) {
-        throwErr('Deal not found', 402)
+        Err.throw('Deal not found', 402)
         return
       } else res.json(deal[0])
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -289,11 +289,11 @@ router.get(
       ])
 
       if (!deal?.length) {
-        throwErr('Deal not found', 402)
+        Err.throw('Deal not found', 402)
         return
       } else res.json(deal[0])
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -322,7 +322,7 @@ router.post(
       const locationsCount = restLocations.length || 0
 
       if (activeDealsCount >= locationsCount * DEALS_PER_LOCATION) {
-        throwErr('Maxmimum active deals limit reached', 402)
+        Err.throw('Maxmimum active deals limit reached', 402)
       }
 
       const locationsMap = locations
@@ -333,7 +333,7 @@ router.post(
         .filter(Boolean)
 
       if (!locationsMap?.length || locations?.length !== locationsMap.length)
-        throwErr('Error: No matching locations found', 400)
+        Err.throw('Error: No matching locations found', 400)
 
       const deal = new Deal({
         start_date,
@@ -363,7 +363,7 @@ router.post(
       await Promise.all([deal.save(), updateLocationsActiveDealProm])
       return res.status(200).json('Success')
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -393,13 +393,13 @@ router.patch(
         .filter(Boolean)
 
       if (!locationsMap?.length || locationsMap.length !== locations.length)
-        throwErr('Error: No matching locations found', 400)
+        Err.throw('Error: No matching locations found', 400)
 
       const deal = await Deal.findById(id)
-      if (!deal) throwErr('Deal not found', 400)
-      if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to edit this deal', 400)
+      if (!deal) Err.throw('Deal not found', 400)
+      if (getID(deal.restaurant) !== getID(restaurant)) Err.throw('Unauthorized to edit this deal', 400)
       if (isBefore(new Date(end_date), new Date(deal.start_date))) {
-        throwErr('Deal end date cannot be before the start date', 400)
+        Err.throw('Deal end date cannot be before the start date', 400)
       }
 
       const proms = []
@@ -479,7 +479,7 @@ router.patch(
       await Promise.all(proms)
       return res.status(200).json('Success')
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -495,8 +495,8 @@ router.post(
 
     try {
       const deal = await Deal.findById(id)
-      if (!deal) throwErr('Deal not found', 400)
-      if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to delete this deal', 400)
+      if (!deal) Err.throw('Deal not found', 400)
+      if (getID(deal.restaurant) !== getID(restaurant)) Err.throw('Unauthorized to delete this deal', 400)
 
       await Promise.all([
         Location.updateMany(
@@ -510,7 +510,7 @@ router.post(
 
       return res.status(200).json('Success')
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
@@ -528,15 +528,15 @@ router.patch(
 
     try {
       const deal = await Deal.findById(id)
-      if (!deal) throwErr('Deal not found', 400)
-      if (getID(deal.restaurant) !== getID(restaurant)) throwErr('Unauthorized to expire this deal', 400)
-      if (deal.is_expired) throwErr('Deal is already expired', 400)
+      if (!deal) Err.throw('Deal not found', 400)
+      if (getID(deal.restaurant) !== getID(restaurant)) Err.throw('Unauthorized to expire this deal', 400)
+      if (deal.is_expired) Err.throw('Deal is already expired', 400)
       if (isBefore(new Date(), new Date(deal.start_date))) {
-        throwErr('You cant expire a deal that hasnt started yet', 400)
+        Err.throw('You cant expire a deal that hasnt started yet', 400)
       }
-      if (!end_date) throwErr('Must provide an end_date', 400)
+      if (!end_date) Err.throw('Must provide an end_date', 400)
       if (isBefore(new Date(end_date), new Date(deal.start_date))) {
-        throwErr('You cant expire a deal that hasnt start yet... Deal end date cannot be before the start date', 400)
+        Err.throw('You cant expire a deal that hasnt start yet... Deal end date cannot be before the start date', 400)
       }
       deal.is_expired = true
       deal.end_date = end_date
@@ -553,7 +553,7 @@ router.patch(
 
       return res.status(200).json('Success')
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )

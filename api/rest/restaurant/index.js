@@ -6,6 +6,10 @@ dotenv.config()
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 
+import Err from '#app/services/error/index.js'
+import AWS from '#app/services/aws/index.js'
+import IMG from '#app/services/image/index.js'
+
 import Restaurant from '#app/models/Restaurant.js'
 import Location from '#app/models/Location.js'
 import Deal from '#app/models/Deal.js'
@@ -16,14 +20,7 @@ import validate from '#app/middleware/validation.js'
 
 import { restaurantDetailsSchema } from '#app/validation/restaurant/create-restaurant.js'
 
-import { ACCEPTED_FILES, RESTAURANT_IMAGES } from '#app/constants/images.js'
 import { RESTAURANT_ROLES } from '#app/constants/restaurant.js'
-
-import { createImageName } from '#app/utilities/images.js'
-import { SendError, throwErr } from '#app/utilities/error.js'
-
-import WorkerService from '#app/services/worker/index.js'
-import { bucketName, foodieS3Client, s3PutCommand } from '#app/services/aws/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -42,7 +39,7 @@ router.get('/', authWithCache, async (req, res) => {
     // await fakeLongLoadPromise()
     return res.status(200).json(uRest.toClient())
   } catch (error) {
-    SendError(res, error)
+    Err.send(res, error)
   }
 })
 
@@ -63,7 +60,7 @@ router.patch(
       files,
     } = req
 
-    if (!cuisines || cuisines?.length <= 0) throwErr('Must provide atleast 1 cuisine', 400)
+    if (!cuisines || cuisines?.length <= 0) Err.throw('Must provide atleast 1 cuisine', 400)
 
     //! route is expecting formdata - any objects that arent files must be stringified and sent as formdata
     //! then destringifyd on the server
@@ -72,67 +69,37 @@ router.patch(
       const rAvatar = restaurant?.avatar
       const rCoverPhoto = restaurant?.cover_photo
 
-      const uAvatar = files?.avatar
-      const uCoverPhoto = files?.cover_photo
+      const uAvatar = files?.avatar?.[0]
+      const uCoverPhoto = files?.cover_photo?.[0]
 
       if ((!rAvatar && !uAvatar) || (!rCoverPhoto && !uCoverPhoto)) {
-        throwErr('Error - Restaurant must provide Avatar and Cover Photo', 400)
+        Err.throw('Error - Restaurant must provide Avatar and Cover Photo', 400)
         return
       }
 
-      if (uAvatar && !!ACCEPTED_FILES.some((type) => type === uAvatar.mimetype)) {
-        throwErr('Restaurant avatar must be JPEG or PNG', 400)
-        return
+      if (uAvatar && !IMG.isAcceptedFileType(uAvatar.mimetype)) {
+        Err.throw('Restaurant avatar must be JPEG or PNG', 400)
       }
 
-      if (uCoverPhoto && !!ACCEPTED_FILES.some((type) => type === uCoverPhoto.mimetype)) {
-        throwErr('Restaurant cover photo must be JPEG or PNG', 400)
-        return
+      if (uCoverPhoto && !IMG.isAcceptedFileType(uCoverPhoto.mimetype)) {
+        Err.throw('Restaurant cover photo must be JPEG or PNG', 400)
       }
 
-      const filesArr = Object.entries(files)
+      const imageNames = {}
+      const saveImagePromises = []
 
-      // update existing restaurant
+      if (uAvatar) {
+        imageNames.avatar = IMG.createImageName(restaurant.image_uuid, 'avatar')
+        const buffer = await IMG.resizeAvatar(uAvatar.buffer)
+        saveImagePromises.push(AWS.saveImage(imageNames.avatar, buffer))
+      }
+      if (uCoverPhoto) {
+        imageNames.cover_photo = IMG.createImageName(restaurant.image_uuid, 'cover_photo')
+        const buffer = await IMG.resizeCoverPhoto(uCoverPhoto.buffer)
+        saveImagePromises.push(AWS.saveImage(imageNames.cover_photo, buffer))
+      }
 
-      let imageNames = {}
-
-      const promises = filesArr.map(
-        (entry) =>
-          // eslint-disable-next-line no-async-promise-executor
-          new Promise(async (resolve, reject) => {
-            try {
-              const item = entry[0]
-              const img = entry[1][0]
-              const imageName = createImageName(restaurant, item, img)
-              imageNames[item] = imageName
-              let buffer = img.buffer
-              if (item === RESTAURANT_IMAGES.avatar) {
-                buffer = await WorkerService.call({
-                  name: 'resizeImg',
-                  params: [buffer, { width: 500 }],
-                })
-              }
-              if (item === RESTAURANT_IMAGES.cover_photo) {
-                buffer = await WorkerService.call({
-                  name: 'resizeImg',
-                  params: [buffer, { width: 1000 }],
-                })
-              }
-              const pc = s3PutCommand({
-                Bucket: bucketName,
-                Key: createImageName(restaurant, item, img),
-                Body: buffer,
-                ContentType: 'image/jpeg',
-              })
-              const res = await foodieS3Client.send(pc)
-              resolve(res)
-            } catch (error) {
-              reject(error)
-            }
-          })
-      )
-
-      await Promise.all(promises)
+      await Promise.all(saveImagePromises)
 
       const newData = {
         ...(imageNames.avatar && { avatar: imageNames.avatar }),
@@ -172,11 +139,11 @@ router.patch(
 
       await Promise.all([updateRestProm, updateDealsProm, updateLocationsProm])
 
-      if (!restaurant.cover_photo || !restaurant.avatar) return throwErr('Must provide an Avatar and Cover Photo')
+      if (!restaurant.cover_photo || !restaurant.avatar) return Err.throw('Must provide an Avatar and Cover Photo')
 
       return res.status(200).json(restaurant.toClient())
     } catch (error) {
-      SendError(res, error)
+      Err.send(res, error)
     }
   }
 )
