@@ -1,6 +1,6 @@
-import { worker } from './initialize.js'
+import workerConfig from './initialize.js'
 
-const WorkerService = await worker.launchService({
+const WorkerService = await workerConfig.launchService({
   exceptionHandler({ error }) {
     console.error('WorkerService:', error)
   },

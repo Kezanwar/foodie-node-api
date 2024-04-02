@@ -5,7 +5,7 @@ import dotenv from 'dotenv'
 import Deal from '#app/models/Deal.js'
 
 import { authWithCache } from '#app/middleware/auth.js'
-import validate from '#app/middleware/validation.js'
+import validate from '#app/middleware/validate.js'
 
 import { singleDealSchema } from '#app/validation/customer/deal.js'
 

@@ -10,7 +10,7 @@ import Location from '#app/models/Location.js'
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES } from '#app/constants/restaurant.js'
 
 import { authWithCache } from '#app/middleware/auth.js'
-import validate from '#app/middleware/validation.js'
+import validate from '#app/middleware/validate.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
 import { addLocationSchema, checkLocationSchema } from '#app/validation/restaurant/locations.js'

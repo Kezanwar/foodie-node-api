@@ -1,7 +1,7 @@
 import { Redis } from '#app/server.js'
-import JWT from '#app/services/jwt/index.js'
-import Err from '#app/services/error/index.js'
 
+import Err from '#app/services/error/index.js'
+import Auth from '#app/services/auth/index.js'
 import User from '#app/models/User.js'
 
 import { getUser } from '#app/utilities/user.js'
@@ -18,7 +18,7 @@ export async function authWithCache(req, res, next) {
 
   try {
     // verify token
-    const decoded = JWT.verify(token)
+    const decoded = Auth.jwtVerify(token)
 
     if (!decoded) Err.throw('token not valid')
 
@@ -50,7 +50,7 @@ export async function authNoCache(req, res, next) {
 
   try {
     // verify token
-    const decoded = JWT.verify(token)
+    const decoded = Auth.jwtVerify(token)
 
     if (!decoded) Err.throw('token not valid')
 
@@ -77,7 +77,7 @@ export async function authWithFavFollow(req, res, next) {
 
   try {
     // verify token
-    const decoded = JWT.verify(token)
+    const decoded = Auth.jwtVerify(token)
 
     if (!decoded) Err.throw('token not valid')
     //  attach dedcoded user in token to req.user in req object

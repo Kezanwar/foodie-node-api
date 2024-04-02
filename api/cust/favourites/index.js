@@ -4,7 +4,7 @@ import Deal from '#app/models/Deal.js'
 import User from '#app/models/User.js'
 
 import { authWithCache, authWithFavFollow } from '#app/middleware/auth.js'
-import validate from '#app/middleware/validation.js'
+import validate from '#app/middleware/validate.js'
 
 import { favouriteDealSchema } from '#app/validation/customer/deal.js'
 

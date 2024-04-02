@@ -8,7 +8,7 @@ import Restaurant from '#app/models/Restaurant.js'
 
 import Err from '#app/services/error/index.js'
 
-import validate from '#app/middleware/validation.js'
+import validate from '#app/middleware/validate.js'
 import { followRestSchema } from '#app/validation/customer/follow.js'
 import { Redis } from '#app/server.js'
 

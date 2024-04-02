@@ -1,5 +1,5 @@
 import * as cron from 'node-cron'
-import expireDeals from './deals/expire.js'
+import expireDeals from './handlers/expire.js'
 
 class CronService {
   #expireDeals() {
