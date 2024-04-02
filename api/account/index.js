@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 import { authNoCache } from '#app/middleware/auth.js'
-import validate from '#app/middleware/validation.js'
+import validate from '#app/middleware/validate.js'
 
 import { patchProfileSchema } from '#app/validation/account/account.js'
 

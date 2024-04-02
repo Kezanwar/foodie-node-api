@@ -7,7 +7,7 @@ dotenv.config()
 export const createRedis = async () => {
   try {
     const r = await createClient({ url: process.env.REDIS_URL }).connect()
-    console.log('Redis connected 🚀')
+    console.log('redis connected 🚀')
     return new RedisCache(r)
   } catch (error) {
     console.log('Error: Redis failed to connect...')

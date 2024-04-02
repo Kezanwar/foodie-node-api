@@ -6,7 +6,7 @@ dotenv.config()
 import Location from '#app/models/Location.js'
 
 import { authWithCache } from '#app/middleware/auth.js'
-import validate from '#app/middleware/validation.js'
+import validate from '#app/middleware/validate.js'
 
 import Err from '#app/services/error/index.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'

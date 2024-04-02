@@ -20,7 +20,7 @@ import AWS from '#app/services/aws/index.js'
 import Err from '#app/services/error/index.js'
 import { Redis } from '#app/server.js'
 
-import validate from '#app/middleware/validation.js'
+import validate from '#app/middleware/validate.js'
 import {
   companyInfoSchema,
   restaurantDetailsSchema,

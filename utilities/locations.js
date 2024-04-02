@@ -95,28 +95,9 @@ export const getTimezone = async ({ lat, long }) => {
   }
 }
 
-export function hasMultipleTimezones(arrToTest) {
-  const sum = arrToTest.reduce((arr, el) => {
-    if (!arr.includes(el.timezone)) arr.push(el.timezone)
-    return arr
-  }, [])
-  return sum.length > 1
-}
-
 export function findCountryPhoneCode(country) {
   const code = countries.find((c) => c.label === country)?.phone
   return `+${code}`
-}
-
-export const getLocationsToExpireFromDealsPromises = (deals) => {
-  return deals.map((deal) =>
-    Location.updateMany(
-      {
-        'restaurant.id': deal.restaurant.id,
-      },
-      { $pull: { active_deals: deal._id } }
-    )
-  )
 }
 
 export async function findRestaurantsLocations(

@@ -16,7 +16,7 @@ import { DEALS_PER_LOCATION } from '#app/constants/deals.js'
 // middlewares
 import { authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
-import validate from '#app/middleware/validation.js'
+import validate from '#app/middleware/validate.js'
 
 // validations
 import { addDealSchema, editDealSchema } from '#app/validation/restaurant/deals.js'
@@ -314,7 +314,7 @@ router.post(
     let currentDate = current_date ? new Date(current_date) : new Date()
 
     try {
-      const activeDealsCount = await Deal({
+      const activeDealsCount = await Deal.countDocuments({
         'restaurant.id': restaurant._id,
         $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
       })

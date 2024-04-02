@@ -105,7 +105,7 @@ const restRoleGuard =
       // eslint-disable-next-line quotes
       else Err.throw('Unexpected error: Please contact Foodie Admin')
     } catch (err) {
-      Err.send(res, error)
+      Err.send(res, err)
       return
     }
   }

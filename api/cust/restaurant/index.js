@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 import { isValidObjectId } from 'mongoose'
 
 import { authWithCache } from '#app/middleware/auth.js'
-import validate from '#app/middleware/validation.js'
+import validate from '#app/middleware/validate.js'
 
 import Location from '#app/models/Location.js'
 

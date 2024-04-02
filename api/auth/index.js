@@ -1,28 +1,20 @@
 import { Router } from 'express'
 
 const router = Router()
-import dotenv from 'dotenv'
-dotenv.config()
-import axios from 'axios'
-import bcrypt from 'bcryptjs'
-import { addMinutes } from 'date-fns'
 
 import { Redis } from '#app/server.js'
-import JWT from '#app/services/jwt/index.js'
+import Auth from '#app/services/auth/index.js'
+import Email from '#app/services/email/index.js'
+import Err from '#app/services/error/index.js'
 
 import User from '#app/models/User.js'
 
-import { authNoCache } from '#app/middleware/auth.js'
-import validate from '#app/middleware/validation.js'
+import { authNoCache, authWithCache } from '#app/middleware/auth.js'
+import validate from '#app/middleware/validate.js'
 import { loginUserSchema, registerUserSchema } from '#app/validation/auth/auth.js'
 
-import Err from '#app/services/error/index.js'
 import { findUserByEmail, findUserByEmailWithPassword } from '#app/utilities/user.js'
 import { capitalizeFirstLetter } from '#app/utilities/strings.js'
-import { createOTP } from '#app/utilities/otp.js'
-import Email from '#app/services/email/index.js'
-
-import { AUTH_METHODS } from '#app/constants/auth.js'
 
 import { dashboardUrl } from '#app/config/config.js'
 
@@ -30,7 +22,7 @@ import { dashboardUrl } from '#app/config/config.js'
 //? @desc GET A LOGGED IN USER WITH JWT
 // @access auth
 
-router.get('/initialize', authNoCache, async (req, res) => {
+router.get('/initialize', authWithCache, async (req, res) => {
   try {
     const user = req.user
     if (!user) throw new Error('User doesnt exist')
@@ -61,13 +53,13 @@ router.post(
         Err.throw('Invalid credentials', 400)
       }
 
-      if (user?.auth_method !== AUTH_METHODS.jwt) {
+      if (Auth.isGoogleAuthMethod(user?.auth_method)) {
         Err.throw('User signed up using Google')
       }
 
       // compare the passwords if they exist
 
-      const isMatch = await bcrypt.compare(password, user.password)
+      const isMatch = await Auth.comparePasswordToHash(password, user.password)
 
       // if dont exist send an error
 
@@ -84,7 +76,7 @@ router.post(
         },
       }
 
-      const token = JWT.sign30Days(payload)
+      const token = Auth.jwtSign30Days(payload)
 
       const userResponse = user.toClient()
 
@@ -107,7 +99,7 @@ router.post(
       const { token } = req.body
       if (!token) Err.throw('No token authentication error', 500)
 
-      const userRequested = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`)
+      const userRequested = await Auth.fetchGoogleAuthUser(token)
 
       const { email } = userRequested.data
 
@@ -116,7 +108,7 @@ router.post(
         Err.throw('Invalid credentials', 400)
       }
 
-      if (user?.auth_method !== AUTH_METHODS.google) {
+      if (Auth.isJWTAuthMethod(user?.auth_method)) {
         Err.throw('User didnt sign up with google, please sign in with email & password')
       }
 
@@ -129,7 +121,7 @@ router.post(
         },
       }
 
-      const access_token = JWT.sign30Days(payload)
+      const access_token = Auth.jwtSign30Days(payload)
 
       const userResponse = user.toClient()
 
@@ -167,15 +159,12 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       last_name: capitalizeFirstLetter(last_name),
       email: email.toLowerCase(),
       password,
-      auth_method: AUTH_METHODS.jwt,
-      auth_otp: createOTP(),
+      auth_method: Auth.jwtAuthMethod,
+      auth_otp: Auth.createOTP(),
       email_confirmed: false,
     })
-    // encrypt users passsord using bcrypt
-    // generate the salt
-    const salt = await bcrypt.genSalt(10)
-    // encrypt users password with the salt
-    user.password = await bcrypt.hash(password, salt)
+
+    user.password = await Auth.hashUserGeneratedPW(password)
 
     // save the new user to DB using mongoose and send OTP email
     await Promise.all([user.save(), Redis.setUserByID(user)])
@@ -188,7 +177,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       },
     }
 
-    const access_token = JWT.sign365Days(payload)
+    const access_token = Auth.jwtSign365Days(payload)
 
     const userResponse = user.toClient()
 
@@ -215,7 +204,7 @@ router.post('/register-google', async (req, res) => {
     const { token } = req.body
     if (!token) Err.throw('No token authentication error', 500)
 
-    const userRequested = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`)
+    const userRequested = await Auth.fetchGoogleAuthUser(token)
 
     const { given_name, family_name, picture, email } = userRequested.data
 
@@ -230,15 +219,10 @@ router.post('/register-google', async (req, res) => {
       email: email.toLowerCase(),
       email_confirmed: true,
       avatar: picture,
-      auth_method: AUTH_METHODS.google,
+      auth_method: Auth.googleAuthMethod,
     })
 
-    const password = email + process.env.GOOGLE_REGISTER_EMAIL_PW_SECRET
-    // encrypt users passsord using bcrypt
-    // generate the salt
-    const salt = await bcrypt.genSalt(10)
-    // encrypt users password with the salt
-    user.password = await bcrypt.hash(password, salt)
+    user.password = await Auth.hashServerGeneratedPW(email)
 
     // save the new user to DB using mongoose
     await Promise.all([user.save(), Redis.setUserByID(user)])
@@ -249,7 +233,7 @@ router.post('/register-google', async (req, res) => {
       },
     }
 
-    const access_token = JWT.sign365Days(payload)
+    const access_token = Auth.jwtSign365Days(payload)
 
     const userResponse = user.toClient()
 
@@ -290,7 +274,7 @@ router.post('/confirm-email/:otp', authNoCache, async (req, res) => {
 router.patch('/confirm-email/resend-otp', authNoCache, async (req, res) => {
   const user = req.user
   try {
-    user.auth_otp = createOTP()
+    user.auth_otp = Auth.createOTP()
     await Promise.all([user.save(), Redis.setUserByID(user), Email.sendOTPEmail(user)])
     res.status(200).send({ message: 'success' })
   } catch (error) {
@@ -309,14 +293,14 @@ router.post('/forgot-password', async (req, res) => {
     const user = await findUserByEmail(email)
     // eslint-disable-next-line quotes
     if (!user) Err.throw("Sorry, we can't locate a user with this email.", 400)
-    if (user.auth_method === AUTH_METHODS.google)
+    if (Auth.isGoogleAuthMethod(user.auth_method))
       Err.throw('This email address signed up with Google, please login via Google.', 400)
 
     const confirmEmailPayload = {
       email: user.email,
     }
 
-    const token = JWT.sign15Mins(confirmEmailPayload)
+    const token = Auth.jwtSign15Mins(confirmEmailPayload)
 
     await Email.sendChangePasswordEmail(user, token)
 
@@ -333,7 +317,7 @@ router.get('/change-password/:token', async (req, res) => {
   try {
     if (!token) Err.throw('No token provided')
 
-    const decoded = JWT.verify(token)
+    const decoded = Auth.jwtVerify(token)
 
     if (!decoded?.email) {
       Err.throw('Token expired', 400)
@@ -343,9 +327,9 @@ router.get('/change-password/:token', async (req, res) => {
       email: decoded.email,
     }
 
-    const forward_token = JWT.sign15Mins(payload)
+    const forward_token = Auth.jwtSign15Mins(payload)
 
-    const expires = addMinutes(new Date(), 15).toISOString()
+    const expires = Auth.createChangePWExpiryDate()
 
     return res.redirect(`${dashboardUrl}/change-password?token=${forward_token}&expires=${expires}`)
   } catch (error) {
@@ -362,7 +346,7 @@ router.patch('/change-password/:token', async (req, res) => {
   try {
     if (!token) Err.throw('No token provided')
 
-    const decoded = JWT.verify(token)
+    const decoded = Auth.jwtVerify(token)
 
     if (!decoded?.email) {
       Err.throw('Token expired', 400)
@@ -374,9 +358,7 @@ router.patch('/change-password/:token', async (req, res) => {
       Err.throw('User doesnt exist', 400)
     }
 
-    const salt = await bcrypt.genSalt(10)
-
-    user.password = await bcrypt.hash(password, salt)
+    user.password = await Auth.hashUserGeneratedPW(password)
 
     await Promise.all([user.save(), Redis.setUserByID(user)])
 

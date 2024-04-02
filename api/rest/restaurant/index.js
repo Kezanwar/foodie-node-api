@@ -16,7 +16,7 @@ import Deal from '#app/models/Deal.js'
 
 import { authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
-import validate from '#app/middleware/validation.js'
+import validate from '#app/middleware/validate.js'
 
 import { restaurantDetailsSchema } from '#app/validation/restaurant/create-restaurant.js'
 

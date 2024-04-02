@@ -15,10 +15,6 @@ import Err from '#app/services/error/index.js'
 
 dotenv.config()
 
-//* route GET api/auth/initialize
-//? @desc GET A LOGGED IN USER WITH JWT
-//! @access public
-
 router.get('/', async (req, res) => {
   try {
     let resAllCuisines = Memory.getCuisineOptions()
