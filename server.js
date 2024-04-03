@@ -8,23 +8,26 @@ import express, { json } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 dotenv.config()
-import mixpanel from 'mixpanel'
 import ExpressMongoSanitize from 'express-mongo-sanitize'
 import path from 'path'
 import { fileURLToPath } from 'url'
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-//db
-import connectDB from './services/db/index.js'
-//api
-import api from './api/index.js'
 const PORT = process.env.PORT
-//middlewares
-import rateLimiterMiddlware from './middleware/rate-limit.js'
+
+//db
+import DB from './services/db/index.js'
 //crons
 import Crons from './services/crons/index.js'
 //redis
-import { createRedis } from './services/cache/redis.js'
+import Redis from './services/cache/redis.js'
+//mixpanel
+import Mixpanel from './services/mixpanel/index.js'
+//middlewares
+import rateLimiterMiddlware from './middleware/rate-limit.js'
+//api
+import api from './api/index.js'
 
 //create app
 const app = express()
@@ -33,13 +36,13 @@ const app = express()
 app.set('view engine', 'ejs')
 
 //connect to database
-connectDB()
+await DB.connect()
 
-//create redis client and export for use around the app
-export const Redis = await createRedis()
+//connect to redis
+await Redis.connect()
 
-//initialize mixpanel
-mixpanel.init(process.env.MIXPANEL_TOKEN, { host: 'api-eu.mixpanel.com' })
+//connect to  mixpanel
+await Mixpanel.connect()
 
 //initialize middlewares
 app.use(json({ extended: false }))
@@ -56,7 +59,7 @@ app.use(
 app.get('/', (req, res) => res.send('Foodie API Running'))
 app.use('/api', api)
 
-//initialize crons
+//start crons
 Crons.run()
 
 //start server

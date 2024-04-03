@@ -8,7 +8,7 @@ import validate from '#app/middleware/validate.js'
 
 import { patchProfileSchema } from '#app/validation/account/account.js'
 
-import { Redis } from '#app/server.js'
+import Redis from '#app/services/cache/redis.js'
 import Err from '#app/services/error/index.js'
 
 //* route PATCH api/account/profile

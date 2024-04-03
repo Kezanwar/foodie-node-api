@@ -10,7 +10,7 @@ import Err from '#app/services/error/index.js'
 
 import validate from '#app/middleware/validate.js'
 import { followRestSchema } from '#app/validation/customer/follow.js'
-import { Redis } from '#app/server.js'
+import Redis from '#app/services/cache/redis.js'
 
 router.post('/', validate(followRestSchema), authWithCache, async (req, res) => {
   const {
