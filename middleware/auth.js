@@ -87,9 +87,7 @@ export async function authWithFavFollow(req, res, next) {
       Err.throw('no ID passed')
     }
 
-    const userRequest = await DB.getUserWithFavAndFollow(decoded.user.id)
-
-    const [user] = userRequest
+    const user = await DB.CGetUserWithFavAndFollow(decoded.user.id)
 
     if (!user) {
       Err.throw('User doesnt exist', 401)
