@@ -2,7 +2,7 @@ import { Router } from 'express'
 
 const router = Router()
 
-import { Redis } from '#app/server.js'
+import Redis from '#app/services/cache/redis.js'
 import Auth from '#app/services/auth/index.js'
 import Email from '#app/services/email/index.js'
 import Err from '#app/services/error/index.js'

@@ -18,7 +18,7 @@ import Email from '#app/services/email/index.js'
 import IMG from '#app/services/image/index.js'
 import AWS from '#app/services/aws/index.js'
 import Err from '#app/services/error/index.js'
-import { Redis } from '#app/server.js'
+import Redis from '#app/services/cache/redis.js'
 
 import validate from '#app/middleware/validate.js'
 import {

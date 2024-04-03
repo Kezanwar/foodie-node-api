@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 
 import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 import Err from '#app/services/error/index.js'
-import { Redis } from '#app/server.js'
+import Redis from '#app/services/cache/redis.js'
 
 dotenv.config()
 

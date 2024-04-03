@@ -9,7 +9,7 @@ import validate from '#app/middleware/validate.js'
 import { favouriteDealSchema } from '#app/validation/customer/deal.js'
 
 import Err from '#app/services/error/index.js'
-import { Redis } from '#app/server.js'
+import Redis from '#app/services/cache/redis.js'
 
 const router = Router()
 

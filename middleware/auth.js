@@ -1,4 +1,4 @@
-import { Redis } from '#app/server.js'
+import Redis from '#app/services/cache/redis.js'
 
 import Err from '#app/services/error/index.js'
 import Auth from '#app/services/auth/index.js'

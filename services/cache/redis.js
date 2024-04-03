@@ -3,23 +3,18 @@ import dotenv from 'dotenv'
 import User from '#app/models/User.js'
 dotenv.config()
 
-// this fn is called in server and exports Redis Cache for use around the app
-export const createRedis = async () => {
-  try {
-    const r = await createClient({ url: process.env.REDIS_URL }).connect()
-    console.log('redis connected 🚀')
-    return new RedisCache(r)
-  } catch (error) {
-    console.log('Error: Redis failed to connect...')
-    process.exit(1)
-  }
-}
-
 class RedisCache {
   #client = null
 
-  constructor(Redis) {
-    this.#client = Redis
+  async connect() {
+    try {
+      const connection = await createClient({ url: process.env.REDIS_URL }).connect()
+      console.log('redis connected 🚀')
+      this.#client = connection
+    } catch (error) {
+      console.log('Error: Redis failed to connect...')
+      process.exit(1)
+    }
   }
 
   #getID(doc) {
@@ -41,3 +36,7 @@ class RedisCache {
     await this.#client.del(this.#getID(user))
   }
 }
+
+const Redis = new RedisCache()
+
+export default Redis

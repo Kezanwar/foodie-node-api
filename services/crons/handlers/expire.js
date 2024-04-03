@@ -2,9 +2,9 @@ import Deal from '#app/models/Deal.js'
 
 import WorkerService from '#app/services/worker/index.js'
 
-import { MIXPANEL_EVENTS, mixpanelTrack } from '#app/services/mixpanel/index.js'
 import Location from '#app/models/Location.js'
 import Err from '#app/services/error/index.js'
+import Mixpanel from '#app/services/mixpanel/index.js'
 
 const expireDeals = async () => {
   try {
@@ -24,7 +24,7 @@ const expireDeals = async () => {
     )
     await Promise.all(proms)
     const expiredReq = await Deal.updateMany(filter, { is_expired: true })
-    await mixpanelTrack(MIXPANEL_EVENTS.cron_deals_expired, expiredReq)
+    Mixpanel.trackExpiredDeals(expiredReq)
   } catch (error) {
     Err.log(error)
   }
