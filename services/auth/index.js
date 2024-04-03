@@ -43,7 +43,7 @@ class AuthService {
     return check === this.#auth_methods.google
   }
 
-  fetchGoogleAuthUser(token) {
+  fetchGoogleOAuthUser(token) {
     return axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`)
   }
 

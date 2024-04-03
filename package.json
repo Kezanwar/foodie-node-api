@@ -73,10 +73,6 @@
       "modules/no-cjs": [
         "error"
       ],
-      "quotes": [
-        "error",
-        "single"
-      ],
       "no-undef": [
         "error"
       ],
