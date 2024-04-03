@@ -7,7 +7,6 @@
     "start": "node server",
     "server": "nodemon  --inspect server",
     "client": "npm start --prefix client",
-    "sass-watch": "sass --no-source-map --watch sass/main.scss public/main.css",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest"
   },
   "type": "module",
@@ -26,7 +25,6 @@
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^6.7.0",
     "html-entities": "^2.4.0",
-    "jsdom": "^21.1.0",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
     "memory-cache": "^0.2.0",
