@@ -24,8 +24,7 @@ import { addDealSchema, editDealSchema } from '#app/validation/restaurant/deals.
 import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
 import Loc from '#app/services/location/index.js'
-
-import { capitalizeSentence } from '#app/utilities/strings.js'
+import Str from '#app/services/string/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -154,10 +153,10 @@ router.post(
         Err.throw('Error: No matching locations found', 400)
       }
 
-      const deal = new Deal({
+      const newDeal = new Deal({
         start_date,
         end_date,
-        name: capitalizeSentence(name).trim(),
+        name: Str.capitalizeSentence(name).trim(),
         description: description.trim(),
         locations: newDealLocations,
         restaurant: {
@@ -171,9 +170,7 @@ router.post(
         is_expired: false,
       })
 
-      const updateLocationsActiveDealProm = DB.RAddActiveDealToLocations(restaurant._id, locations, deal)
-
-      await Promise.all([deal.save(), updateLocationsActiveDealProm])
+      await DB.RCreateNewDeal(restaurant._id, newDeal, locations)
 
       return res.status(200).json('Success')
     } catch (error) {
@@ -219,48 +216,22 @@ router.patch(
         Err.throw('Deal end date cannot be before the start date', 400)
       }
 
-      const proms = []
-
-      const { remove, add, update } = Loc.editDealFindLocationsToAddRemoveAndUpdate(deal, locations)
-
-      if (remove.length) {
-        proms.push(DB.RRemoveActiveDealInSelectedLocations(restaurant._id, remove, deal))
+      const newData = {
+        name: trimmedName,
+        description: trimmedDescription,
+        end_date,
+        locations: newDealLocations,
       }
 
-      if (add.length) {
-        proms.push(
-          DB.RAddActiveDealToSelectedLocations(restaurant._id, add, {
-            _id: deal._id,
-            name: trimmedName,
-            description: trimmedDescription,
-          })
-        )
-      }
+      await DB.REditOneDeal(restaurant._id, deal, newData, locations)
 
-      if (update.length) {
-        proms.push(
-          DB.RUpdateActiveDealInSelectedLocations(restaurant._id, update, {
-            _id: deal._id,
-            name: trimmedName,
-            description: trimmedDescription,
-          })
-        )
-      }
-
-      deal.name = trimmedName
-      deal.description = trimmedDescription
-      deal.end_date = end_date
-      deal.locations = newDealLocations
-
-      proms.push(deal.save())
-
-      await Promise.all(proms)
       return res.status(200).json('Success')
     } catch (error) {
       Err.send(res, error)
     }
   }
 )
+
 router.post(
   '/delete/:id',
   authWithCache,
@@ -281,7 +252,7 @@ router.post(
         Err.throw('Unauthorized to delete this deal', 400)
       }
 
-      await Promise.all([DB.RRemoveDealFromAllLocationsActiveDeals(restaurant._id, deal), deal.deleteOne()])
+      await DB.RDeleteOneDeal(restaurant._id, deal)
 
       return res.status(200).json('Success')
     } catch (error) {
@@ -328,10 +299,7 @@ router.patch(
         Err.throw('You cant expire a deal that hasnt start yet... Deal end date cannot be before the start date', 400)
       }
 
-      deal.is_expired = true
-      deal.end_date = end_date
-
-      await Promise.all([DB.RRemoveAllInstancesOfDealInLocationsActiveDeals(restaurant._id, deal), deal.save()])
+      await DB.RExpireOneDeal(restaurant._id, deal, end_date)
 
       return res.status(200).json('Success')
     } catch (error) {

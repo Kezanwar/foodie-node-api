@@ -17,6 +17,7 @@ import { addLocationSchema, checkLocationSchema } from '#app/validation/restaura
 import Err from '#app/services/error/index.js'
 import Loc from '#app/services/location/index.js'
 import DB from '#app/services/db/index.js'
+import Task from '#app/services/worker/index.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check
@@ -79,12 +80,12 @@ router.post(
       const firstChar = phone_number.charAt(0)
 
       if (firstChar !== '+' && firstChar !== '0') {
-        const code = await Loc.findCountryPhoneCode(address.country)
+        const code = await Task.findCountryPhoneCode(address.country)
         phoneWithCode = `${code}${phoneWithCode}`
       }
 
       if (firstChar === '0') {
-        const code = await Loc.findCountryPhoneCode(address.country)
+        const code = await Task.findCountryPhoneCode(address.country)
         const restOfNumber = phone_number.substring(1)
         phoneWithCode = `${code}${restOfNumber}`
       }
@@ -144,11 +145,8 @@ router.post(
         }
       }
 
-      await Promise.all([
-        restaurant.save(),
-        DB.RDeleteLocationByID(rLocToDelete._id),
-        DB.RRemoveAllInstancesOfLocationFromDeals(restaurant._id, rLocToDelete._id),
-      ])
+      await DB.RDeleteOneLocation(restaurant._id, rLocToDelete._id)
+      await restaurant.save()
 
       const response = Loc.pruneLocationsListForDeleteLocationResponse(locations, id)
 
@@ -238,12 +236,12 @@ router.patch(
       const firstChar = phone_number.charAt(0)
 
       if (firstChar !== '+' && firstChar !== '0') {
-        const code = await Loc.findCountryPhoneCode(address.country)
+        const code = await Task.findCountryPhoneCode(address.country)
         phoneWithCode = `${code}${phoneWithCode}`
       }
 
       if (firstChar === '0') {
-        const code = await Loc.findCountryPhoneCode(address.country)
+        const code = await Task.findCountryPhoneCode(address.country)
         const restOfNumber = phone_number.substring(1)
         phoneWithCode = `${code}${restOfNumber}`
       }

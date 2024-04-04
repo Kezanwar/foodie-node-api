@@ -2,11 +2,15 @@ import dotenv from 'dotenv'
 dotenv.config()
 import { connect, Types } from 'mongoose'
 
+import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
+
 import User from '#app/models/User.js'
 import { S3BaseUrl } from '#app/services/aws/index.js'
 import Restaurant from '#app/models/Restaurant.js'
 import Location from '#app/models/Location.js'
 import Deal from '#app/models/Deal.js'
+import Task from '#app/services/worker/index.js'
+import IMG from '#app/services/image/index.js'
 
 const MONGO_URI = process.env.MONGO_URI
 
@@ -113,57 +117,74 @@ class DBService {
   RGetRestaurantByIDWithSuperAdmin(id) {
     return Restaurant.findById(id).select('+super_admin')
   }
+  async RCreateNewRestaurant(company_info, user) {
+    const rest = new Restaurant({
+      company_info,
+      super_admin: user._id,
+      registration_step: RESTAURANT_REG_STEPS.STEP_1_COMPLETE,
+      status: RESTAURANT_STATUS.APPLICATION_PENDING,
+      image_uuid: IMG.createImgUUID(),
+    })
+    user.restaurant = { id: rest._id, role: RESTAURANT_ROLES.SUPER_ADMIN }
+
+    await Promise.all([rest.save(), user.save()])
+    return { restaurant: rest, user: user }
+  }
+  async RUpdateRestaurant(restaurant, data) {
+    const promises = []
+
+    //if new data has cuisines and cuisines arent the same as the current
+    //update locations and deals cuisines
+    let set = { $set: null }
+
+    if (
+      data.cuisines &&
+      (data.cuisines.length !== restaurant.cuisines.length ||
+        data.cuisines.filter((nc) => !restaurant.cuisines.find((rc) => rc.slug === nc.slug)).length)
+    ) {
+      set = { $set: { cuisines: data.cuisines } }
+    }
+
+    //if new data has dietary_requirements and dietary_requirements arent the same as the current
+    //update locations and deals dietary_requirements
+    if (
+      data.dietary_requirements &&
+      (data.dietary_requirements.length !== restaurant.dietary_requirements.length ||
+        data.dietary_requirements.filter((nc) => !restaurant.dietary_requirements.find((rc) => rc.slug === nc.slug))
+          .length)
+    ) {
+      if (set.$set === null) {
+        set = { $set: { dietary_requirements: data.dietary_requirements } }
+      } else {
+        set.$set.dietary_requirements = data.dietary_requirements
+      }
+    }
+
+    console.log('set:', set)
+
+    if (set.$set !== null) {
+      console.log('set runs')
+      promises.push(Location.updateMany({ 'restaurant.id': restaurant._id }, set))
+      promises.push(Deal.updateMany({ 'restaurant.id': restaurant._id }, set))
+    }
+
+    const dataArr = Object.entries(data)
+    dataArr.forEach(([key, value]) => {
+      restaurant[key] = value
+    })
+    promises.push(restaurant.save())
+    await Promise.all(promises)
+  }
 
   //usertype:restaurant locations
   RGetRestaurantLocations(id) {
     return Location.find({ 'restaurant.id': id }).select('-cuisines -dietary_requirements -restaurant -active_deals')
   }
-  RAddActiveDealToSelectedLocations(rest_id, locations, deal) {
-    return Location.updateMany(
-      {
-        'restaurant.id': rest_id,
-        _id: { $in: locations },
-      },
-      { $push: { active_deals: { deal_id: deal._id, name: deal.name, description: deal.description } } }
-    )
-  }
-  RRemoveActiveDealInSelectedLocations(rest_id, locations, deal) {
-    return Location.updateMany(
-      {
-        'restaurant.id': rest_id,
-        _id: { $in: locations },
-      },
-      { $pull: { active_deals: { deal_id: deal._id } } }
-    )
-  }
-  RUpdateActiveDealInSelectedLocations(rest_id, locations, deal) {
-    Location.updateMany(
-      {
-        'restaurant.id': rest_id,
-        _id: { $in: locations },
-        active_deals: { $elemMatch: { deal_id: deal._id } },
-      },
-      {
-        $set: {
-          'active_deals.$.name': deal.trimmedName,
-          'active_deals.$.description': deal.trimmedDescription,
-        },
-      }
-    )
-  }
-  RRemoveDealFromAllLocationsActiveDeals(rest_id, deal) {
-    return Location.updateMany(
-      {
-        'restaurant.id': rest_id,
-      },
-      { $pull: { active_deals: { deal_id: deal._id } } }
-    )
-  }
-  RDeleteLocationByID(id) {
-    return Location.deleteOne({ _id: id })
-  }
-  RRemoveAllInstancesOfLocationFromDeals(rest_id, location_id) {
-    return Deal.updateMany(
+  async RDeleteOneLocation(rest_id, location_id) {
+    //delete the locations
+    const locationProm = Location.deleteOne({ _id: location_id })
+    //remove from all deals
+    const dealProm = Deal.updateMany(
       {
         'restaurant.id': rest_id,
       },
@@ -173,6 +194,8 @@ class DBService {
         },
       }
     )
+
+    await Promise.all([locationProm, dealProm])
   }
   async RUpdateOneLocation(rest_id, location_id, data) {
     const { nickname, address, phone_number, email, opening_times, long_lat } = data
@@ -208,7 +231,7 @@ class DBService {
         arrayFilters: [{ 'loc.location_id': locationID }],
       }
     )
-    await Promise.all(locationUpdateProm, allDealUpdateProm)
+    await Promise.all([locationUpdateProm, allDealUpdateProm])
   }
 
   //usertype:restaurant dashboard
@@ -454,6 +477,111 @@ class DBService {
       },
     ])
     return deal[0]
+  }
+  async RCreateNewDeal(rest_id, newDeal, newLocationsList) {
+    //save new deal
+    const dealProm = newDeal.save()
+
+    //add deal as active to locations list
+    const locProm = Location.updateMany(
+      {
+        'restaurant.id': rest_id,
+        _id: { $in: newLocationsList },
+      },
+      { $push: { active_deals: { deal_id: newDeal._id, name: newDeal.name, description: newDeal.description } } }
+    )
+
+    await Promise.all([dealProm, locProm])
+  }
+  async REditOneDeal(rest_id, currDeal, newData, newLocationsList) {
+    console.log(currDeal)
+    const find = await Task.editDealFindLocationsToAddRemoveAndUpdate(currDeal, newLocationsList)
+
+    const { remove, add, update } = find
+
+    const { name, description, end_date, locations } = newData
+
+    const promises = []
+
+    if (remove.length) {
+      //remove deal from these locations active deals
+      promises.push(
+        Location.updateMany(
+          {
+            'restaurant.id': rest_id,
+            _id: { $in: remove },
+          },
+          { $pull: { active_deals: { deal_id: currDeal._id } } }
+        )
+      )
+    }
+
+    if (add.length) {
+      //add updated deal to new locations
+      promises.push(
+        Location.updateMany(
+          {
+            'restaurant.id': rest_id,
+            _id: { $in: add },
+          },
+          { $push: { active_deals: { deal_id: currDeal._id, name: name, description: description } } }
+        )
+      )
+    }
+
+    if (update.length) {
+      promises.push(
+        Location.updateMany(
+          {
+            'restaurant.id': rest_id,
+            _id: { $in: update },
+            active_deals: { $elemMatch: { deal_id: currDeal._id } },
+          },
+          {
+            $set: {
+              'active_deals.$.name': name,
+              'active_deals.$.description': description,
+            },
+          }
+        )
+      )
+    }
+
+    currDeal.name = name
+    currDeal.description = description
+    currDeal.end_date = end_date
+    currDeal.locations = locations
+
+    promises.push(currDeal.save())
+
+    await Promise.all(promises)
+  }
+  async RExpireOneDeal(rest_id, deal, end_date) {
+    //remove from location active deals
+    const locationsProm = Location.updateMany(
+      {
+        'restaurant.id': rest_id,
+      },
+      { $pull: { active_deals: { deal_id: deal._id } } }
+    )
+    //save deal
+    deal.is_expired = true
+    deal.end_date = end_date
+    await Promise.all([locationsProm, deal.save()])
+  }
+  async RDeleteOneDeal(rest_id, deal) {
+    // delete the deal
+    const dealProm = deal.deleteOne()
+
+    //remove from location active deals
+    const locationsProm = Location.updateMany(
+      {
+        'restaurant.id': rest_id,
+      },
+      { $pull: { active_deals: { deal_id: deal._id } } }
+    )
+
+    await Promise.all([dealProm, locationsProm])
   }
 }
 

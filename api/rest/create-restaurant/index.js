@@ -9,8 +9,6 @@ const upload = multer({ storage: storage })
 import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
-import Restaurant from '#app/models/Restaurant.js'
-
 import { appEnv } from '#app/config/config.js'
 
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
@@ -21,6 +19,7 @@ import AWS from '#app/services/aws/index.js'
 import Err from '#app/services/error/index.js'
 import Redis from '#app/services/cache/redis.js'
 import DB from '#app/services/db/index.js'
+import Task from '#app/services/worker/index.js'
 
 import validate from '#app/middleware/validate.js'
 
@@ -55,18 +54,11 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
 
     if (!uRestID) {
       // user has no restaurant yet, first time hitting this step
-      const newRest = new Restaurant({
-        company_info,
-        super_admin: user.id,
-        registration_step: RESTAURANT_REG_STEPS.STEP_1_COMPLETE,
-        status: RESTAURANT_STATUS.APPLICATION_PENDING,
-        image_uuid: IMG.createImgUUID(),
-      })
+      const created = await DB.RCreateNewRestaurant(company_info, user)
 
-      user.restaurant = { id: newRest.id, role: RESTAURANT_ROLES.SUPER_ADMIN }
-      await Promise.all([newRest.save(), user.save(), Redis.setUserByID(user)])
+      await Redis.setUserByID(created.user)
 
-      return res.status(200).json(newRest.toClient())
+      return res.status(200).json(created.restaurant.toClient())
     } else {
       // user has a restaurant
       if (!uRole) {
@@ -91,10 +83,8 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
       }
 
       if (currentRest) {
-        currentRest.company_info = company_info
+        await DB.RUpdateRestaurant(currentRest, { company_info })
       }
-
-      await currentRest.save()
 
       return res.status(200).json(currentRest.toClient())
     }
@@ -128,8 +118,8 @@ router.post(
       Err.throw('Must provide atleast 1 cuisine', 400)
     }
 
-    //! route is expecting formdata - any objects that arent files must be stringified and sent as formdata
-    //! then destringifyd on the server
+    // route is expecting formdata - any objects that arent files must be stringified and sent as formdata
+    // then destringifyd on the server
 
     try {
       if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
@@ -167,12 +157,12 @@ router.post(
 
       if (uAvatar) {
         imageNames.avatar = IMG.createImageName(restaurant.image_uuid, 'avatar')
-        const buffer = await IMG.resizeAvatar(uAvatar.buffer)
+        const buffer = await Task.resizeAvatar(uAvatar.buffer)
         saveImagePromises.push(AWS.saveImage(imageNames.avatar, buffer))
       }
       if (uCoverPhoto) {
         imageNames.cover_photo = IMG.createImageName(restaurant.image_uuid, 'cover_photo')
-        const buffer = await IMG.resizeCoverPhoto(uCoverPhoto.buffer)
+        const buffer = await Task.resizeCoverPhoto(uCoverPhoto.buffer)
         saveImagePromises.push(AWS.saveImage(imageNames.cover_photo, buffer))
       }
 
@@ -189,15 +179,14 @@ router.post(
         ...(social_media && { social_media: JSON.parse(social_media) }),
       }
 
-      await restaurant.updateRest(newData)
+      if (restaurant?.registration_step === RESTAURANT_REG_STEPS.STEP_1_COMPLETE) {
+        newData.registration_step = RESTAURANT_REG_STEPS.STEP_2_COMPLETE
+      }
+
+      await DB.RUpdateRestaurant(restaurant, newData)
 
       if (!restaurant.cover_photo || !restaurant.avatar) {
         Err.throw('Must provide an Avatar and Cover Photo')
-      }
-
-      if (restaurant?.registration_step === RESTAURANT_REG_STEPS.STEP_1_COMPLETE) {
-        restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_2_COMPLETE
-        await restaurant.save()
       }
 
       return res.status(200).json(restaurant.toClient())
@@ -240,8 +229,7 @@ router.post(
       }
 
       if (restaurant.registration_step === RESTAURANT_REG_STEPS.STEP_2_COMPLETE) {
-        restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_3_COMPLETE
-        await restaurant.save()
+        await DB.RUpdateRestaurant(restaurant, { registration_step: RESTAURANT_REG_STEPS.STEP_3_COMPLETE })
       }
 
       return res.status(200).json(restaurant.toClient())
@@ -287,13 +275,17 @@ router.post(
         return
       }
 
-      restaurant.terms_and_conditions = terms_and_conditions
-      restaurant.privacy_policy = privacy_policy
+      const newData = {
+        terms_and_conditions,
+        privacy_policy,
+        registration_step: RESTAURANT_REG_STEPS.STEP_4_COMPLETE,
+        status: RESTAURANT_STATUS.APPLICATION_PROCESSING,
+      }
 
-      restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_4_COMPLETE
-      restaurant.status = RESTAURANT_STATUS.APPLICATION_PROCESSING
-
-      await Promise.all([restaurant.save(), Email.sendAdminReviewApplicationEmail({ restaurant, locations })])
+      await Promise.all([
+        DB.RUpdateRestaurant(restaurant, newData),
+        Email.sendAdminReviewApplicationEmail({ restaurant, locations }),
+      ])
 
       return res.status(200).json(restaurant.toClient())
     } catch (error) {

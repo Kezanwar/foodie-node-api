@@ -14,9 +14,8 @@ import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validate.js'
 import { loginUserSchema, registerUserSchema } from '#app/validation/auth/auth.js'
 
-import { capitalizeFirstLetter } from '#app/utilities/strings.js'
-
 import { dashboardUrl } from '#app/config/config.js'
+import Str from '#app/services/string/index.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -144,8 +143,8 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 
     // create a new user with our schema and users details from req
     user = new User({
-      first_name: capitalizeFirstLetter(first_name),
-      last_name: capitalizeFirstLetter(last_name),
+      first_name: Str.capitalizeFirstLetter(first_name),
+      last_name: Str.capitalizeFirstLetter(last_name),
       email: email.toLowerCase(),
       password,
       auth_method: Auth.jwtAuthMethod,
@@ -205,8 +204,8 @@ router.post('/register-google', async (req, res) => {
 
     // create a new user with our schema and users details from req
     user = new User({
-      first_name: capitalizeFirstLetter(given_name),
-      last_name: family_name ? capitalizeFirstLetter(family_name) : '',
+      first_name: Str.capitalizeFirstLetter(given_name),
+      last_name: family_name ? Str.capitalizeFirstLetter(family_name) : '',
       email: email.toLowerCase(),
       email_confirmed: true,
       avatar: picture,

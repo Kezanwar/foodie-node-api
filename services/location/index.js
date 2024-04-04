@@ -1,9 +1,11 @@
 import pkg from 'lodash'
-import WorkerService from '#app/services/worker/index.js'
 import axios from 'axios'
 import dotenv from 'dotenv'
+
 dotenv.config()
 const { upperCase, omit, capitalize } = pkg
+
+import { worker } from '#app/services/worker/index.js'
 
 class LocationService {
   getID(doc) {
@@ -25,29 +27,11 @@ class LocationService {
     }, [])
   }
 
-  editDealFindLocationsToAddRemoveAndUpdate(deal, newDealLocationIds) {
-    const remove = deal.locations.reduce((acc, oldL) => {
-      if (!newDealLocationIds.find((newL) => oldL.location_id.toHexString() === newL)) {
-        acc.push(oldL.location_id)
-      }
-      return acc
-    }, [])
-    const add = newDealLocationIds.reduce((acc, newL) => {
-      if (!deal.locations.find((oldL) => oldL.location_id.toHexString() === newL)) {
-        acc.push(newL)
-      }
-      return acc
-    }, [])
-    const update = newDealLocationIds.reduce((acc, newL) => {
-      if (!remove.find((removeL) => removeL === newL)) {
-        if (!add.find((addL) => addL === newL)) {
-          acc.push(newL)
-        }
-      }
-      return acc
-    }, [])
-
-    return { remove, add, update }
+  editDealFindLocationsToAddRemoveAndUpdate(deal, newLocationIdList) {
+    return worker.call({
+      name: 'editDealFindLocationsToAddRemoveAndUpdate',
+      params: [JSON.stringify(deal), newLocationIdList],
+    })
   }
 
   checkIfAddLocationAlreadyExists(locations, address) {
@@ -62,13 +46,6 @@ class LocationService {
 
   findLocationToEdit(locations, id) {
     return locations.find((l) => this.getID(l) === id)
-  }
-
-  findCountryPhoneCode(country) {
-    return WorkerService.call({
-      name: 'findCountryPhoneCode',
-      params: [country],
-    })
   }
 
   async getTimezone({ lat, long }) {

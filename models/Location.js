@@ -121,6 +121,11 @@ const LocationSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
+// Ensure virtual fields are serialised.
+LocationSchema.set('toJSON', {
+  virtuals: true,
+})
+
 const Location = mongoose.model('location', LocationSchema)
 
 if (isMainThread) {

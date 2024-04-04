@@ -9,12 +9,12 @@ import validate from '#app/middleware/validate.js'
 
 import { singleDealSchema } from '#app/validation/customer/deal.js'
 
-import { makeMongoIDs } from '#app/utilities/document.js'
 import Err from '#app/services/error/index.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
-import WorkerService from '#app/services/worker/index.js'
+import { worker } from '#app/services/worker/index.js'
 import { S3BaseUrl } from '#app/services/aws/index.js'
+import DB from '#app/services/db/index.js'
 
 dotenv.config()
 
@@ -28,7 +28,7 @@ router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
     const LONG = Number(long)
     const LAT = Number(lat)
 
-    const [dealID, locationID] = makeMongoIDs(deal_id, location_id)
+    const [dealID, locationID] = DB.makeMongoIDs(deal_id, location_id)
 
     const dealProm = Deal.aggregate([
       {
@@ -114,7 +114,7 @@ router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
       },
     ])
 
-    const followFavProm = WorkerService.call({
+    const followFavProm = worker.call({
       name: 'checkSingleDealFollowAndFav',
       params: [JSON.stringify(user), deal_id, location_id],
     })

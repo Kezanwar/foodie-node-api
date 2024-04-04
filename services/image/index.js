@@ -1,5 +1,4 @@
 import { S3BaseUrl } from '../aws/index.js'
-import WorkerService from '../worker/index.js'
 import { mongo } from 'mongoose'
 
 export const RESTAURANT_IMAGES = {
@@ -21,20 +20,6 @@ class ImageService {
 
   createImgUUID() {
     return new mongo.ObjectId().toHexString()
-  }
-
-  resizeCoverPhoto(buffer) {
-    return WorkerService.call({
-      name: 'resizeImg',
-      params: [buffer, { width: 1000 }],
-    })
-  }
-
-  resizeAvatar(buffer) {
-    return WorkerService.call({
-      name: 'resizeImg',
-      params: [buffer, { width: 500 }],
-    })
   }
 
   prefixImageWithBaseUrlRest(imageName) {

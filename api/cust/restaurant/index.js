@@ -8,13 +8,13 @@ import validate from '#app/middleware/validate.js'
 
 import Location from '#app/models/Location.js'
 
-import { makeMongoIDs } from '#app/utilities/document.js'
 import Err from '#app/services/error/index.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
-import WorkerService from '#app/services/worker/index.js'
+import { worker } from '#app/services/worker/index.js'
 import { singleRestaurantSchema } from '#app/validation/customer/restaurant.js'
 import { S3BaseUrl } from '#app/services/aws/index.js'
+import DB from '#app/services/db/index.js'
 
 dotenv.config()
 
@@ -34,7 +34,7 @@ router.get('/:id', authWithCache, validate(singleRestaurantSchema), async (req, 
     const location = await Location.aggregate([
       {
         $match: {
-          _id: makeMongoIDs(id),
+          _id: DB.makeMongoIDs(id),
         },
       },
       ...calculateDistancePipeline(LAT, LONG, '$geometry.coordinates', 'distance_miles'),
@@ -95,7 +95,7 @@ router.get('/:id', authWithCache, validate(singleRestaurantSchema), async (req, 
 
     if (!location.length) Err.throw('Location not found', 404)
 
-    const resp = await WorkerService.call({
+    const resp = await worker.call({
       name: 'checkSingleRestaurantFollowAndFav',
       params: [JSON.stringify(user), JSON.stringify(location[0])],
     })
