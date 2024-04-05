@@ -1,13 +1,14 @@
 import { isBefore, isPast } from 'date-fns'
 import { object, string, array } from 'yup'
-import { matchesDateString } from '#app/utilities/regex.js'
+
+import Str from '#app/services/string/index.js'
 
 export const addDealSchema = object({
   body: object({
     start_date: string()
       .required('Start date is required')
       .test('start_date', 'Start Date: Must be in yyyy-mm-dd format', function (val) {
-        if (!matchesDateString(val)) return false
+        if (!Str.matchesDateString(val)) return false
         const date = new Date(val)
         return !!date
       }),
@@ -15,7 +16,7 @@ export const addDealSchema = object({
       'end_date',
       'End Date: Must be in yyyy-mm-dd format, must not be in the past and must be after the start date',
       function (val) {
-        if (!matchesDateString(val)) return false
+        if (!Str.matchesDateString(val)) return false
         const endDate = new Date(val)
         const startDate = new Date(this.parent.start_date)
         if (!endDate || !startDate) return false
@@ -38,7 +39,7 @@ export const editDealSchema = object({
       'end_date',
       'End Date: Must be in yyyy-mm-dd format, must not be in the past',
       function (val) {
-        if (!matchesDateString(val)) return false
+        if (!Str.matchesDateString(val)) return false
         const endDate = new Date(val)
         if (!endDate) return false
         else return !isPast(endDate)
@@ -60,7 +61,7 @@ export const expireDealSchema = object({
       'end_date',
       'End Date: Must be in yyyy-mm-dd format, must not be in the past',
       function (val) {
-        if (!matchesDateString(val)) return false
+        if (!Str.matchesDateString(val)) return false
         const endDate = new Date(val)
         if (!endDate) return false
         else return !isPast(endDate)

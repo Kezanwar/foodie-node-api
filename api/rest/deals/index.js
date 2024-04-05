@@ -7,7 +7,6 @@ import { isBefore } from 'date-fns'
 
 // models
 import Deal from '#app/models/Deal.js'
-import Location from '#app/models/Location.js'
 
 // constants
 import { RESTAURANT_ROLES } from '#app/constants/restaurant.js'
@@ -21,10 +20,11 @@ import validate from '#app/middleware/validate.js'
 // validations
 import { addDealSchema, editDealSchema } from '#app/validation/restaurant/deals.js'
 
-// utils
+// services
 import Err from '#app/services/error/index.js'
-import { getID, makeMongoIDs } from '#app/utilities/document.js'
-import { capitalizeSentence } from '#app/utilities/strings.js'
+import DB from '#app/services/db/index.js'
+import Loc from '#app/services/location/index.js'
+import Str from '#app/services/string/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -42,63 +42,9 @@ router.get(
     try {
       let currentDate = current_date ? new Date(current_date) : new Date()
 
-      const query = await Deal.aggregate([
-        {
-          $match: {
-            'restaurant.id': restaurant._id,
-            $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
-          },
-        },
-        {
-          $addFields: {
-            unique_views: {
-              $sum: {
-                $size: { $setUnion: [[], '$views'] },
-              },
-            },
-            views: { $size: '$views' },
-            favourites: { $size: '$favourites' },
-            id: '$_id',
-            days_left: {
-              $cond: {
-                if: { $lt: ['$start_date', currentDate] },
-                then: {
-                  $dateDiff: {
-                    startDate: currentDate,
-                    endDate: '$end_date',
-                    unit: 'day',
-                  },
-                },
-                else: {
-                  $dateDiff: {
-                    startDate: '$start_date',
-                    endDate: '$end_date',
-                    unit: 'day',
-                  },
-                },
-              },
-            },
-            days_active: {
-              $cond: {
-                if: { $lt: ['$start_date', currentDate] },
-                then: {
-                  $dateDiff: {
-                    startDate: '$start_date',
-                    endDate: currentDate,
-                    unit: 'day',
-                  },
-                },
-                else: 0,
-              },
-            },
-          },
-        },
-        {
-          $unset: ['locations', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt', 'description'],
-        },
-      ]).sort({ updatedAt: -1 })
+      const active_deals = await DB.RGetActiveDeals(restaurant._id, currentDate)
 
-      res.json(query)
+      res.json(active_deals)
     } catch (error) {
       Err.send(res, error)
     }
@@ -116,44 +62,10 @@ router.get(
     } = req
     try {
       let currentDate = current_date ? new Date(current_date) : new Date()
-      const agg = await Deal.aggregate([
-        {
-          $match: {
-            'restaurant.id': restaurant._id,
-            $or: [{ is_expired: true }, { end_date: { $lte: currentDate } }],
-          },
-        },
-        {
-          $addFields: {
-            unique_views: {
-              $sum: {
-                $size: { $setUnion: [[], '$views'] },
-              },
-            },
-            views: { $size: '$views' },
-            favourites: { $size: '$favourites' },
-            id: '$_id',
-            days_active: {
-              $cond: {
-                if: { $lt: ['$start_date', currentDate] },
-                then: {
-                  $dateDiff: {
-                    startDate: '$start_date',
-                    endDate: '$end_date',
-                    unit: 'day',
-                  },
-                },
-                else: 0,
-              },
-            },
-          },
-        },
-        {
-          $unset: ['locations', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt', 'description'],
-        },
-      ]).sort({ updatedAt: -1 })
 
-      res.json(agg)
+      const expired_deals = await DB.RGetExpiredDeals(restaurant._id, currentDate)
+
+      res.json(expired_deals)
     } catch (error) {
       Err.send(res, error)
     }
@@ -174,79 +86,13 @@ router.get(
     let currentDate = current_date ? new Date(current_date) : new Date()
 
     try {
-      const deal = await Deal.aggregate([
-        {
-          $match: {
-            'restaurant.id': restaurant._id,
-            _id: makeMongoIDs(id),
-          },
-        },
-        {
-          $addFields: {
-            days_active: {
-              $dateDiff: {
-                startDate: '$start_date',
-                endDate: currentDate,
-                unit: 'day',
-              },
-            },
-          },
-        },
-        {
-          $addFields: {
-            counts: {
-              unique_views: {
-                $sum: {
-                  $size: { $setUnion: [[], '$views'] },
-                },
-              },
-              views: { $size: '$views' },
-              favourites: { $size: '$favourites' },
-            },
-          },
-        },
-        {
-          $addFields: {
-            averages: {
-              unique_views: {
-                $cond: {
-                  if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['$counts.unique_views', 1] }] },
-                  then: {
-                    $divide: ['$counts.unique_views', '$days_active'],
-                  },
-                  else: '$counts.unique_views',
-                },
-              },
-              views: {
-                $cond: {
-                  if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['$counts.views', 1] }] },
-                  then: {
-                    $divide: ['$counts.views', '$days_active'],
-                  },
-                  else: '$counts.views',
-                },
-              },
-              favourites: {
-                $cond: {
-                  if: { $and: [{ $gte: ['$days_active', 1] }, { $gte: ['$counts.favourites', 1] }] },
-                  then: {
-                    $divide: ['$counts.favourites', '$days_active'],
-                  },
-                  else: '$counts.favourites',
-                },
-              },
-            },
-          },
-        },
-        {
-          $unset: ['views', 'favourites', 'restaurant', 'cuisines', 'dietary_requirements', 'createdAt'],
-        },
-      ])
+      const deal = await DB.RGetSingleDealWithStatsByID(restaurant._id, id, currentDate)
 
-      if (!deal?.length) {
+      if (!deal) {
         Err.throw('Deal not found', 402)
-        return
-      } else res.json(deal[0])
+      }
+
+      res.json(deal)
     } catch (error) {
       Err.send(res, error)
     }
@@ -264,34 +110,13 @@ router.get(
     } = req
 
     try {
-      const deal = await Deal.aggregate([
-        {
-          $match: {
-            'restaurant.id': restaurant._id,
-            _id: makeMongoIDs(id),
-          },
-        },
-        {
-          $unset: [
-            'views',
-            'favourites',
-            'restaurant',
-            'cuisines',
-            'dietary_requirements',
-            'createdAt',
-            'updatedAt',
-            'is_expired',
-            'start_date',
-            'end_date',
-            'locations',
-          ],
-        },
-      ])
+      const deal = await DB.RGetDealAsTemplateByID(restaurant._id, id)
 
-      if (!deal?.length) {
+      if (!deal) {
         Err.throw('Deal not found', 402)
-        return
-      } else res.json(deal[0])
+      }
+
+      res.json(deal)
     } catch (error) {
       Err.send(res, error)
     }
@@ -314,10 +139,7 @@ router.post(
     let currentDate = current_date ? new Date(current_date) : new Date()
 
     try {
-      const activeDealsCount = await Deal.countDocuments({
-        'restaurant.id': restaurant._id,
-        $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
-      })
+      const activeDealsCount = await DB.RGetActiveDealsCount(restaurant._id, currentDate)
 
       const locationsCount = restLocations.length || 0
 
@@ -325,22 +147,18 @@ router.post(
         Err.throw('Maxmimum active deals limit reached', 402)
       }
 
-      const locationsMap = locations
-        .map((id) => {
-          const mappedLoc = restLocations.find((rL) => getID(rL) === id)
-          return mappedLoc ? { location_id: id, geometry: mappedLoc.geometry, nickname: mappedLoc.nickname } : false
-        })
-        .filter(Boolean)
+      const newDealLocations = Loc.createAddDealLocations(restLocations, locations)
 
-      if (!locationsMap?.length || locations?.length !== locationsMap.length)
+      if (!newDealLocations.length || locations.length !== newDealLocations.length) {
         Err.throw('Error: No matching locations found', 400)
+      }
 
-      const deal = new Deal({
+      const newDeal = new Deal({
         start_date,
         end_date,
-        name: capitalizeSentence(name).trim(),
+        name: Str.capitalizeSentence(name).trim(),
         description: description.trim(),
-        locations: locationsMap,
+        locations: newDealLocations,
         restaurant: {
           id: restaurant._id,
           name: restaurant.name,
@@ -352,15 +170,8 @@ router.post(
         is_expired: false,
       })
 
-      const updateLocationsActiveDealProm = Location.updateMany(
-        {
-          'restaurant.id': restaurant._id,
-          _id: { $in: locations },
-        },
-        { $push: { active_deals: { deal_id: deal._id, name: deal.name, description: deal.description } } }
-      )
+      await DB.RCreateNewDeal(restaurant._id, newDeal, locations)
 
-      await Promise.all([deal.save(), updateLocationsActiveDealProm])
       return res.status(200).json('Success')
     } catch (error) {
       Err.send(res, error)
@@ -385,104 +196,42 @@ router.patch(
       const trimmedName = name.trim()
       const trimmedDescription = description.trim()
 
-      const locationsMap = locations
-        .map((id) => {
-          const mappedLoc = restLocations.find((rL) => getID(rL) === id)
-          return mappedLoc ? { location_id: id, geometry: mappedLoc.geometry, nickname: mappedLoc.nickname } : false
-        })
-        .filter(Boolean)
+      const newDealLocations = Loc.createAddDealLocations(restLocations, locations)
 
-      if (!locationsMap?.length || locationsMap.length !== locations.length)
+      if (!newDealLocations?.length || newDealLocations.length !== locations.length) {
         Err.throw('Error: No matching locations found', 400)
+      }
 
-      const deal = await Deal.findById(id)
-      if (!deal) Err.throw('Deal not found', 400)
-      if (getID(deal.restaurant) !== getID(restaurant)) Err.throw('Unauthorized to edit this deal', 400)
+      const deal = await DB.RGetDealByID(id)
+
+      if (!deal) {
+        Err.throw('Deal not found', 400)
+      }
+
+      if (DB.getID(deal.restaurant) !== DB.getID(restaurant)) {
+        Err.throw('Unauthorized to edit this deal', 400)
+      }
+
       if (isBefore(new Date(end_date), new Date(deal.start_date))) {
         Err.throw('Deal end date cannot be before the start date', 400)
       }
 
-      const proms = []
-
-      const locationsToRemove = deal.locations.reduce((acc, oldL) => {
-        if (!locations.find((newL) => oldL.location_id.toHexString() === newL)) {
-          acc.push(oldL.location_id)
-        }
-        return acc
-      }, [])
-
-      if (locationsToRemove?.length) {
-        proms.push(
-          Location.updateMany(
-            {
-              'restaurant.id': restaurant._id,
-              _id: { $in: locationsToRemove },
-            },
-            { $pull: { active_deals: { deal_id: deal._id } } }
-          )
-        )
+      const newData = {
+        name: trimmedName,
+        description: trimmedDescription,
+        end_date,
+        locations: newDealLocations,
       }
 
-      const locationsToAdd = locations.reduce((acc, newL) => {
-        if (!deal.locations.find((oldL) => oldL.location_id.toHexString() === newL)) {
-          acc.push(newL)
-        }
-        return acc
-      }, [])
+      await DB.REditOneDeal(restaurant._id, deal, newData, locations)
 
-      if (locationsToAdd?.length) {
-        proms.push(
-          Location.updateMany(
-            {
-              'restaurant.id': restaurant._id,
-              _id: { $in: locationsToAdd },
-            },
-            { $push: { active_deals: { deal_id: deal._id, name: trimmedName, description: trimmedDescription } } }
-          )
-        )
-      }
-
-      const locationsToUpdate = locations.reduce((acc, newL) => {
-        if (!locationsToRemove.find((removeL) => removeL === newL)) {
-          if (!locationsToAdd.find((addL) => addL === newL)) {
-            acc.push(newL)
-          }
-        }
-        return acc
-      }, [])
-
-      if (locationsToUpdate?.length) {
-        proms.push(
-          Location.updateMany(
-            {
-              'restaurant.id': restaurant._id,
-              _id: { $in: locationsToUpdate },
-              active_deals: { $elemMatch: { deal_id: deal._id } },
-            },
-            {
-              $set: {
-                'active_deals.$.name': trimmedName,
-                'active_deals.$.description': trimmedDescription,
-              },
-            }
-          )
-        )
-      }
-
-      deal.name = trimmedName
-      deal.description = trimmedDescription
-      deal.end_date = end_date
-      deal.locations = locationsMap
-
-      proms.push(deal.save())
-
-      await Promise.all(proms)
       return res.status(200).json('Success')
     } catch (error) {
       Err.send(res, error)
     }
   }
 )
+
 router.post(
   '/delete/:id',
   authWithCache,
@@ -494,19 +243,16 @@ router.post(
     } = req
 
     try {
-      const deal = await Deal.findById(id)
-      if (!deal) Err.throw('Deal not found', 400)
-      if (getID(deal.restaurant) !== getID(restaurant)) Err.throw('Unauthorized to delete this deal', 400)
+      const deal = await DB.RGetDealByID(id)
+      if (!deal) {
+        Err.throw('Deal not found', 400)
+      }
 
-      await Promise.all([
-        Location.updateMany(
-          {
-            'restaurant.id': restaurant._id,
-          },
-          { $pull: { active_deals: { deal_id: deal._id } } }
-        ),
-        deal.deleteOne(),
-      ])
+      if (DB.getID(deal.restaurant) !== DB.getID(restaurant)) {
+        Err.throw('Unauthorized to delete this deal', 400)
+      }
+
+      await DB.RDeleteOneDeal(restaurant._id, deal)
 
       return res.status(200).json('Success')
     } catch (error) {
@@ -527,29 +273,33 @@ router.patch(
     } = req
 
     try {
-      const deal = await Deal.findById(id)
-      if (!deal) Err.throw('Deal not found', 400)
-      if (getID(deal.restaurant) !== getID(restaurant)) Err.throw('Unauthorized to expire this deal', 400)
-      if (deal.is_expired) Err.throw('Deal is already expired', 400)
+      const deal = await DB.RGetDealByID(id)
+
+      if (!deal) {
+        Err.throw('Deal not found', 400)
+      }
+
+      if (DB.getID(deal.restaurant) !== DB.getID(restaurant)) {
+        Err.throw('Unauthorized to expire this deal', 400)
+      }
+
+      if (deal.is_expired) {
+        Err.throw('Deal is already expired', 400)
+      }
+
       if (isBefore(new Date(), new Date(deal.start_date))) {
         Err.throw('You cant expire a deal that hasnt started yet', 400)
       }
-      if (!end_date) Err.throw('Must provide an end_date', 400)
+
+      if (!end_date) {
+        Err.throw('Must provide an end_date', 400)
+      }
+
       if (isBefore(new Date(end_date), new Date(deal.start_date))) {
         Err.throw('You cant expire a deal that hasnt start yet... Deal end date cannot be before the start date', 400)
       }
-      deal.is_expired = true
-      deal.end_date = end_date
 
-      await Promise.all([
-        Location.updateMany(
-          {
-            'restaurant.id': restaurant._id,
-          },
-          { $pull: { active_deals: { deal_id: deal._id } } }
-        ),
-        deal.save(),
-      ])
+      await DB.RExpireOneDeal(restaurant._id, deal, end_date)
 
       return res.status(200).json('Success')
     } catch (error) {

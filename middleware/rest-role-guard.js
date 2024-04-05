@@ -1,7 +1,7 @@
 import { RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
-import Restaurant from '#app/models/Restaurant.js'
+
 import Err from '#app/services/error/index.js'
-import { findRestaurantsLocations } from '#app/utilities/locations.js'
+import DB from '#app/services/db/index.js'
 
 const restRoleGuard =
   (role, options = {}) =>
@@ -12,8 +12,9 @@ const restRoleGuard =
       }
       const user = req.user
 
-      if (!user.email_confirmed)
+      if (!user.email_confirmed) {
         Err.throw('Access denied - Please confirm your email before accessing these resources', 403)
+      }
 
       let uRest = user?.restaurant
       let uRestID = uRest?.id
@@ -23,19 +24,25 @@ const restRoleGuard =
         Err.throw('Access denied - User has no restaurant associated with them', 403)
       }
 
-      if (!uRole) Err.throw('Access denied - User has no role on this restaurant', 403)
+      if (!uRole) {
+        Err.throw('Access denied - User has no role on this restaurant', 403)
+      }
 
-      const restaurantProm = Restaurant.findById(uRestID).select('+super_admin')
+      const restaurantProm = DB.RGetRestaurantByIDWithSuperAdmin(uRestID)
 
       const proms = [restaurantProm]
 
-      const locationProm = options?.getLocations ? findRestaurantsLocations(uRestID) : null
+      const locationProm = options?.getLocations ? DB.RGetRestaurantLocations(uRestID) : null
 
-      if (locationProm) proms.push(locationProm)
+      if (locationProm) {
+        proms.push(locationProm)
+      }
 
       const [restaurant, locations] = await Promise.all(proms)
 
-      if (!restaurant) Err.throw('Access denied - restaurant not found', 403)
+      if (!restaurant) {
+        Err.throw('Access denied - restaurant not found', 403)
+      }
 
       const { acceptedOnly, applicationOnly } = options
 
@@ -93,17 +100,14 @@ const restRoleGuard =
       }
 
       if (!canAccess) {
-        // eslint-disable-next-line quotes
         Err.throw("Access denied - users permissions can't access this route", 403)
-      } else if (canAccess) {
+      } else {
         if (locations) {
           req.locations = locations
         }
         req.restaurant = restaurant
         return next()
       }
-      // eslint-disable-next-line quotes
-      else Err.throw('Unexpected error: Please contact Foodie Admin')
     } catch (err) {
       Err.send(res, err)
       return

@@ -6,6 +6,7 @@ import Redis from '#app/services/cache/redis.js'
 import Auth from '#app/services/auth/index.js'
 import Email from '#app/services/email/index.js'
 import Err from '#app/services/error/index.js'
+import DB from '#app/services/db/index.js'
 
 import User from '#app/models/User.js'
 
@@ -13,10 +14,8 @@ import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validate.js'
 import { loginUserSchema, registerUserSchema } from '#app/validation/auth/auth.js'
 
-import { findUserByEmail, findUserByEmailWithPassword } from '#app/utilities/user.js'
-import { capitalizeFirstLetter } from '#app/utilities/strings.js'
-
 import { dashboardUrl } from '#app/config/config.js'
+import Str from '#app/services/string/index.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -25,7 +24,10 @@ import { dashboardUrl } from '#app/config/config.js'
 router.get('/initialize', authWithCache, async (req, res) => {
   try {
     const user = req.user
-    if (!user) throw new Error('User doesnt exist')
+
+    if (!user) {
+      Err.throw('User doesnt exist')
+    }
 
     res.json({ user: user.toClient() })
   } catch (error) {
@@ -37,103 +39,87 @@ router.get('/initialize', authWithCache, async (req, res) => {
 //? @desc Authenticate and log in a user and send token
 //! @access public
 
-router.post(
-  '/login',
-  //   middleware validating the req.body using yup
-  validate(loginUserSchema),
-  async (req, res) => {
-    try {
-      // destructuring from req.body
-      const { email, password } = req.body
+router.post('/login', validate(loginUserSchema), async (req, res) => {
+  try {
+    const { email, password } = req.body
 
-      // checking if user doesnt exist, if they dont then send err
-      let user = await findUserByEmailWithPassword(email)
+    let user = await DB.getUserByEmailWithPassword(email)
 
-      if (!user) {
-        Err.throw('Invalid credentials', 400)
-      }
-
-      if (Auth.isGoogleAuthMethod(user?.auth_method)) {
-        Err.throw('User signed up using Google')
-      }
-
-      // compare the passwords if they exist
-
-      const isMatch = await Auth.comparePasswordToHash(password, user.password)
-
-      // if dont exist send an error
-
-      if (!isMatch) {
-        Err.throw('Invalid credentials', 400)
-      }
-
-      // is user credentials are a match
-      // create the payload for JWT which includes our users id from the db
-
-      const payload = {
-        user: {
-          id: user.id,
-        },
-      }
-
-      const token = Auth.jwtSign30Days(payload)
-
-      const userResponse = user.toClient()
-
-      res.json({
-        accessToken: token,
-        user: userResponse,
-      })
-    } catch (err) {
-      Err.send(res, err)
+    if (!user) {
+      Err.throw('Invalid credentials', 400)
     }
-  }
-)
 
-router.post(
-  '/login-google',
-  //   middleware validating the req.body using yup
-  async (req, res) => {
-    try {
-      // destructuring from req.body
-      const { token } = req.body
-      if (!token) Err.throw('No token authentication error', 500)
-
-      const userRequested = await Auth.fetchGoogleAuthUser(token)
-
-      const { email } = userRequested.data
-
-      let user = await findUserByEmail(email)
-      if (!user) {
-        Err.throw('Invalid credentials', 400)
-      }
-
-      if (Auth.isJWTAuthMethod(user?.auth_method)) {
-        Err.throw('User didnt sign up with google, please sign in with email & password')
-      }
-
-      // is user credentials are a match
-      // create the payload for JWT which includes our users id from the db
-
-      const payload = {
-        user: {
-          id: user.id,
-        },
-      }
-
-      const access_token = Auth.jwtSign30Days(payload)
-
-      const userResponse = user.toClient()
-
-      res.json({
-        accessToken: access_token,
-        user: userResponse,
-      })
-    } catch (err) {
-      Err.send(res, err)
+    if (Auth.isGoogleAuthMethod(user?.auth_method)) {
+      Err.throw('User signed up using Google')
     }
+
+    const isMatch = await Auth.comparePasswordToHash(password, user.password)
+
+    if (!isMatch) {
+      Err.throw('Invalid credentials', 400)
+    }
+
+    const payload = {
+      user: {
+        id: user.id,
+      },
+    }
+
+    const token = Auth.jwtSign30Days(payload)
+
+    const userResponse = user.toClient()
+
+    res.json({
+      accessToken: token,
+      user: userResponse,
+    })
+  } catch (err) {
+    Err.send(res, err)
   }
-)
+})
+
+router.post('/login-google', async (req, res) => {
+  try {
+    const { token } = req.body
+
+    if (!token) {
+      Err.throw('No token authentication error', 500)
+    }
+
+    const userRequested = await Auth.fetchGoogleOAuthUser(token)
+
+    const { email } = userRequested.data
+
+    const user = await DB.getUserByEmail(email)
+
+    if (!user) {
+      Err.throw('Invalid credentials', 400)
+    }
+
+    if (Auth.isJWTAuthMethod(user?.auth_method)) {
+      Err.throw('User didnt sign up with google, please sign in with email & password')
+    }
+
+    await Redis.setUserByID(user)
+
+    const payload = {
+      user: {
+        id: user.id,
+      },
+    }
+
+    const access_token = Auth.jwtSign30Days(payload)
+
+    const userResponse = user.toClient()
+
+    res.json({
+      accessToken: access_token,
+      user: userResponse,
+    })
+  } catch (err) {
+    Err.send(res, err)
+  }
+})
 
 //* route POST api/auth/register
 //? @desc register user - uses express validator middleware to check the userinfo posted to see if there are any errors and handle them, else create new user in the db, returns a token and user
@@ -149,14 +135,16 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
     const { first_name, last_name, email, password } = req.body
 
     // checking if user exists, if they do then send err
-    let user = await findUserByEmail(email)
+    let user = await DB.getUserByEmail(email)
 
-    if (user) Err.throw('User aleady exists', 400)
+    if (user) {
+      Err.throw('User aleady exists', 400)
+    }
 
     // create a new user with our schema and users details from req
     user = new User({
-      first_name: capitalizeFirstLetter(first_name),
-      last_name: capitalizeFirstLetter(last_name),
+      first_name: Str.capitalizeFirstLetter(first_name),
+      last_name: Str.capitalizeFirstLetter(last_name),
       email: email.toLowerCase(),
       password,
       auth_method: Auth.jwtAuthMethod,
@@ -204,18 +192,20 @@ router.post('/register-google', async (req, res) => {
     const { token } = req.body
     if (!token) Err.throw('No token authentication error', 500)
 
-    const userRequested = await Auth.fetchGoogleAuthUser(token)
+    const userRequested = await Auth.fetchGoogleOAuthUser(token)
 
     const { given_name, family_name, picture, email } = userRequested.data
 
-    let user = await findUserByEmail(email)
+    let user = await DB.getUserByEmail(email)
 
-    if (user) Err.throw('User already exists', 400)
+    if (user) {
+      Err.throw('User already exists', 400)
+    }
 
     // create a new user with our schema and users details from req
     user = new User({
-      first_name: capitalizeFirstLetter(given_name),
-      last_name: family_name ? capitalizeFirstLetter(family_name) : '',
+      first_name: Str.capitalizeFirstLetter(given_name),
+      last_name: family_name ? Str.capitalizeFirstLetter(family_name) : '',
       email: email.toLowerCase(),
       email_confirmed: true,
       avatar: picture,
@@ -289,10 +279,16 @@ router.patch('/confirm-email/resend-otp', authNoCache, async (req, res) => {
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body
-    if (!email) Err.throw('No email attached', 400)
-    const user = await findUserByEmail(email)
-    // eslint-disable-next-line quotes
-    if (!user) Err.throw("Sorry, we can't locate a user with this email.", 400)
+
+    if (!email) {
+      Err.throw('No email attached', 400)
+    }
+
+    const user = await DB.getUserByEmail(email)
+
+    if (!user) {
+      Err.throw("Sorry, we can't locate a user with this email.", 400)
+    }
     if (Auth.isGoogleAuthMethod(user.auth_method))
       Err.throw('This email address signed up with Google, please login via Google.', 400)
 
@@ -315,7 +311,9 @@ router.get('/change-password/:token', async (req, res) => {
     params: { token },
   } = req
   try {
-    if (!token) Err.throw('No token provided')
+    if (!token) {
+      Err.throw('No token provided')
+    }
 
     const decoded = Auth.jwtVerify(token)
 
@@ -344,7 +342,9 @@ router.patch('/change-password/:token', async (req, res) => {
   } = req
 
   try {
-    if (!token) Err.throw('No token provided')
+    if (!token) {
+      Err.throw('No token provided')
+    }
 
     const decoded = Auth.jwtVerify(token)
 
@@ -352,7 +352,7 @@ router.patch('/change-password/:token', async (req, res) => {
       Err.throw('Token expired', 400)
     }
 
-    const user = await findUserByEmail(decoded.email)
+    const user = await DB.getUserByEmail(decoded.email)
 
     if (!user) {
       Err.throw('User doesnt exist', 400)

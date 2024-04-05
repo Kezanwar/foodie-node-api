@@ -3,15 +3,13 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import { RESTAURANT_ROLES } from '#app/constants/restaurant.js'
-
 import { authWithCache } from '#app/middleware/auth.js'
+
+import { RESTAURANT_ROLES } from '#app/constants/restaurant.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
-import Deal from '#app/models/Deal.js'
-import Location from '#app/models/Location.js'
-
 import Err from '#app/services/error/index.js'
+import DB from '#app/services/db/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -30,47 +28,13 @@ router.get(
     let currentDate = current_date ? new Date(current_date) : new Date()
 
     try {
-      const active_deals_prom = Deal.countDocuments({
-        'restaurant.id': restaurant._id,
-        $or: [{ is_expired: false }, { end_date: { $gt: currentDate } }],
-      })
+      const active_deals_prom = DB.RGetActiveDealsCount(restaurant._id, currentDate)
 
-      const expired_deals_prom = Deal.countDocuments({
-        'restaurant.id': restaurant._id,
-        $or: [{ is_expired: true }, { end_date: { $lte: currentDate } }],
-      })
+      const expired_deals_prom = DB.RGetExpiredDealsCount(restaurant._id, currentDate)
 
-      const impressions_views_favourites_prom = Deal.aggregate([
-        {
-          $match: {
-            'restaurant.id': restaurant._id,
-          },
-        },
+      const impressions_views_favourites_prom = DB.RGetRestaurantImpressionsViewFavouritesStats(restaurant._id)
 
-        {
-          $addFields: {
-            unique_views: {
-              $sum: {
-                $size: { $setUnion: [[], '$views'] },
-              },
-            },
-            views: { $size: '$views' },
-            favourites: { $size: '$favourites' },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            impressions: {
-              $sum: '$unique_views',
-            },
-            views: { $sum: '$views' },
-            favourites: { $sum: '$favourites' },
-          },
-        },
-      ])
-
-      const locationsProm = Location.countDocuments({ 'restaurant.id': restaurant._id })
+      const locationsProm = DB.RGetRestaurantLocationsCount(restaurant._id)
 
       const [active_deals, expired_deals, impressions_views_favourites, locations] = await Promise.all([
         active_deals_prom,

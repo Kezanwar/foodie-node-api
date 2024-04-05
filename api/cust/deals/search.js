@@ -13,7 +13,7 @@ import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 import { searchFeedSchema } from '#app/validation/customer/deal.js'
 
-import WorkerService from '#app/services/worker/index.js'
+import { worker } from '#app/services/worker/index.js'
 import { S3BaseUrl } from '#app/services/aws/index.js'
 
 const RADIUS_METRES = 20000 //20km
@@ -120,7 +120,7 @@ router.get('/', authWithCache, validate(searchFeedSchema), async (req, res) => {
       },
     ])
 
-    const sorted = await WorkerService.call({
+    const sorted = await worker.call({
       name: 'orderSearchDealsByTextMatchRelevance',
       params: [JSON.stringify(results), text],
     })

@@ -9,9 +9,8 @@ const upload = multer({ storage: storage })
 import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
-import Restaurant from '#app/models/Restaurant.js'
-
 import { appEnv } from '#app/config/config.js'
+
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
 
 import Email from '#app/services/email/index.js'
@@ -19,15 +18,16 @@ import IMG from '#app/services/image/index.js'
 import AWS from '#app/services/aws/index.js'
 import Err from '#app/services/error/index.js'
 import Redis from '#app/services/cache/redis.js'
+import DB from '#app/services/db/index.js'
+import Task from '#app/services/worker/index.js'
 
 import validate from '#app/middleware/validate.js'
+
 import {
   companyInfoSchema,
   restaurantDetailsSchema,
   restaurantSubmitApplicationSchema,
 } from '#app/validation/restaurant/create-restaurant.js'
-
-import { findRestaurantsLocations } from '#app/utilities/locations.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -38,8 +38,9 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
   try {
     const user = req.user
 
-    if (!user.email_confirmed)
+    if (!user.email_confirmed) {
       Err.throw('Access denied - Please confirm your email before accessing these resources', 403)
+    }
 
     let uRest = user?.restaurant
     let uRestID = uRest?.id
@@ -53,29 +54,26 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
 
     if (!uRestID) {
       // user has no restaurant yet, first time hitting this step
-      const newRest = new Restaurant({
-        company_info,
-        super_admin: user.id,
-        registration_step: RESTAURANT_REG_STEPS.STEP_1_COMPLETE,
-        status: RESTAURANT_STATUS.APPLICATION_PENDING,
-        image_uuid: IMG.createImgUUID(),
-      })
-      await newRest.save()
+      const created = await DB.RCreateNewRestaurant(company_info, user)
 
-      user.restaurant = { id: newRest.id, role: RESTAURANT_ROLES.SUPER_ADMIN }
-      await Promise.all([user.save(), Redis.setUserByID(user)])
+      await Redis.setUserByID(created.user)
 
-      return res.status(200).json(newRest.toClient())
+      return res.status(200).json(created.restaurant.toClient())
     } else {
       // user has a restaurant
       if (!uRole) {
         Err.throw('Unable to find Restaurant or User Permissions')
       }
-      if (uRole !== RESTAURANT_ROLES.SUPER_ADMIN) Err.throw('Access denied - user permissions', 400)
 
-      const currentRest = await Restaurant.findById(uRestID)
+      if (uRole !== RESTAURANT_ROLES.SUPER_ADMIN) {
+        Err.throw('Access denied - user permissions', 400)
+      }
 
-      if (!currentRest) Err.throw('Restaurant doesnt exist', 400)
+      const currentRest = await DB.RGetRestaurantByID(uRestID)
+
+      if (!currentRest) {
+        Err.throw('Restaurant doesnt exist', 400)
+      }
 
       if (currentRest.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
         Err.throw(
@@ -84,8 +82,10 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
         )
       }
 
-      if (currentRest) currentRest.company_info = company_info
-      await currentRest.save()
+      if (currentRest) {
+        await DB.RUpdateApplicationRestaurant(currentRest, { company_info })
+      }
+
       return res.status(200).json(currentRest.toClient())
     }
   } catch (error) {
@@ -114,10 +114,12 @@ router.post(
       files,
     } = req
 
-    if (!cuisines || cuisines?.length <= 0) Err.throw('Must provide atleast 1 cuisine', 400)
+    if (!cuisines || cuisines?.length <= 0) {
+      Err.throw('Must provide atleast 1 cuisine', 400)
+    }
 
-    //! route is expecting formdata - any objects that arent files must be stringified and sent as formdata
-    //! then destringifyd on the server
+    // route is expecting formdata - any objects that arent files must be stringified and sent as formdata
+    // then destringifyd on the server
 
     try {
       if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
@@ -129,7 +131,6 @@ router.post(
 
       if (!restaurant.registration_step) {
         Err.throw('Error: Must complete step 1 first')
-        return
       }
 
       const rAvatar = restaurant?.avatar
@@ -156,12 +157,12 @@ router.post(
 
       if (uAvatar) {
         imageNames.avatar = IMG.createImageName(restaurant.image_uuid, 'avatar')
-        const buffer = await IMG.resizeAvatar(uAvatar.buffer)
+        const buffer = await Task.resizeAvatar(uAvatar.buffer)
         saveImagePromises.push(AWS.saveImage(imageNames.avatar, buffer))
       }
       if (uCoverPhoto) {
         imageNames.cover_photo = IMG.createImageName(restaurant.image_uuid, 'cover_photo')
-        const buffer = await IMG.resizeCoverPhoto(uCoverPhoto.buffer)
+        const buffer = await Task.resizeCoverPhoto(uCoverPhoto.buffer)
         saveImagePromises.push(AWS.saveImage(imageNames.cover_photo, buffer))
       }
 
@@ -178,13 +179,14 @@ router.post(
         ...(social_media && { social_media: JSON.parse(social_media) }),
       }
 
-      await restaurant.updateRest(newData)
-
-      if (!restaurant.cover_photo || !restaurant.avatar) return Err.throw('Must provide an Avatar and Cover Photo')
-
       if (restaurant?.registration_step === RESTAURANT_REG_STEPS.STEP_1_COMPLETE) {
-        restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_2_COMPLETE
-        await restaurant.save()
+        newData.registration_step = RESTAURANT_REG_STEPS.STEP_2_COMPLETE
+      }
+
+      await DB.RUpdateApplicationRestaurant(restaurant, newData)
+
+      if (!restaurant.cover_photo || !restaurant.avatar) {
+        Err.throw('Must provide an Avatar and Cover Photo')
       }
 
       return res.status(200).json(restaurant.toClient())
@@ -219,7 +221,7 @@ router.post(
         return
       }
 
-      const locations = await findRestaurantsLocations(restaurant._id)
+      const locations = await DB.RGetRestaurantLocations(restaurant._id)
 
       if (!locations || locations.length === 0) {
         Err.throw('Error: A minimum of 1 locations is required')
@@ -227,8 +229,7 @@ router.post(
       }
 
       if (restaurant.registration_step === RESTAURANT_REG_STEPS.STEP_2_COMPLETE) {
-        restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_3_COMPLETE
-        await restaurant.save()
+        await DB.RUpdateApplicationRestaurant(restaurant, { registration_step: RESTAURANT_REG_STEPS.STEP_3_COMPLETE })
       }
 
       return res.status(200).json(restaurant.toClient())
@@ -267,20 +268,24 @@ router.post(
         return
       }
 
-      const locations = await findRestaurantsLocations(restaurant._id)
+      const locations = await DB.RGetRestaurantLocations(restaurant._id)
 
       if (!locations || locations.length === 0) {
         Err.throw('Error: A minimum of 1 locations is required')
         return
       }
 
-      restaurant.terms_and_conditions = terms_and_conditions
-      restaurant.privacy_policy = privacy_policy
+      const newData = {
+        terms_and_conditions,
+        privacy_policy,
+        registration_step: RESTAURANT_REG_STEPS.STEP_4_COMPLETE,
+        status: RESTAURANT_STATUS.APPLICATION_PROCESSING,
+      }
 
-      restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_4_COMPLETE
-      restaurant.status = RESTAURANT_STATUS.APPLICATION_PROCESSING
-
-      await Promise.all([restaurant.save(), Email.sendAdminReviewApplicationEmail({ restaurant, locations })])
+      await Promise.all([
+        DB.RUpdateApplicationRestaurant(restaurant, newData),
+        Email.sendAdminReviewApplicationEmail({ restaurant, locations }),
+      ])
 
       return res.status(200).json(restaurant.toClient())
     } catch (error) {
@@ -297,7 +302,7 @@ if (appEnv === 'development' || appEnv === 'staging') {
 
     try {
       if (!id) return Err.throw('No ID', 401)
-      const restaurant = await Restaurant.findById(id)
+      const restaurant = await DB.RGetRestaurantByID(id)
       if (!restaurant) return Err.throw('No restaurant', 401)
       if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
         restaurant.status = RESTAURANT_STATUS.APPLICATION_ACCEPTED
@@ -318,7 +323,7 @@ if (appEnv === 'development' || appEnv === 'staging') {
 
     try {
       if (!id) return Err.throw('No ID', 401)
-      const restaurant = await Restaurant.findById(id)
+      const restaurant = await DB.RGetRestaurantByID(id)
       if (!restaurant) return Err.throw('No restaurant', 401)
       if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
         restaurant.status = RESTAURANT_STATUS.APPLICATION_REJECTED

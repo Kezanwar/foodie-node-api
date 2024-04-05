@@ -1,17 +1,19 @@
+import { formatInTimeZone } from 'date-fns-tz'
+
 import Deal from '#app/models/Deal.js'
-
-import WorkerService from '#app/services/worker/index.js'
-
 import Location from '#app/models/Location.js'
+
 import Err from '#app/services/error/index.js'
 import Mixpanel from '#app/services/mixpanel/index.js'
 
+export const createExpiryDate = () => {
+  return formatInTimeZone(new Date(), 'Etc/GMT+12', 'yyyy-MM-dd')
+}
+
 const expireDeals = async () => {
   try {
-    const expireDate = await WorkerService.call({
-      name: 'expireDate',
-    })
-    const filter = { end_date: { $lte: expireDate }, is_expired: false }
+    const filter = { end_date: { $lte: createExpiryDate() }, is_expired: false }
+
     const toExpire = await Deal.find(filter)
 
     const proms = toExpire.map((deal) =>

@@ -9,18 +9,19 @@ import Location from '#app/models/Location.js'
 import { authWithCache } from '#app/middleware/auth.js'
 
 import Err from '#app/services/error/index.js'
-import WorkerService from '#app/services/worker/index.js'
+import { worker } from '#app/services/worker/index.js'
 import Memory from '#app/services/cache/memory.js'
+import Str from '#app/services/string/index.js'
 
 import { landingUrl } from '#app/config/config.js'
-import { removeTags } from '#app/utilities/regex.js'
+
 import { S3BaseUrl } from '#app/services/aws/index.js'
 
 const fetchBlogs = async () => {
   return axios.get(`${landingUrl}/api/recent`).then((res) =>
     res.data.edges.map((d) => ({
       ...d.node,
-      excerpt: removeTags(d.node.excerpt),
+      excerpt: Str.removeTags(d.node.excerpt),
       featuredImage: d.node.featuredImage.node.sourceUrl,
     }))
   )
@@ -130,7 +131,7 @@ router.get('/', authWithCache, async (req, res) => {
 
     const [results, fetchedBlogs] = await Promise.all(request)
 
-    const resp = await WorkerService.call({
+    const resp = await worker.call({
       name: 'getPopularRestaurantsAndCuisines',
       params: [JSON.stringify(results)],
     })

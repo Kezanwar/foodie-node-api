@@ -1,6 +1,26 @@
-import { expAsPerc } from './numbers.js'
-import { getStringSimilarity } from './strings.js'
+import { getStringSimilarity } from '#app/utilities/levenshtein.js'
 
+//UTILS
+const getCuisineDietaryMatch = (search, arr) => {
+  return arr.reduce((acc, curr) => {
+    const calc = getStringSimilarity(search, curr.name)
+    if (acc < calc) {
+      acc = calc
+    }
+    return acc
+  }, 0)
+}
+
+const expAsPerc = (...args) => {
+  const arg = [...args]
+  let sum = 0
+  for (let a of arg) {
+    sum = sum + a
+  }
+  return sum / arg.length
+}
+
+//TASKS
 export const filterDealsByDistance = (deals, distance) =>
   JSON.parse(deals).filter((deal) => deal.location.distance_miles <= distance)
 
@@ -80,14 +100,4 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
   }
 
   return sorted
-}
-
-const getCuisineDietaryMatch = (search, arr) => {
-  return arr.reduce((acc, curr) => {
-    const calc = getStringSimilarity(search, curr.name)
-    if (acc < calc) {
-      acc = calc
-    }
-    return acc
-  }, 0)
 }

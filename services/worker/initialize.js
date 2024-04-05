@@ -1,21 +1,23 @@
 import { define } from 'nanolith'
-import { findCountryPhoneCode } from '#app/utilities/locations.js'
-import { expireDate } from '#app/utilities/date.js'
-import { resizeImg } from '#app/utilities/images.js'
-import { filterDealsByDistance, orderSearchDealsByTextMatchRelevance } from '#app/utilities/deals.js'
-import { checkSingleDealFollowAndFav, checkSingleRestaurantFollowAndFav } from '#app/utilities/deals.js'
-import { getPopularRestaurantsAndCuisines } from '#app/utilities/discover.js'
+import { resizeImg } from './tasks/image.js'
+import {
+  filterDealsByDistance,
+  orderSearchDealsByTextMatchRelevance,
+  checkSingleDealFollowAndFav,
+  checkSingleRestaurantFollowAndFav,
+} from './tasks/deals.js'
+import { getPopularRestaurantsAndCuisines } from './tasks/discover.js'
+import { editDealFindLocationsToAddRemoveAndUpdate, findCountryPhoneCode } from './tasks/locations.js'
 
 export const workerConfig = await define({
-  //images
   resizeImg,
   findCountryPhoneCode,
-  expireDate,
   filterDealsByDistance,
   checkSingleDealFollowAndFav,
   checkSingleRestaurantFollowAndFav,
   getPopularRestaurantsAndCuisines,
   orderSearchDealsByTextMatchRelevance,
+  editDealFindLocationsToAddRemoveAndUpdate,
   // Functions don't have to be directly defined within the
   // object, they can be defined elsewhere outside, or even
   // imported from a totally different module.

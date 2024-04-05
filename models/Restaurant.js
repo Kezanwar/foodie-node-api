@@ -1,9 +1,9 @@
 import mongoose from 'mongoose'
+import { isMainThread } from 'node:worker_threads'
 
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
-import User from './User.js'
-import { isMainThread } from 'node:worker_threads'
 import { FollowSchemaRestaurant } from './schemas/FollowSchema.js'
+
 import IMG from '#app/services/image/index.js'
 
 const RestaurantSchema = new mongoose.Schema(
@@ -139,14 +139,6 @@ RestaurantSchema.methods.updateRest = async function (data) {
   dataArr.forEach(([key, value]) => {
     this[key] = value
   })
-  await this.save()
-}
-
-RestaurantSchema.methods.updateRegStep = async function (step) {
-  if (!step) throw new Error('no step passed to update step method')
-  this.registration_step = step
-  const sAdmin = await User.findById(this.super_admin)
-  sAdmin.restaurant
   await this.save()
 }
 
