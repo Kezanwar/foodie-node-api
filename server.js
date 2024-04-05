@@ -64,3 +64,7 @@ Crons.run()
 
 //start server
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
+
+const c = await DB.getCuisines()
+
+console.log(c)

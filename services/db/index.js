@@ -3,6 +3,7 @@ dotenv.config()
 import { connect, Types } from 'mongoose'
 
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
+import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.js'
 
 import User from '#app/models/User.js'
 import { S3BaseUrl } from '#app/services/aws/index.js'
@@ -11,10 +12,36 @@ import Location from '#app/models/Location.js'
 import Deal from '#app/models/Deal.js'
 import Task from '#app/services/worker/index.js'
 import IMG from '#app/services/image/index.js'
+import Cuisine from '#app/models/Cuisine.js'
+import DietaryRequirement from '#app/models/DietaryRequirement.js'
 
 const MONGO_URI = process.env.MONGO_URI
 
 class DBService {
+  //admin
+
+  async setCuisineOptions() {
+    await Cuisine.deleteMany({})
+
+    const data = this.#prepareOptionsForDB(CUISINES_DATA)
+
+    for await (const d of data) {
+      const option = new Cuisine(d)
+      await option.save()
+    }
+  }
+
+  async setDietaryOptions() {
+    await DietaryRequirement.deleteMany({})
+
+    const data = this.#prepareOptionsForDB(DIETARY_REQUIREMENTS)
+
+    for await (const d of data) {
+      const option = new DietaryRequirement(d)
+      await option.save()
+    }
+  }
+
   //connection
   async connect() {
     try {
@@ -25,17 +52,6 @@ class DBService {
       // Exit proccess with failure
       process.exit(1)
     }
-  }
-
-  //util
-  makeMongoIDs(...args) {
-    if (args.length === 1) return new Types.ObjectId(args[0])
-    else return args.map((i) => new Types.ObjectId(i))
-  }
-
-  getID(doc) {
-    if (doc._id) return doc._id.toHexString()
-    if (doc.id) return doc?.id?.toHexString ? doc?.id?.toHexString() : doc.id
   }
 
   //usertype:common user
@@ -110,6 +126,28 @@ class DBService {
     return user[0]
   }
 
+  //usertype:common options
+  getCuisines() {
+    return Cuisine.aggregate([
+      {
+        $project: {
+          name: 1,
+          slug: 1,
+        },
+      },
+    ])
+  }
+  getDietaryRequirements() {
+    return DietaryRequirement.aggregate([
+      {
+        $project: {
+          name: 1,
+          slug: 1,
+        },
+      },
+    ])
+  }
+
   //usertype:restuarant restaurant
   RGetRestaurantByID(id) {
     return Restaurant.findById(id)
@@ -145,7 +183,7 @@ class DBService {
     let dealSet = null
     let locationSet = null
 
-    const { name, bio, cuisines, dietary_requirements } = this.onRestUpdateCheckNewLocationAndDealDataChanges(
+    const { name, bio, cuisines, dietary_requirements } = this.#onRestUpdateCheckNewLocationAndDealDataChanges(
       restaurant,
       data
     )
@@ -602,22 +640,40 @@ class DBService {
     await Promise.all([dealProm, locationsProm])
   }
 
-  //util
-  onRestUpdateCheckNewLocationAndDealDataChanges(restaurant, data) {
+  //util pub
+  makeMongoIDs(...args) {
+    if (args.length === 1) return new Types.ObjectId(args[0])
+    else return args.map((i) => new Types.ObjectId(i))
+  }
+  getID(doc) {
+    if (doc._id) return doc._id.toHexString()
+    if (doc.id) return doc?.id?.toHexString ? doc?.id?.toHexString() : doc.id
+  }
+  //util priv
+  #onRestUpdateCheckNewLocationAndDealDataChanges(restaurant, data) {
     return {
-      cuisines: data.cuisines && this.haveOptionsChanged(restaurant.cuisines, data.cuisines),
+      cuisines: data.cuisines && this.#haveOptionsChanged(restaurant.cuisines, data.cuisines),
       dietary_requirements:
         data.dietary_requirements &&
-        this.haveOptionsChanged(restaurant.dietary_requirements, data.dietary_requirements),
+        this.#haveOptionsChanged(restaurant.dietary_requirements, data.dietary_requirements),
       name: restaurant.name !== data.name,
       bio: restaurant.bio !== data.bio,
     }
   }
-  haveOptionsChanged(currentList, newList) {
+  #haveOptionsChanged(currentList, newList) {
     return (
       newList.length !== currentList.length ||
       !!newList.filter((nc) => !currentList.find((rc) => rc.slug === nc.slug)).length
     )
+  }
+  #sortOptions(a, b) {
+    return a > b ? 1 : -1
+  }
+  #prepareOptionsForDB(options) {
+    return options.sort(this.#sortOptions).map((c) => ({
+      name: c,
+      slug: c.split(' ').join('-').toLowerCase().replace(/&/g, 'and'),
+    }))
   }
 }
 
