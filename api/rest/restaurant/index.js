@@ -105,7 +105,7 @@ router.patch(
         ...(social_media && { social_media: JSON.parse(social_media) }),
       }
 
-      await DB.RUpdateRestaurant(restaurant, newData)
+      await DB.RUpdateAcceptedRestaurant(restaurant, newData)
 
       if (!restaurant.cover_photo || !restaurant.avatar) return Err.throw('Must provide an Avatar and Cover Photo')
 

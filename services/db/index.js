@@ -130,49 +130,67 @@ class DBService {
     await Promise.all([rest.save(), user.save()])
     return { restaurant: rest, user: user }
   }
-  async RUpdateRestaurant(restaurant, data) {
+  async RUpdateApplicationRestaurant(restaurant, data) {
+    const dataArr = Object.entries(data)
+    dataArr.forEach(([key, value]) => {
+      restaurant[key] = value
+    })
+    await restaurant.save()
+  }
+  async RUpdateAcceptedRestaurant(restaurant, data) {
     const promises = []
 
-    //if new data has cuisines and cuisines arent the same as the current
-    //update locations and deals cuisines
-    let set = { $set: null }
+    //if new data has changes that effect locations/deals
+    //update locations and deals
+    let dealSet = null
+    let locationSet = null
 
-    if (
-      data.cuisines &&
-      (data.cuisines.length !== restaurant.cuisines.length ||
-        data.cuisines.filter((nc) => !restaurant.cuisines.find((rc) => rc.slug === nc.slug)).length)
-    ) {
-      set = { $set: { cuisines: data.cuisines } }
+    const { name, bio, cuisines, dietary_requirements } = this.onRestUpdateCheckNewLocationAndDealDataChanges(
+      restaurant,
+      data
+    )
+
+    if (name || cuisines || dietary_requirements) {
+      dealSet = {}
+      locationSet = {}
     }
 
-    //if new data has dietary_requirements and dietary_requirements arent the same as the current
-    //update locations and deals dietary_requirements
-    if (
-      data.dietary_requirements &&
-      (data.dietary_requirements.length !== restaurant.dietary_requirements.length ||
-        data.dietary_requirements.filter((nc) => !restaurant.dietary_requirements.find((rc) => rc.slug === nc.slug))
-          .length)
-    ) {
-      if (set.$set === null) {
-        set = { $set: { dietary_requirements: data.dietary_requirements } }
-      } else {
-        set.$set.dietary_requirements = data.dietary_requirements
+    if (name) {
+      dealSet['restaurant.name'] = data.name
+      locationSet['restaurant.name'] = data.name
+    }
+    if (cuisines) {
+      dealSet.cuisines = data.cuisines
+      locationSet.cuisines = data.cuisines
+    }
+
+    if (dietary_requirements) {
+      dealSet.dietary_requirements = data.dietary_requirements
+      locationSet.dietary_requirements = data.dietary_requirements
+    }
+
+    if (bio) {
+      if (!locationSet) {
+        locationSet = {}
       }
+      locationSet['restaurant.bio'] = data.bio
     }
 
-    console.log('set:', set)
+    if (dealSet) {
+      promises.push(Deal.updateMany({ 'restaurant.id': restaurant._id }, { $set: dealSet }))
+    }
 
-    if (set.$set !== null) {
-      console.log('set runs')
-      promises.push(Location.updateMany({ 'restaurant.id': restaurant._id }, set))
-      promises.push(Deal.updateMany({ 'restaurant.id': restaurant._id }, set))
+    if (locationSet) {
+      promises.push(Location.updateMany({ 'restaurant.id': restaurant._id }, { $set: locationSet }))
     }
 
     const dataArr = Object.entries(data)
     dataArr.forEach(([key, value]) => {
       restaurant[key] = value
     })
+
     promises.push(restaurant.save())
+
     await Promise.all(promises)
   }
 
@@ -582,6 +600,24 @@ class DBService {
     )
 
     await Promise.all([dealProm, locationsProm])
+  }
+
+  //util
+  onRestUpdateCheckNewLocationAndDealDataChanges(restaurant, data) {
+    return {
+      cuisines: data.cuisines && this.haveOptionsChanged(restaurant.cuisines, data.cuisines),
+      dietary_requirements:
+        data.dietary_requirements &&
+        this.haveOptionsChanged(restaurant.dietary_requirements, data.dietary_requirements),
+      name: restaurant.name !== data.name,
+      bio: restaurant.bio !== data.bio,
+    }
+  }
+  haveOptionsChanged(currentList, newList) {
+    return (
+      newList.length !== currentList.length ||
+      !!newList.filter((nc) => !currentList.find((rc) => rc.slug === nc.slug)).length
+    )
   }
 }
 

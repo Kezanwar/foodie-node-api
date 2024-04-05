@@ -83,7 +83,7 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
       }
 
       if (currentRest) {
-        await DB.RUpdateRestaurant(currentRest, { company_info })
+        await DB.RUpdateApplicationRestaurant(currentRest, { company_info })
       }
 
       return res.status(200).json(currentRest.toClient())
@@ -183,7 +183,7 @@ router.post(
         newData.registration_step = RESTAURANT_REG_STEPS.STEP_2_COMPLETE
       }
 
-      await DB.RUpdateRestaurant(restaurant, newData)
+      await DB.RUpdateApplicationRestaurant(restaurant, newData)
 
       if (!restaurant.cover_photo || !restaurant.avatar) {
         Err.throw('Must provide an Avatar and Cover Photo')
@@ -229,7 +229,7 @@ router.post(
       }
 
       if (restaurant.registration_step === RESTAURANT_REG_STEPS.STEP_2_COMPLETE) {
-        await DB.RUpdateRestaurant(restaurant, { registration_step: RESTAURANT_REG_STEPS.STEP_3_COMPLETE })
+        await DB.RUpdateApplicationRestaurant(restaurant, { registration_step: RESTAURANT_REG_STEPS.STEP_3_COMPLETE })
       }
 
       return res.status(200).json(restaurant.toClient())
@@ -283,7 +283,7 @@ router.post(
       }
 
       await Promise.all([
-        DB.RUpdateRestaurant(restaurant, newData),
+        DB.RUpdateApplicationRestaurant(restaurant, newData),
         Email.sendAdminReviewApplicationEmail({ restaurant, locations }),
       ])
 
