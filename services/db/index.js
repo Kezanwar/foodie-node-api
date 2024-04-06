@@ -236,6 +236,11 @@ class DBService {
   RGetRestaurantLocations(id) {
     return Location.find({ 'restaurant.id': id }).select('-cuisines -dietary_requirements -restaurant -active_deals')
   }
+  async RCreateNewLocation(data) {
+    const location = new Location(data)
+    await location.save()
+    return location
+  }
   async RDeleteOneLocation(rest_id, location_id) {
     //delete the locations
     const locationProm = Location.deleteOne({ _id: location_id })

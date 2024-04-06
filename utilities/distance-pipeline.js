@@ -1,3 +1,5 @@
+//https://stackoverflow.com/questions/18883601/function-to-calculate-distance-between-two-coordinates
+
 const METER_TO_MILE_CONVERSION = 0.00062137
 const r = 6371 // km
 const p = Math.PI / 180
