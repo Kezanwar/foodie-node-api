@@ -4,8 +4,6 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import Location from '#app/models/Location.js'
-
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES } from '#app/constants/restaurant.js'
 
 import { authWithCache } from '#app/middleware/auth.js'
@@ -90,7 +88,7 @@ router.post(
         phoneWithCode = `${code}${restOfNumber}`
       }
 
-      const newLocation = new Location({
+      const newLocation = await DB.RCreateNewLocation({
         nickname,
         address,
         phone_number: phoneWithCode,
@@ -108,8 +106,6 @@ router.post(
         cuisines: restaurant.cuisines,
         dietary_requirements: restaurant.dietary_requirements,
       })
-
-      await newLocation.save()
 
       res.status(200).json([...locations, Loc.pruneLocationForNewLocationResponse(newLocation)])
     } catch (error) {
@@ -140,13 +136,12 @@ router.post(
       }
 
       if (locations.length === 1) {
-        if (restaurant?.registration_step === RESTAURANT_REG_STEPS.STEP_3_COMPLETE) {
-          restaurant.registration_step = RESTAURANT_REG_STEPS.STEP_2_COMPLETE
+        if (restaurant.registration_step === RESTAURANT_REG_STEPS.STEP_3_COMPLETE) {
+          await DB.RUpdateApplicationRestaurant({ registration_step: RESTAURANT_REG_STEPS.STEP_2_COMPLETE })
         }
       }
 
       await DB.RDeleteOneLocation(restaurant._id, rLocToDelete._id)
-      await restaurant.save()
 
       const response = Loc.pruneLocationsListForDeleteLocationResponse(locations, id)
 

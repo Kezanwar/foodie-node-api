@@ -42,8 +42,6 @@ router.get('/', authWithCache, async (req, res) => {
     query: { long, lat },
   } = req
 
-  //https://stackoverflow.com/questions/18883601/function-to-calculate-distance-between-two-coordinates
-
   try {
     if (!long || !lat) Err.throw('No coordinates', 400)
 

@@ -4,6 +4,7 @@ import { connect, Types } from 'mongoose'
 
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
 import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.js'
+import { FEED_LIMIT, METER_TO_MILE_CONVERSION, RADIUS_METRES } from '#app/constants/deals.js'
 
 import User from '#app/models/User.js'
 import { S3BaseUrl } from '#app/services/aws/index.js'
@@ -14,6 +15,7 @@ import Task from '#app/services/worker/index.js'
 import IMG from '#app/services/image/index.js'
 import Cuisine from '#app/models/Cuisine.js'
 import DietaryRequirement from '#app/models/DietaryRequirement.js'
+import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 const MONGO_URI = process.env.MONGO_URI
 
@@ -235,6 +237,11 @@ class DBService {
   //usertype:restaurant locations
   RGetRestaurantLocations(id) {
     return Location.find({ 'restaurant.id': id }).select('-cuisines -dietary_requirements -restaurant -active_deals')
+  }
+  async RCreateNewLocation(data) {
+    const location = new Location(data)
+    await location.save()
+    return location
   }
   async RDeleteOneLocation(rest_id, location_id) {
     //delete the locations
@@ -638,6 +645,281 @@ class DBService {
     )
 
     await Promise.all([dealProm, locationsProm])
+  }
+
+  //usertype:customer deals
+  CGetFeed(user, page, long, lat, cuisines, dietary_requirements) {
+    const query = { active_deals: { $ne: [], $exists: true } }
+    if (cuisines) {
+      query.cuisines = {
+        $elemMatch: {
+          slug: { $in: typeof cuisines === 'string' ? [cuisines] : cuisines },
+        },
+      }
+    }
+    if (dietary_requirements) {
+      query.dietary_requirements = {
+        $elemMatch: {
+          slug: { $in: typeof dietary_requirements === 'string' ? [dietary_requirements] : dietary_requirements },
+        },
+      }
+    }
+
+    return Location.aggregate([
+      {
+        $geoNear: {
+          near: { type: 'Point', coordinates: [long, lat] },
+          distanceField: 'distance_miles',
+          spherical: true,
+          maxDistance: RADIUS_METRES,
+          distanceMultiplier: METER_TO_MILE_CONVERSION,
+          query: query,
+        },
+      },
+      {
+        $skip: page * FEED_LIMIT,
+      },
+      {
+        $limit: FEED_LIMIT,
+      },
+      {
+        $lookup: {
+          from: 'deals', // Replace with the name of your linked collection
+          localField: 'active_deals.deal_id',
+          foreignField: '_id',
+          let: { locationId: '$_id' },
+          pipeline: [
+            {
+              $project: {
+                match_fav: {
+                  $filter: {
+                    input: '$favourites',
+                    as: 'fav',
+                    cond: {
+                      $and: [{ $eq: ['$$fav.user', user._id] }, { $eq: ['$$fav.location_id', '$$locationId'] }],
+                    },
+                    limit: 1,
+                  },
+                },
+                name: 1,
+                description: 1,
+                start_date: 1,
+                end_date: 1,
+              },
+            },
+          ],
+          as: 'deals',
+        },
+      },
+      { $unwind: '$deals' },
+      {
+        $project: {
+          deal: {
+            name: '$deals.name',
+            description: '$deals.description',
+            id: '$deals._id',
+            is_favourited: {
+              $cond: {
+                if: { $eq: [{ $size: { $ifNull: ['$deals.match_fav', []] } }, 1] },
+                then: true,
+                else: false,
+              },
+            },
+          },
+          restaurant: {
+            id: '$restaurant.id',
+            name: '$restaurant.name',
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+          },
+          location: {
+            id: '$_id',
+            nickname: '$nickname',
+            distance_miles: '$distance_miles',
+          },
+        },
+      },
+    ]).sort({ 'location.distance_miles': 1 })
+  }
+  CGetSearchFeed(user, long, lat, text) {
+    return Location.aggregate([
+      {
+        $search: {
+          index: 'default',
+          compound: {
+            must: [
+              {
+                text: {
+                  query: text,
+                  path: {
+                    wildcard: '*',
+                  },
+                },
+              },
+              {
+                geoWithin: {
+                  circle: {
+                    center: {
+                      type: 'Point',
+                      coordinates: [long, lat],
+                    },
+                    radius: RADIUS_METRES,
+                  },
+                  path: 'geometry',
+                },
+              },
+            ],
+          },
+        },
+      },
+      ...calculateDistancePipeline(lat, long, '$geometry.coordinates', 'distance_miles'),
+      {
+        $lookup: {
+          from: 'deals', // Replace with the name of your linked collection
+          localField: 'active_deals.deal_id',
+          foreignField: '_id',
+          let: { locationId: '$_id' },
+          pipeline: [
+            {
+              $project: {
+                match_fav: {
+                  $filter: {
+                    input: '$favourites',
+                    as: 'fav',
+                    cond: {
+                      $and: [{ $eq: ['$$fav.user', user._id] }, { $eq: ['$$fav.location_id', '$$locationId'] }],
+                    },
+                    limit: 1,
+                  },
+                },
+                name: 1,
+                description: 1,
+                start_date: 1,
+                end_date: 1,
+              },
+            },
+          ],
+          as: 'deals',
+        },
+      },
+      { $unwind: '$deals' },
+      {
+        $project: {
+          deal: {
+            name: '$deals.name',
+            description: '$deals.description',
+            id: '$deals._id',
+            is_favourited: {
+              $cond: {
+                if: { $eq: [{ $size: { $ifNull: ['$deals.match_fav', []] } }, 1] },
+                then: true,
+                else: false,
+              },
+            },
+          },
+          restaurant: {
+            id: '$restaurant.id',
+            name: '$restaurant.name',
+            bio: '$restaurant.bio',
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            cuisines: '$cuisines',
+            dietary: '$dietary_requirements',
+          },
+          location: {
+            id: '$_id',
+            nickname: '$nickname',
+            distance_miles: '$distance_miles',
+          },
+        },
+      },
+    ])
+  }
+  CGetSingleDeal(deal_id, location_id, long, lat) {
+    const [dealID, locationID] = this.makeMongoIDs(deal_id, location_id)
+    return Deal.aggregate([
+      {
+        $match: {
+          _id: dealID,
+        },
+      },
+      {
+        $addFields: {
+          matchedLocation: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$locations',
+                  as: 'location',
+                  cond: { $eq: ['$$location.location_id', locationID] },
+                },
+              },
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'locations', // Replace with the name of your linked collection
+          localField: 'matchedLocation.location_id',
+          foreignField: '_id',
+          as: 'loc',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                opening_times: 1,
+                address: 1,
+                phone_number: 1,
+                email: 1,
+                geometry: 1,
+                nickname: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'restaurants', // Replace with the name of your linked collection
+          localField: 'restaurant.id',
+          foreignField: '_id',
+          as: 'rest',
+          pipeline: [
+            {
+              $project: {
+                bio: 1,
+                booking_link: 1,
+              },
+            },
+          ],
+        },
+      },
+
+      ...calculateDistancePipeline(lat, long, '$matchedLocation.geometry.coordinates', 'distance_miles'),
+
+      {
+        $project: {
+          restaurant: {
+            id: '$restaurant.id',
+            name: '$restaurant.name',
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            bio: '$restaurant.bio',
+            booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
+          },
+          name: 1,
+          distance_miles: 1,
+          description: 1,
+          location: { $arrayElemAt: ['$loc', 0] },
+          cuisines: 1,
+          dietary_requirements: 1,
+          is_expired: 1,
+          end_date: 1,
+        },
+      },
+    ])
   }
 
   //util pub

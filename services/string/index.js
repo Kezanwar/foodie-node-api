@@ -25,6 +25,17 @@ class StringService {
     // HTML tag with a null string.
     return decode(str.replace(/(<([^>]+)>)/gi, ''))
   }
+
+  createUrlFromLink(str) {
+    if (!str.includes('http')) return `https://${str}`
+    else return str
+  }
+
+  ValidURL(str) {
+    /* eslint-disable no-useless-escape */
+    const regex = /(?:https?):\/\/(\w+:?\w*)?(\S+)(:\d+)?(\/|\/([\w#!:.?+=&%!\-\/]))?/
+    return regex.test(str)
+  }
 }
 
 const Str = new StringService()
