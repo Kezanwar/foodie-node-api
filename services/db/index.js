@@ -4,6 +4,7 @@ import { connect, Types } from 'mongoose'
 
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
 import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.js'
+import { FEED_LIMIT, METER_TO_MILE_CONVERSION, RADIUS_METRES } from '#app/constants/deals.js'
 
 import User from '#app/models/User.js'
 import { S3BaseUrl } from '#app/services/aws/index.js'
@@ -643,6 +644,101 @@ class DBService {
     )
 
     await Promise.all([dealProm, locationsProm])
+  }
+
+  //usertype:customer deals
+  CGetFeed(user, page, long, lat, cuisines, dietary_requirements) {
+    const query = { active_deals: { $ne: [], $exists: true } }
+    if (cuisines) {
+      query.cuisines = {
+        $elemMatch: {
+          slug: { $in: typeof cuisines === 'string' ? [cuisines] : cuisines },
+        },
+      }
+    }
+    if (dietary_requirements) {
+      query.dietary_requirements = {
+        $elemMatch: {
+          slug: { $in: typeof dietary_requirements === 'string' ? [dietary_requirements] : dietary_requirements },
+        },
+      }
+    }
+
+    return Location.aggregate([
+      {
+        $geoNear: {
+          near: { type: 'Point', coordinates: [long, lat] },
+          distanceField: 'distance_miles',
+          spherical: true,
+          maxDistance: RADIUS_METRES,
+          distanceMultiplier: METER_TO_MILE_CONVERSION,
+          query: query,
+        },
+      },
+      {
+        $skip: page * FEED_LIMIT,
+      },
+      {
+        $limit: FEED_LIMIT,
+      },
+      {
+        $lookup: {
+          from: 'deals', // Replace with the name of your linked collection
+          localField: 'active_deals.deal_id',
+          foreignField: '_id',
+          let: { locationId: '$_id' },
+          pipeline: [
+            {
+              $project: {
+                match_fav: {
+                  $filter: {
+                    input: '$favourites',
+                    as: 'fav',
+                    cond: {
+                      $and: [{ $eq: ['$$fav.user', user._id] }, { $eq: ['$$fav.location_id', '$$locationId'] }],
+                    },
+                    limit: 1,
+                  },
+                },
+                name: 1,
+                description: 1,
+                start_date: 1,
+                end_date: 1,
+              },
+            },
+          ],
+          as: 'deals',
+        },
+      },
+      { $unwind: '$deals' },
+      {
+        $project: {
+          deal: {
+            name: '$deals.name',
+            description: '$deals.description',
+            id: '$deals._id',
+            is_favourited: {
+              $cond: {
+                if: { $eq: [{ $size: { $ifNull: ['$deals.match_fav', []] } }, 1] },
+                then: true,
+                else: false,
+              },
+            },
+          },
+          restaurant: {
+            id: '$restaurant.id',
+            name: '$restaurant.name',
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+          },
+          location: {
+            id: '$_id',
+            nickname: '$nickname',
+            distance_miles: '$distance_miles',
+          },
+        },
+      },
+    ]).sort({ 'location.distance_miles': 1 })
   }
 
   //util pub
