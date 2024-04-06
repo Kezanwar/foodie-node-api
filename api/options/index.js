@@ -11,20 +11,20 @@ dotenv.config()
 
 router.get('/', async (_, res) => {
   try {
-    let resAllCuisines = Memory.getCuisineOptions()
-    let resAllDietaries = Memory.getDietaryOptions()
+    let cuisines = Memory.getCuisineOptions()
+    let dietary = Memory.getDietaryOptions()
 
-    if (!resAllCuisines) {
-      resAllCuisines = await DB.getCuisines()
-      Memory.setCuisineOptions(resAllCuisines)
+    if (!cuisines) {
+      cuisines = await DB.getCuisines()
+      Memory.setCuisineOptions(cuisines)
     }
 
-    if (!resAllDietaries) {
-      resAllDietaries = await DB.getDietaryRequirements()
-      Memory.setDietaryOptions(resAllDietaries)
+    if (!dietary) {
+      dietary = await DB.getDietaryRequirements()
+      Memory.setDietaryOptions(dietary)
     }
 
-    res.status(200).json({ cuisines: resAllCuisines, dietary_requirements: resAllDietaries })
+    res.status(200).json({ cuisines: cuisines, dietary_requirements: dietary })
   } catch (error) {
     Err.send(res, error)
   }

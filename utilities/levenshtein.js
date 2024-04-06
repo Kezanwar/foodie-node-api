@@ -1,5 +1,5 @@
-//* Levenshtein String Similarity
-//* stackoverflow.com/questions/10473745/compare-strings-javascript-return-of-likely
+//Levenshtein String Similarity
+//stackoverflow.com/questions/10473745/compare-strings-javascript-return-of-likely
 
 export const stringSimilarity = (s1, s2) => {
   let longer = s1
@@ -38,42 +38,34 @@ function calcEditDistance(s1, s2) {
   return costs[s2.length]
 }
 
-//* needle: string (single word)
-//* haystack: string (multi word)
+//needle: string (single word)
+//haystack: string (multi word)
 export const getStringSimilaritySingleWord = (needle, haystack) => {
   return haystack.split(' ').reduce((acc, curr) => {
     const calc = stringSimilarity(needle, curr)
-
     if (acc < calc) {
       acc = calc
     }
-
     return acc
   }, 0)
 }
 
-//* needle: string OR array (single world OR multi word)
-//* haystack: string (multi word)
+//needle: string OR array (single world OR multi word)
+//haystack: string (multi word)
 export const getStringSimilarity = (needle, haystack) => {
   const needleLength = needle.split(' ').length
-
   if (needleLength === 1) {
     return getStringSimilaritySingleWord(needle, haystack)
   }
-
   const haySplit = haystack.split(' ')
-
   const haySplitLength = haySplit.length
-
   let similarity = 0
-
   for (let i = 0; i <= haySplitLength; i++) {
     const phraseMatch = stringSimilarity(needle, haySplit.slice(i, i + needleLength).join(' '))
     if (similarity < phraseMatch) {
       similarity = phraseMatch
     }
   }
-
   return similarity
 }
 
