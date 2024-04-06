@@ -4,28 +4,25 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 import { authWithCache } from '#app/middleware/auth.js'
+import validate from '#app/middleware/validate.js'
+
+import { regularFeedSchema } from '#app/validation/customer/deal.js'
 
 import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
 
 import { FEED_LIMIT } from '#app/constants/deals.js'
 
-router.get('/', authWithCache, async (req, res) => {
+router.get('/', validate(regularFeedSchema), authWithCache, async (req, res) => {
   const {
     query: { page, long, lat, cuisines, dietary_requirements },
     user,
   } = req
 
   try {
-    if (!long || !lat) Err.throw('No coordinates', 400)
-
     const LONG = Number(long)
     const LAT = Number(lat)
     const PAGE = page ? Number(page) : 0
-
-    for (let n of [LONG, LAT, PAGE]) {
-      if (isNaN(n)) Err.throw('You must pass a number for Page, Long and Lat')
-    }
 
     const results = await DB.CGetFeed(user, PAGE, LONG, LAT, cuisines, dietary_requirements)
 
