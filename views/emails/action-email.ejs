@@ -31,7 +31,7 @@
       p,
       li {
         line-height: 1.4;
-        color: #404040;
+        color: #313131;
         font-size: 0.9rem;
       }
 
@@ -46,7 +46,7 @@
         margin-block-start: 0;
         margin-block-end: 0;
         margin-bottom: 24px;
-        letter-spacing: -0.5px;
+        letter-spacing: -0.2px;
       }
 
       h1 {
@@ -153,9 +153,11 @@
                       <% if(locals?.list) { %>
                       <ul style="margin-top: 16px">
                         <% for (item of list) { %>
-                        <li style="margin-bottom: 8px"><%= item %></li>
+                        <li style="margin-bottom: 8px"><%- item %></li>
                         <% } %>
                       </ul>
+                      <% } %> <% if(locals?.bottom_content) { %>
+                      <p><%- locals?.bottom_content %></p>
                       <% } %>
                       <!-- BUTTON START -->
                       <table

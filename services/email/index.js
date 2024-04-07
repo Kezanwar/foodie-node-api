@@ -2,6 +2,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 import nodemailer from 'nodemailer'
 import { renderFile } from 'ejs'
+
 import Err from '#app/services/error/index.js'
 import { baseUrl } from '#app/config/config.js'
 
@@ -25,12 +26,13 @@ class EmailService {
   //html templates
   #createActionEmailHTML(
     data = {
+      receiver: '',
       title: '',
       content: '',
-      receiver: '',
+      list: [''],
+      bottom_content: '',
       action_primary: { text: '', url: '' },
       action_secondary: { text: '', url: '' },
-      list: [''],
     }
   ) {
     return renderFile(process.cwd() + '/views/emails/action-email.ejs', data)
@@ -73,7 +75,7 @@ class EmailService {
         html,
       }
       const info = await transporter.sendMail(mailOptions)
-      console.log('OTP email sent: ' + info.response)
+      console.log('Change password email sent: ' + info.response)
     } catch (err) {
       Err.throw(err)
     }
@@ -112,10 +114,43 @@ class EmailService {
         html,
       }
       const info = await transporter.sendMail(mailOptions)
-      console.log('OTP email sent: ' + info.response)
+      console.log('Application to admin email sent: ' + info.response)
     } catch (error) {
       Err.throw(error)
     }
+  }
+
+  async sendSuccessfulApplicationEmail(user, restaurant) {
+    const html = await this.#createActionEmailHTML({
+      receiver: user.first_name,
+      title: `Congratulations!`,
+      content: `Great news! We're excited to advise that your application for <strong>${restaurant.name}</strong> to partner with Foodie has been approved. Welcome aboard!
+      </br>
+      </br>
+      At Foodie, we're all about helping restaurants like yours to shine. As our partner, you'll tap into a vibrant community of food lovers eager to discover what you bring to the table.
+      Here's what's in store for you as a Foodie partner:
+      `,
+      list: [
+        `<strong>Boosted Visibility: </strong>Get your restaurant in front of our hungry audience actively seeking new deals and offers.`,
+        `<strong>Increased Revenues: </strong>Drive foot traffic and spike sales with tailored promotions and deals made just for your restaurant.`,
+        `<strong>Your own dashboard: </strong>As our partner, you'll gain access to your own dashboard, helping you to monitor the success of your deals and offers first hand.`,
+      ],
+      bottom_content: `If you haven't already added some deals, now is the time to do so; and if you have, those deals and offers will go live as soon as you choose a subscription plan. So, head back to your dashboard to choose a subscription plan to start boosting footfall and increasing your sales.
+      </br>
+      </br>
+      Remember every subscription package comes with a <strong>free month</strong>, allowing you to test and see the results first hand!
+      </br>
+      </br>
+      Congratulations on joining the Foodie family! We're thrilled to have you on board.`,
+    })
+    const mailOptions = {
+      from: this.#noreply,
+      to: user.email,
+      subject: `Foodie Application Accepted!`,
+      html,
+    }
+    const info = await transporter.sendMail(mailOptions)
+    console.log('Successful application email sent: ' + info.response)
   }
 }
 

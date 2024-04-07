@@ -301,14 +301,27 @@ if (appEnv === 'development' || appEnv === 'staging') {
     } = req
 
     try {
-      if (!id) return Err.throw('No ID', 401)
-      const restaurant = await DB.RGetRestaurantByID(id)
-      if (!restaurant) return Err.throw('No restaurant', 401)
-      if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
-        restaurant.status = RESTAURANT_STATUS.APPLICATION_ACCEPTED
-        await restaurant.save()
+      const restaurant = await DB.RGetRestaurantByIDWithSuperAdmin(id)
+
+      if (!restaurant) {
+        Err.throw('No restaurant found', 401)
       }
-      return res.json(`Restaurant: ${restaurant.name} status is ${restaurant.status}`)
+
+      console.log(restaurant.super_admin)
+
+      const user = await DB.getUserByID(restaurant.super_admin)
+
+      if (!user) {
+        Err.throw('No user found', 401)
+      }
+
+      if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+        await DB.RUpdateApplicationRestaurant(restaurant, { status: RESTAURANT_STATUS.APPLICATION_ACCEPTED })
+      }
+
+      res.json(`Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`)
+
+      await Email.sendSuccessfulApplicationEmail(user, restaurant)
     } catch (error) {
       Err.send(res, error)
     }
