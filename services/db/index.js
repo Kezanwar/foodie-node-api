@@ -7,7 +7,6 @@ import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.j
 import { FEED_LIMIT, METER_TO_MILE_CONVERSION, RADIUS_METRES } from '#app/constants/deals.js'
 
 import User from '#app/models/User.js'
-import { S3BaseUrl } from '#app/services/aws/index.js'
 import Restaurant from '#app/models/Restaurant.js'
 import Location from '#app/models/Location.js'
 import Deal from '#app/models/Deal.js'
@@ -19,6 +18,7 @@ import DietaryRequirement from '#app/models/DietaryRequirement.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 const MONGO_URI = process.env.MONGO_URI
+import { S3BaseUrl } from '#app/services/aws/index.js'
 
 class DBService {
   //admin

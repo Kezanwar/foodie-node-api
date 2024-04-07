@@ -29,7 +29,7 @@ body {
   5. Improve text rendering
 */
 body {
-  line-height: 1.5;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -58,12 +58,10 @@ select {
 :root {
   --primary-main: #f0692a;
   --primary-light: #f27b44;
-  --success-main: #36B37E;
-  --success-light: #86E8AB;
+  --success-main: #36b37e;
+  --success-light: #86e8ab;
   --black: #000;
   --white: #fff;
-
-
 }
 
 /*
@@ -78,10 +76,7 @@ h5,
 h6,
 a {
   overflow-wrap: break-word;
-
 }
-
-
 
 a {
   color: #282828;
@@ -99,7 +94,6 @@ a.button {
 }
 
 a.button:hover {
-
   background-color: var(--primary-light);
 }
 

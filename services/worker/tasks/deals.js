@@ -1,7 +1,7 @@
 import levenshtein from '#app/utilities/levenshtein.js'
 
 //UTILS
-const getCuisineDietaryMatch = (search, arr) => {
+const getOptionMatch = (search, arr) => {
   return arr.reduce((acc, curr) => {
     const calc = levenshtein(search, curr.name)
     if (acc < calc) {
@@ -21,9 +21,6 @@ const expAsPerc = (...args) => {
 }
 
 //TASKS
-export const filterDealsByDistance = (deals, distance) =>
-  JSON.parse(deals).filter((deal) => deal.location.distance_miles <= distance)
-
 export const checkSingleDealFollowAndFav = (user, deal_id, location_id) => {
   const u = JSON.parse(user)
   const is_following = !!u.following.find((follow) => follow.location_id === location_id)
@@ -74,8 +71,8 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
       } else {
         if (!restuarant_map?.[d.restaurant.id]) {
           restuarant_map[d.restaurant.id] = {
-            cuisine: getCuisineDietaryMatch(search, d.restaurant.cuisines),
-            dietary: getCuisineDietaryMatch(search, d.restaurant.dietary),
+            cuisine: getOptionMatch(search, d.restaurant.cuisines),
+            dietary: getOptionMatch(search, d.restaurant.dietary),
           }
         }
 
@@ -96,7 +93,9 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
 
     if (sorted[0]?.match > d.match) {
       sorted.push(d)
-    } else sorted.unshift(d)
+    } else {
+      sorted.unshift(d)
+    }
   }
 
   return sorted
