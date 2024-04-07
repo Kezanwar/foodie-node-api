@@ -1,9 +1,9 @@
-import { getStringSimilarity } from '#app/utilities/levenshtein.js'
+import levenshtein from '#app/utilities/levenshtein.js'
 
 //UTILS
 const getCuisineDietaryMatch = (search, arr) => {
   return arr.reduce((acc, curr) => {
-    const calc = getStringSimilarity(search, curr.name)
+    const calc = levenshtein(search, curr.name)
     if (acc < calc) {
       acc = calc
     }
@@ -62,12 +62,12 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
   const restuarant_map = {}
 
   for (let d of parsedDeals) {
-    const deal_name = getStringSimilarity(search, d.deal.name)
+    const deal_name = levenshtein(search, d.deal.name)
 
     if (deal_name > 0.6) {
       d.match = deal_name
     } else {
-      const deal_description = getStringSimilarity(search, d.deal.description)
+      const deal_description = levenshtein(search, d.deal.description)
 
       if (deal_description > 0.6) {
         d.match = deal_description
@@ -82,8 +82,8 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
         d.match = expAsPerc(
           deal_name,
           deal_description,
-          getStringSimilarity(search, d.restaurant.bio),
-          getStringSimilarity(search, d.restaurant.name),
+          levenshtein(search, d.restaurant.bio),
+          levenshtein(search, d.restaurant.name),
           restuarant_map[d.restaurant.id].cuisine,
           restuarant_map[d.restaurant.id].dietary
         )
