@@ -67,6 +67,13 @@ class DBService {
   getUserByEmailWithPassword(email) {
     return User.findOne({ email: email.toLowerCase() }).select('+password')
   }
+  async updateUser(user, data) {
+    const dataArr = Object.entries(data)
+    dataArr.forEach(([key, value]) => {
+      user[key] = value
+    })
+    await user.save()
+  }
 
   //usertype:customer user
   async CGetUserWithFavAndFollow(id) {
