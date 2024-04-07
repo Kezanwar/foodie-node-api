@@ -27,28 +27,24 @@ class TaskService {
       params: [buffer, { width: 1000 }],
     })
   }
-
   resizeAvatar(buffer) {
     return worker.call({
       name: 'resizeImg',
       params: [buffer, { width: 500 }],
     })
   }
-
   orderSearchDealsByTextMatchRelevance(results, text) {
     return worker.call({
       name: 'orderSearchDealsByTextMatchRelevance',
       params: [JSON.stringify(results), text],
     })
   }
-
   checkSingleDealFollowAndFav(user, deal_id, location_id) {
     return worker.call({
       name: 'checkSingleDealFollowAndFav',
       params: [JSON.stringify(user), deal_id, location_id],
     })
   }
-
   getPopularRestaurantsAndCuisines(discoverResults) {
     return worker.call({
       name: 'getPopularRestaurantsAndCuisines',

@@ -64,12 +64,12 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
   for (let d of parsedDeals) {
     const deal_name = getStringSimilarity(search, d.deal.name)
 
-    if (deal_name > 0.95) {
+    if (deal_name > 0.6) {
       d.match = deal_name
     } else {
       const deal_description = getStringSimilarity(search, d.deal.description)
 
-      if (deal_description > 0.95) {
+      if (deal_description > 0.6) {
         d.match = deal_description
       } else {
         if (!restuarant_map?.[d.restaurant.id]) {
