@@ -15,6 +15,7 @@ import Task from '#app/services/worker/index.js'
 import IMG from '#app/services/image/index.js'
 import Cuisine from '#app/models/Cuisine.js'
 import DietaryRequirement from '#app/models/DietaryRequirement.js'
+
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 const MONGO_URI = process.env.MONGO_URI
@@ -920,6 +921,100 @@ class DBService {
         },
       },
     ])
+  }
+
+  //usertype:customer discover
+  CGetDiscover(long, lat) {
+    return Location.aggregate([
+      {
+        $geoNear: {
+          near: { type: 'Point', coordinates: [long, lat] },
+          distanceField: 'distance_miles',
+          spherical: true,
+          maxDistance: RADIUS_METRES,
+          distanceMultiplier: METER_TO_MILE_CONVERSION,
+          query: { active_deals: { $ne: [], $exists: true } },
+        },
+      },
+      {
+        $lookup: {
+          from: 'restaurants', // Replace with the name of your linked collection
+          localField: 'restaurant.id',
+          foreignField: '_id',
+          let: { locationId: '$_id' },
+          pipeline: [
+            {
+              $project: {
+                followMatch: {
+                  $filter: {
+                    input: '$followers',
+                    as: 'foll',
+                    cond: {
+                      $eq: ['$$foll.location_id', '$$locationId'],
+                    },
+                  },
+                },
+              },
+            },
+          ],
+          as: 'rest',
+        },
+      },
+      {
+        $addFields: {
+          followCount: { $size: { $arrayElemAt: ['$rest.followMatch', 0] } },
+        },
+      },
+      {
+        $sort: {
+          followCount: -1,
+        },
+      },
+      {
+        $project: {
+          restaurant: {
+            id: '$restaurant.id',
+            name: '$restaurant.name',
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            followers: '$followCount',
+            cuisines: '$cuisines',
+            dietary: '$dietary_requirements',
+          },
+          location: {
+            _id: '$_id',
+            nickname: '$nickname',
+            distance_miles: '$distance_miles',
+          },
+        },
+      },
+    ])
+  }
+
+  //usertype:customer favourite
+  async CFavouriteOneDeal(user, deal_id, location_id) {
+    const newDealFavourite = { user: user._id, location_id }
+    const dealProm = Deal.updateOne(
+      {
+        _id: deal_id,
+      },
+      { $addToSet: { favourites: newDealFavourite } }
+    )
+
+    const newUserFavourite = { deal: deal_id, location_id }
+    const userProm = User.updateOne(
+      {
+        _id: user._id,
+      },
+      { $addToSet: { favourites: newUserFavourite } }
+    )
+
+    await Promise.all([dealProm, userProm])
+  }
+  async CUnfavouriteOneDeal(user, deal_id, location_id) {
+    const dealProm = Deal.updateOne({ _id: deal_id }, { $pull: { favourites: { user: user._id, location_id } } })
+    const userProm = User.updateOne({ _id: user._id }, { $pull: { favourites: { deal: deal_id, location_id } } })
+    await Promise.all([dealProm, userProm])
   }
 
   //util pub

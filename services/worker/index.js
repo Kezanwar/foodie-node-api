@@ -48,6 +48,13 @@ class TaskService {
       params: [JSON.stringify(user), deal_id, location_id],
     })
   }
+
+  getPopularRestaurantsAndCuisines(discoverResults) {
+    return worker.call({
+      name: 'getPopularRestaurantsAndCuisines',
+      params: [JSON.stringify(discoverResults)],
+    })
+  }
 }
 
 const Task = new TaskService()
