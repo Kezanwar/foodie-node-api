@@ -922,6 +922,74 @@ class DBService {
     ])
   }
 
+  //usertype:customer discover
+  CGetDiscover(long, lat) {
+    return Location.aggregate([
+      {
+        $geoNear: {
+          near: { type: 'Point', coordinates: [long, lat] },
+          distanceField: 'distance_miles',
+          spherical: true,
+          maxDistance: RADIUS_METRES,
+          distanceMultiplier: METER_TO_MILE_CONVERSION,
+          query: { active_deals: { $ne: [], $exists: true } },
+        },
+      },
+      {
+        $lookup: {
+          from: 'restaurants', // Replace with the name of your linked collection
+          localField: 'restaurant.id',
+          foreignField: '_id',
+          let: { locationId: '$_id' },
+          pipeline: [
+            {
+              $project: {
+                followMatch: {
+                  $filter: {
+                    input: '$followers',
+                    as: 'foll',
+                    cond: {
+                      $eq: ['$$foll.location_id', '$$locationId'],
+                    },
+                  },
+                },
+              },
+            },
+          ],
+          as: 'rest',
+        },
+      },
+      {
+        $addFields: {
+          followCount: { $size: { $arrayElemAt: ['$rest.followMatch', 0] } },
+        },
+      },
+      {
+        $sort: {
+          followCount: -1,
+        },
+      },
+      {
+        $project: {
+          restaurant: {
+            id: '$restaurant.id',
+            name: '$restaurant.name',
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            followers: '$followCount',
+            cuisines: '$cuisines',
+            dietary: '$dietary_requirements',
+          },
+          location: {
+            _id: '$_id',
+            nickname: '$nickname',
+            distance_miles: '$distance_miles',
+          },
+        },
+      },
+    ])
+  }
+
   //util pub
   makeMongoIDs(...args) {
     if (args.length === 1) return new Types.ObjectId(args[0])

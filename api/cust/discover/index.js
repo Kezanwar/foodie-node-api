@@ -2,137 +2,39 @@ import { Router } from 'express'
 const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
-import axios from 'axios'
-
-import Location from '#app/models/Location.js'
 
 import { authWithCache } from '#app/middleware/auth.js'
 
 import Err from '#app/services/error/index.js'
-import { worker } from '#app/services/worker/index.js'
+import Task from '#app/services/worker/index.js'
 import Memory from '#app/services/cache/memory.js'
-import Str from '#app/services/string/index.js'
+import DB from '#app/services/db/index.js'
 
-import { landingUrl } from '#app/config/config.js'
+import validate from '#app/middleware/validate.js'
+import { discoverSchema } from '#app/validation/customer/deal.js'
 
-import { S3BaseUrl } from '#app/services/aws/index.js'
+import { fetchBlogs } from '#app/utilities/blogs.js'
 
-const fetchBlogs = async () => {
-  return axios.get(`${landingUrl}/api/recent`).then((res) =>
-    res.data.edges.map((d) => ({
-      ...d.node,
-      excerpt: Str.removeTags(d.node.excerpt),
-      featuredImage: d.node.featuredImage.node.sourceUrl,
-    }))
-  )
-}
-
-const METER_TO_MILE_CONVERSION = 0.00062137
-
-const RADIUS_METRES = 20000 //20km
-
-const getQueryLocations = () => {
-  const defaults = { active_deals: { $ne: [], $exists: true } }
-
-  return defaults
-}
-
-router.get('/', authWithCache, async (req, res) => {
+router.get('/', authWithCache, validate(discoverSchema), async (req, res) => {
   const {
     query: { long, lat },
   } = req
 
   try {
-    if (!long || !lat) Err.throw('No coordinates', 400)
-
     const LONG = Number(long)
     const LAT = Number(lat)
 
-    for (let n of [LONG, LAT]) {
-      if (isNaN(n)) Err.throw('You must pass a number for Long or Lat')
-    }
-
-    const query = getQueryLocations()
-
     let blogs = Memory.getRecentBlogs()
 
-    const request = [
-      Location.aggregate([
-        {
-          $geoNear: {
-            near: { type: 'Point', coordinates: [LONG, LAT] },
-            distanceField: 'distance_miles',
-            spherical: true,
-            maxDistance: RADIUS_METRES,
-            distanceMultiplier: METER_TO_MILE_CONVERSION,
-            query: query,
-          },
-        },
-        {
-          $lookup: {
-            from: 'restaurants', // Replace with the name of your linked collection
-            localField: 'restaurant.id',
-            foreignField: '_id',
-            let: { locationId: '$_id' },
-            pipeline: [
-              {
-                $project: {
-                  followMatch: {
-                    $filter: {
-                      input: '$followers',
-                      as: 'foll',
-                      cond: {
-                        $eq: ['$$foll.location_id', '$$locationId'],
-                      },
-                    },
-                  },
-                },
-              },
-            ],
-            as: 'rest',
-          },
-        },
-        {
-          $addFields: {
-            followCount: { $size: { $arrayElemAt: ['$rest.followMatch', 0] } },
-          },
-        },
-        {
-          $sort: {
-            followCount: -1,
-          },
-        },
-        {
-          $project: {
-            restaurant: {
-              id: '$restaurant.id',
-              name: '$restaurant.name',
-              avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
-              cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
-              followers: '$followCount',
-              cuisines: '$cuisines',
-              dietary: '$dietary_requirements',
-            },
-            location: {
-              _id: '$_id',
-              nickname: '$nickname',
-              distance_miles: '$distance_miles',
-            },
-          },
-        },
-      ]),
-    ]
+    const request = [DB.CGetDiscover(LONG, LAT)]
 
     if (!blogs) {
-      request[1] = fetchBlogs()
+      request.push(fetchBlogs())
     }
 
     const [results, fetchedBlogs] = await Promise.all(request)
 
-    const resp = await worker.call({
-      name: 'getPopularRestaurantsAndCuisines',
-      params: [JSON.stringify(results)],
-    })
+    const resp = await Task.getPopularRestaurantsAndCuisines(results)
 
     if (blogs) {
       resp.blogs = blogs

@@ -63,4 +63,4 @@ app.use('/api', api)
 Crons.run()
 
 //start server
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`))
+app.listen(PORT, () => console.log(`server started on port ${PORT}`))
