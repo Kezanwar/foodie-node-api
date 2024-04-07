@@ -51,6 +51,12 @@ class TaskService {
       params: [JSON.stringify(discoverResults)],
     })
   }
+  checkSingleRestaurantFollowAndFav(user, location) {
+    return worker.call({
+      name: 'checkSingleRestaurantFollowAndFav',
+      params: [JSON.stringify(user), JSON.stringify(location)],
+    })
+  }
 }
 
 const Task = new TaskService()

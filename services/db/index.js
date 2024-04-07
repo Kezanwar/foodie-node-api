@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 dotenv.config()
-import { connect, Types } from 'mongoose'
+import { connect, isValidObjectId, Types } from 'mongoose'
 
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
 import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.js'
@@ -66,6 +66,13 @@ class DBService {
   }
   getUserByEmailWithPassword(email) {
     return User.findOne({ email: email.toLowerCase() }).select('+password')
+  }
+  async updateUser(user, data) {
+    const dataArr = Object.entries(data)
+    dataArr.forEach(([key, value]) => {
+      user[key] = value
+    })
+    await user.save()
   }
 
   //usertype:customer user
@@ -233,6 +240,71 @@ class DBService {
     promises.push(restaurant.save())
 
     await Promise.all(promises)
+  }
+
+  //usertype:customer restaurant
+  CGetSingleRestaurantLocation(location_id, lat, long) {
+    return Location.aggregate([
+      {
+        $match: {
+          _id: DB.makeMongoIDs(location_id),
+        },
+      },
+      ...calculateDistancePipeline(lat, long, '$geometry.coordinates', 'distance_miles'),
+      {
+        $lookup: {
+          from: 'deals',
+          foreignField: '_id',
+          localField: 'active_deals.deal_id',
+          pipeline: [
+            {
+              $project: {
+                name: 1,
+              },
+            },
+          ],
+          as: 'deals',
+        },
+      },
+      {
+        $lookup: {
+          from: 'restaurants',
+          foreignField: '_id',
+          localField: 'restaurant.id',
+          pipeline: [
+            {
+              $project: {
+                bio: 1,
+                booking_link: 1,
+              },
+            },
+          ],
+          as: 'rest',
+        },
+      },
+      {
+        $project: {
+          nickname: 1,
+          restaurant: {
+            booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
+            bio: { $arrayElemAt: ['$rest.bio', 0] },
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            name: '$restaurant.name',
+            id: '$restaurant.id',
+          },
+          address: 1,
+          phone_number: 1,
+          email: 1,
+          opening_times: 1,
+          dietary_requirements: 1,
+          cuisines: 1,
+          distance_miles: 1,
+          active_deals: '$deals',
+          geometry: 1,
+        },
+      },
+    ])
   }
 
   //usertype:restaurant locations
@@ -1073,6 +1145,10 @@ class DBService {
     if (doc._id) return doc._id.toHexString()
     if (doc.id) return doc?.id?.toHexString ? doc?.id?.toHexString() : doc.id
   }
+  isValidID(str) {
+    return isValidObjectId(str)
+  }
+
   //util priv
   #onRestUpdateCheckNewLocationAndDealDataChanges(restaurant, data) {
     return {
