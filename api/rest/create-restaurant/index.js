@@ -307,8 +307,6 @@ if (appEnv === 'development' || appEnv === 'staging') {
         Err.throw('No restaurant found', 401)
       }
 
-      console.log(restaurant.super_admin)
-
       const user = await DB.getUserByID(restaurant.super_admin)
 
       if (!user) {

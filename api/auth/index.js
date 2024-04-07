@@ -249,7 +249,9 @@ router.post('/confirm-email/:otp', authNoCache, async (req, res) => {
     if (otp === user.auth_otp) {
       user.email_confirmed = true
       await Promise.all([user.save(), Redis.setUserByID(user)])
-    } else Err.throw('Incorrect OTP please try again', 401)
+    } else {
+      Err.throw('Incorrect OTP please try again', 401)
+    }
 
     return res.json('success')
   } catch (error) {
