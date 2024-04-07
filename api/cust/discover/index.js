@@ -4,15 +4,14 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 import { authWithCache } from '#app/middleware/auth.js'
+import validate from '#app/middleware/validate.js'
 
 import Err from '#app/services/error/index.js'
 import Task from '#app/services/worker/index.js'
 import Memory from '#app/services/cache/memory.js'
 import DB from '#app/services/db/index.js'
 
-import validate from '#app/middleware/validate.js'
 import { discoverSchema } from '#app/validation/customer/deal.js'
-
 import { fetchBlogs } from '#app/utilities/blogs.js'
 
 router.get('/', authWithCache, validate(discoverSchema), async (req, res) => {

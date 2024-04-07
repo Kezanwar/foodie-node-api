@@ -15,6 +15,7 @@ import Task from '#app/services/worker/index.js'
 import IMG from '#app/services/image/index.js'
 import Cuisine from '#app/models/Cuisine.js'
 import DietaryRequirement from '#app/models/DietaryRequirement.js'
+
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 const MONGO_URI = process.env.MONGO_URI
@@ -988,6 +989,32 @@ class DBService {
         },
       },
     ])
+  }
+
+  //usertype:customer favourite
+  async CFavouriteOneDeal(user, deal_id, location_id) {
+    const newDealFavourite = { user: user._id, location_id }
+    const dealProm = Deal.updateOne(
+      {
+        _id: deal_id,
+      },
+      { $addToSet: { favourites: newDealFavourite } }
+    )
+
+    const newUserFavourite = { deal: deal_id, location_id }
+    const userProm = User.updateOne(
+      {
+        _id: user._id,
+      },
+      { $addToSet: { favourites: newUserFavourite } }
+    )
+
+    await Promise.all([dealProm, userProm])
+  }
+  async CUnfavouriteOneDeal(user, deal_id, location_id) {
+    const dealProm = Deal.updateOne({ _id: deal_id }, { $pull: { favourites: { user: user._id, location_id } } })
+    const userProm = User.updateOne({ _id: user._id }, { $pull: { favourites: { deal: deal_id, location_id } } })
+    await Promise.all([dealProm, userProm])
   }
 
   //util pub
