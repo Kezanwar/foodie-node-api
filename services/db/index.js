@@ -1017,6 +1017,35 @@ class DBService {
     await Promise.all([dealProm, userProm])
   }
 
+  //usertype:customer follow
+  async CFollowOneRestauarant(user, rest_id, location_id) {
+    const newRestFollower = { user: user._id, location_id }
+    const restProm = await Restaurant.updateOne(
+      {
+        _id: rest_id,
+      },
+      { $addToSet: { followers: newRestFollower } }
+    )
+
+    const newUserFollower = { restaurant: rest_id, location_id }
+    const userProm = User.updateOne(
+      {
+        _id: user._id,
+      },
+      { $addToSet: { following: newUserFollower } }
+    )
+
+    await Promise.all([restProm, userProm])
+  }
+  async CUnfollowOneRestaurant(user, rest_id, location_id) {
+    const restProm = Restaurant.updateOne({ _id: rest_id }, { $pull: { followers: { user: user._id, location_id } } })
+    const userProm = User.updateOne({ _id: user._id }, { $pull: { following: { restaurant: rest_id, location_id } } })
+
+    await Promise.all([restProm, userProm])
+  }
+
+  //usertype
+
   //util pub
   makeMongoIDs(...args) {
     if (args.length === 1) return new Types.ObjectId(args[0])
