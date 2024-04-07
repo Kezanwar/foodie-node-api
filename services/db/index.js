@@ -633,6 +633,21 @@ class DBService {
     deal.end_date = end_date
     await Promise.all([locationsProm, deal.save()])
   }
+  async RBulkExpireDealsFromDate(date) {
+    const filter = { end_date: { $lte: date }, is_expired: false }
+    const toExpire = await Deal.find(filter)
+    const proms = toExpire.map((deal) =>
+      Location.updateMany(
+        {
+          'restaurant.id': deal.restaurant.id,
+        },
+        { $pull: { active_deals: deal._id } }
+      )
+    )
+    await Promise.all(proms)
+    const expiredReq = await Deal.updateMany(filter, { is_expired: true })
+    return expiredReq
+  }
   async RDeleteOneDeal(rest_id, deal) {
     // delete the deal
     const dealProm = deal.deleteOne()
@@ -754,6 +769,9 @@ class DBService {
                   query: text,
                   path: {
                     wildcard: '*',
+                  },
+                  fuzzy: {
+                    maxEdits: 1,
                   },
                 },
               },
