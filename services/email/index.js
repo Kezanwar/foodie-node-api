@@ -2,6 +2,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 import nodemailer from 'nodemailer'
 import { renderFile } from 'ejs'
+import fs from 'node:fs/promises'
 
 import Err from '#app/services/error/index.js'
 import { baseUrl } from '#app/config/config.js'
@@ -18,6 +19,14 @@ const transporter = nodemailer.createTransport({
 class EmailService {
   #getID(doc) {
     return doc._id.toHexString()
+  }
+
+  async #createTestEmailHTMLFile(content) {
+    try {
+      await fs.writeFile('test.html', content)
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   //email addresses
@@ -112,7 +121,7 @@ class EmailService {
       })
       const mailOptions = {
         from: this.#noreply,
-        to: ['kezanwar@gmail.com', 'shak@thefoodie.app'],
+        to: ['shak@thefoodie.app', 'kez@thefoodie.app', 'admin@thefoodie.app'],
         subject: `New restaurant application: ${restaurant.name}`,
         html,
       }
