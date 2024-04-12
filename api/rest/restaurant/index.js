@@ -9,7 +9,6 @@ const upload = multer({ storage: storage })
 import Err from '#app/services/error/index.js'
 import AWS from '#app/services/aws/index.js'
 import IMG from '#app/services/image/index.js'
-import Task from '#app/services/worker/index.js'
 import DB from '#app/services/db/index.js'
 
 import { authWithCache } from '#app/middleware/auth.js'
@@ -83,12 +82,12 @@ router.patch(
 
       if (uAvatar) {
         imageNames.avatar = IMG.createImageName(restaurant.image_uuid, 'avatar')
-        const buffer = await Task.resizeAvatar(uAvatar.buffer)
+        const buffer = await IMG.resizeAvatar(uAvatar.buffer)
         saveImagePromises.push(AWS.saveImage(imageNames.avatar, buffer))
       }
       if (uCoverPhoto) {
         imageNames.cover_photo = IMG.createImageName(restaurant.image_uuid, 'cover_photo')
-        const buffer = await Task.resizeCoverPhoto(uCoverPhoto.buffer)
+        const buffer = await IMG.resizeCoverPhoto(uCoverPhoto.buffer)
         saveImagePromises.push(AWS.saveImage(imageNames.cover_photo, buffer))
       }
 

@@ -19,7 +19,6 @@ import AWS from '#app/services/aws/index.js'
 import Err from '#app/services/error/index.js'
 import Redis from '#app/services/cache/redis.js'
 import DB from '#app/services/db/index.js'
-import Task from '#app/services/worker/index.js'
 
 import validate from '#app/middleware/validate.js'
 
@@ -157,12 +156,12 @@ router.post(
 
       if (uAvatar) {
         imageNames.avatar = IMG.createImageName(restaurant.image_uuid, 'avatar')
-        const buffer = await Task.resizeAvatar(uAvatar.buffer)
+        const buffer = await IMG.resizeAvatar(uAvatar.buffer)
         saveImagePromises.push(AWS.saveImage(imageNames.avatar, buffer))
       }
       if (uCoverPhoto) {
         imageNames.cover_photo = IMG.createImageName(restaurant.image_uuid, 'cover_photo')
-        const buffer = await Task.resizeCoverPhoto(uCoverPhoto.buffer)
+        const buffer = await IMG.resizeCoverPhoto(uCoverPhoto.buffer)
         saveImagePromises.push(AWS.saveImage(imageNames.cover_photo, buffer))
       }
 
@@ -313,13 +312,11 @@ if (appEnv === 'development' || appEnv === 'staging') {
         Err.throw('No user found', 401)
       }
 
-      if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
-        await DB.RUpdateApplicationRestaurant(restaurant, { status: RESTAURANT_STATUS.APPLICATION_ACCEPTED })
-      }
-
-      res.json(`Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`)
+      await DB.RUpdateApplicationRestaurant(restaurant, { status: RESTAURANT_STATUS.APPLICATION_ACCEPTED })
 
       await Email.sendSuccessfulApplicationEmail(user, restaurant)
+
+      res.json(`Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`)
     } catch (error) {
       Err.send(res, error)
     }
@@ -333,14 +330,23 @@ if (appEnv === 'development' || appEnv === 'staging') {
     } = req
 
     try {
-      if (!id) return Err.throw('No ID', 401)
-      const restaurant = await DB.RGetRestaurantByID(id)
-      if (!restaurant) return Err.throw('No restaurant', 401)
-      if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
-        restaurant.status = RESTAURANT_STATUS.APPLICATION_REJECTED
-        await restaurant.save()
+      const restaurant = await DB.RGetRestaurantByIDWithSuperAdmin(id)
+
+      if (!restaurant) {
+        Err.throw('No restaurant found', 401)
       }
-      return res.json(`Restaurant: ${restaurant.name} status is ${restaurant.status}`)
+
+      const user = await DB.getUserByID(restaurant.super_admin)
+
+      if (!user) {
+        Err.throw('No user found', 401)
+      }
+
+      await DB.RUpdateApplicationRestaurant(restaurant, { status: RESTAURANT_STATUS.APPLICATION_REJECTED })
+
+      await Email.sendRejectedApplicationEmail(user, restaurant)
+
+      res.json(`Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`)
     } catch (error) {
       Err.send(res, error)
     }

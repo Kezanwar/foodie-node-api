@@ -56,6 +56,10 @@
         font-size: 3rem;
       }
 
+      .primary {
+        color: #f0692a;
+      }
+
       .otp {
         margin-top: 24px;
         font-size: 20px;
@@ -149,16 +153,17 @@
                     <td valign="top">
                       <h2>Hi <%= locals?.receiver %>,</h2>
                       <h3><%= locals?.title %></h3>
-                      <p><%- locals?.content %></p>
-                      <% if(locals?.list) { %>
+                      <% if(locals?.content) { %> <% for (paragraph of content) { %>
+                      <p style="margin-bottom: 8px"><%- paragraph %></p>
+                      <% } %> <% } %> <% if(locals?.list) { %>
                       <ul style="margin-top: 16px">
                         <% for (item of list) { %>
                         <li style="margin-bottom: 8px"><%- item %></li>
                         <% } %>
                       </ul>
-                      <% } %> <% if(locals?.bottom_content) { %>
-                      <p><%- locals?.bottom_content %></p>
-                      <% } %>
+                      <% } %> <% if(locals?.bottom_content) { %> <% for (block of bottom_content) { %>
+                      <p style="margin-bottom: 8px"><%- block %></p>
+                      <% } %> <% } %>
                       <!-- BUTTON START -->
                       <table
                         style="padding: 24px 0px"

@@ -1,3 +1,4 @@
+import { resizeImg } from '#app/utilities/image.js'
 import { S3BaseUrl } from '../aws/index.js'
 import { mongo } from 'mongoose'
 
@@ -16,6 +17,14 @@ class ImageService {
   createImageName(uuid, imageType) {
     const type = 'image/jpeg'
     return `${uuid}-${imageType}.${type}`
+  }
+
+  resizeCoverPhoto(buffer) {
+    return resizeImg(buffer, { width: 1000 })
+  }
+
+  resizeAvatar(buffer) {
+    return resizeImg(buffer, { width: 500 })
   }
 
   createImgUUID() {

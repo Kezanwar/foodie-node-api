@@ -21,18 +21,6 @@ class TaskService {
       params: [country],
     })
   }
-  resizeCoverPhoto(buffer) {
-    return worker.call({
-      name: 'resizeImg',
-      params: [buffer, { width: 1000 }],
-    })
-  }
-  resizeAvatar(buffer) {
-    return worker.call({
-      name: 'resizeImg',
-      params: [buffer, { width: 500 }],
-    })
-  }
   orderSearchDealsByTextMatchRelevance(results, text) {
     return worker.call({
       name: 'orderSearchDealsByTextMatchRelevance',
