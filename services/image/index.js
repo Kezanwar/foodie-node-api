@@ -1,4 +1,4 @@
-import { resizeImg } from '#app/utilities/image.js'
+import sharp from 'sharp'
 import { S3BaseUrl } from '../aws/index.js'
 import { mongo } from 'mongoose'
 
@@ -10,6 +10,13 @@ export const RESTAURANT_IMAGES = {
 class ImageService {
   #accepted_file_types = ['image/jpeg', 'image/png']
 
+  #resizeImg(buffer, { height, width }) {
+    return sharp(buffer)
+      .jpeg()
+      .resize({ height: height, width: width, fit: 'contain', withoutEnlargement: false })
+      .toBuffer()
+  }
+
   isAcceptedFileType(check) {
     return this.#accepted_file_types.some((type) => type === check)
   }
@@ -20,11 +27,11 @@ class ImageService {
   }
 
   resizeCoverPhoto(buffer) {
-    return resizeImg(buffer, { width: 1000 })
+    return this.#resizeImg(buffer, { width: 1000 })
   }
 
   resizeAvatar(buffer) {
-    return resizeImg(buffer, { width: 500 })
+    return this.#resizeImg(buffer, { width: 500 })
   }
 
   createImgUUID() {
