@@ -1,5 +1,4 @@
 import { define } from 'nanolith'
-import { resizeImg } from './tasks/image.js'
 import {
   orderSearchDealsByTextMatchRelevance,
   checkSingleDealFollowAndFav,
@@ -9,7 +8,6 @@ import { getPopularRestaurantsAndCuisines } from './tasks/discover.js'
 import { editDealFindLocationsToAddRemoveAndUpdate, findCountryPhoneCode } from './tasks/locations.js'
 
 export const workerConfig = await define({
-  resizeImg,
   findCountryPhoneCode,
   checkSingleDealFollowAndFav,
   checkSingleRestaurantFollowAndFav,

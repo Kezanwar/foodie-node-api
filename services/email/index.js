@@ -43,8 +43,10 @@ class EmailService {
       const html = await this.#createActionEmailHTML({
         title: 'Please confirm your email address',
         receiver: user.first_name,
-        content: `You registered an account on Foodie, before being able to use your account you need to verify that this is your email address using the following OTP. 
+        content: [
+          `You registered an account on Foodie, before being able to use your account you need to verify that this is your email address using the following OTP. 
         <p class="otp"><strong>${user.auth_otp}</strong><p>`,
+        ],
       })
       const mailOptions = {
         from: this.#noreply,
@@ -64,8 +66,9 @@ class EmailService {
       const html = await this.#createActionEmailHTML({
         title: 'Change Password Request',
         receiver: user.first_name,
-        content:
+        content: [
           'You requested a password change, please click the button below to change your password. This link expires in 15mins.',
+        ],
         action_primary: { text: 'Change your password', url: `${baseUrl}/auth/change-password/${token}` },
       })
       const mailOptions = {
@@ -89,7 +92,7 @@ class EmailService {
 
       const html = await this.#createActionEmailHTML({
         title: `New restaurant application: ${restaurant.name}`,
-        content: 'Review the application and accept / decline using the actions below.',
+        content: ['Review the application and accept / decline using the actions below.'],
         receiver: 'Admin',
         list: [
           `Bio: ${restaurant.bio}`,
@@ -124,25 +127,23 @@ class EmailService {
     const html = await this.#createActionEmailHTML({
       receiver: user.first_name,
       title: `Congratulations!`,
-      content: `Great news! We're excited to advise that your application for <strong>${restaurant.name}</strong> to partner with Foodie has been approved. Welcome aboard!
-      </br>
-      </br>
-      At Foodie, we're all about helping restaurants like yours to shine. As our partner, you'll tap into a vibrant community of food lovers eager to discover what you bring to the table.
-      Here's what's in store for you as a Foodie partner:
+      content: [
+        `Great news! We're excited to advise that your application for <strong class="primary">${restaurant.name}</strong> to partner with Foodie has been approved. Welcome aboard! 🚀`,
+        `Here's what's in store for you as a Foodie partner:
       `,
-      list: [
-        `<strong>Boosted Visibility: </strong>Get your restaurant in front of our hungry audience actively seeking new deals and offers.`,
-        `<strong>Increased Revenues: </strong>Drive foot traffic and spike sales with tailored promotions and deals made just for your restaurant.`,
-        `<strong>Your own dashboard: </strong>As our partner, you'll gain access to your own dashboard, helping you to monitor the success of your deals and offers first hand.`,
       ],
-      bottom_content: `If you haven't already added some deals, now is the time to do so; and if you have, those deals and offers will go live as soon as you choose a subscription plan. So, head back to your dashboard to choose a subscription plan to start boosting footfall and increasing your sales.
-      </br>
-      </br>
-      Remember every subscription package comes with a <strong>free month</strong>, allowing you to test and see the results first hand!
-      </br>
-      </br>
-      Congratulations on joining the Foodie family! We're thrilled to have you on board.`,
+      list: [
+        `<strong class="primary">Boosted Visibility: </strong>Get your restaurant in front of our hungry audience actively seeking new deals and offers.`,
+        `<strong class="primary" >Increased Revenues: </strong>Drive foot traffic and spike sales with tailored promotions and deals made just for your restaurant.`,
+        `<strong class="primary">Your own dashboard: </strong>As our partner, you'll gain access to your own dashboard, helping you to monitor the success of your deals and offers first hand.`,
+      ],
+      bottom_content: [
+        `Head back to your dashboard, choose a subscription plan, create some deals and start boosting footfall and increasing your sales.`,
+        `Remember, each subscription tier comes with a <strong class="primary">free month</strong>, allowing you to test and see the results first hand!`,
+        `We're thrilled to have you on board.`,
+      ],
     })
+
     const mailOptions = {
       from: this.#noreply,
       to: user.email,
@@ -151,6 +152,26 @@ class EmailService {
     }
     const info = await transporter.sendMail(mailOptions)
     console.log('Successful application email sent: ' + info.response)
+  }
+
+  async sendRejectedApplicationEmail(user, restaurant) {
+    const html = await this.#createActionEmailHTML({
+      receiver: user.first_name,
+      title: `Sorry!`,
+      content: [
+        `Our team reviewed your application for <strong class="primary">${restaurant.name}</strong> to partner with Foodie, and unfortunately we have decided not to move forward with your application.`,
+        `If you have any questions regarding this please forward them to <a href="mailto:admin@thefoodie.app">admin@thefoodie.app</a>.`,
+      ],
+    })
+
+    const mailOptions = {
+      from: this.#noreply,
+      to: user.email,
+      subject: `Foodie Application`,
+      html,
+    }
+    const info = await transporter.sendMail(mailOptions)
+    console.log('Rejected application email sent: ' + info.response)
   }
 }
 
