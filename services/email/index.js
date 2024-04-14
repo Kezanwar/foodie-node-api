@@ -29,8 +29,10 @@ class EmailService {
     }
   }
 
-  //email addresses
-  #noreply = 'noreply@thefoodie.app'
+  #email_addresses = {
+    no_reply: 'noreply@thefoodie.app',
+    admins: ['shak@thefoodie.app', 'kez@thefoodie.app', 'admin@thefoodie.app'],
+  }
 
   //html templates
   #createActionEmailHTML(
@@ -58,7 +60,7 @@ class EmailService {
         ],
       })
       const mailOptions = {
-        from: this.#noreply,
+        from: this.#email_addresses.no_reply,
         to: user.email,
         subject: 'Please confirm your email address',
         html,
@@ -81,7 +83,7 @@ class EmailService {
         action_primary: { text: 'Change your password', url: `${baseUrl}/auth/change-password/${token}` },
       })
       const mailOptions = {
-        from: this.#noreply,
+        from: this.#email_addresses.no_reply,
         to: user.email,
         subject: 'Change password request',
         html,
@@ -120,8 +122,8 @@ class EmailService {
         },
       })
       const mailOptions = {
-        from: this.#noreply,
-        to: ['shak@thefoodie.app', 'kez@thefoodie.app', 'admin@thefoodie.app'],
+        from: this.#email_addresses.no_reply,
+        to: this.#email_addresses.admins,
         subject: `New restaurant application: ${restaurant.name}`,
         html,
       }
@@ -154,7 +156,7 @@ class EmailService {
     })
 
     const mailOptions = {
-      from: this.#noreply,
+      from: this.#email_addresses.no_reply,
       to: user.email,
       subject: `Foodie Application Accepted!`,
       html,
@@ -174,7 +176,7 @@ class EmailService {
     })
 
     const mailOptions = {
-      from: this.#noreply,
+      from: this.#email_addresses.no_reply,
       to: user.email,
       subject: `Foodie Application`,
       html,
