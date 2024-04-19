@@ -26,8 +26,8 @@ class ImageService {
     return `${uuid}-${imageType}.${type}`
   }
 
-  createLastUpdatedStr() {
-    return `${new Date().getTime()}`
+  appendLastUpdated(imgName) {
+    return `${imgName}?lu=${new Date().getTime()}`
   }
 
   resizeCoverPhoto(buffer) {
