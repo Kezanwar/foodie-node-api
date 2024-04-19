@@ -94,8 +94,10 @@ router.patch(
       await Promise.all(saveImagePromises)
 
       const newData = {
-        ...(imageNames.avatar && { avatar: imageNames.avatar }),
-        ...(imageNames.cover_photo && { cover_photo: imageNames.cover_photo }),
+        ...(imageNames.avatar && {
+          avatar: IMG.appendLastUpdated(imageNames.avatar),
+        }),
+        ...(imageNames.cover_photo && { cover_photo: IMG.appendLastUpdated(imageNames.cover_photo) }),
         name,
         bio,
         booking_link,

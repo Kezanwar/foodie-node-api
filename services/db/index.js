@@ -193,12 +193,10 @@ class DBService {
     let dealSet = null
     let locationSet = null
 
-    const { name, bio, cuisines, dietary_requirements } = this.#onRestUpdateCheckNewLocationAndDealDataChanges(
-      restaurant,
-      data
-    )
+    const { name, bio, cuisines, dietary_requirements, avatar, cover_photo } =
+      this.#onRestUpdateCheckNewLocationAndDealDataChanges(restaurant, data)
 
-    if (name || cuisines || dietary_requirements) {
+    if (name || cuisines || dietary_requirements || avatar || cover_photo) {
       dealSet = {}
       locationSet = {}
     }
@@ -207,6 +205,16 @@ class DBService {
       dealSet['restaurant.name'] = data.name
       locationSet['restaurant.name'] = data.name
     }
+
+    if (avatar) {
+      dealSet['restaurant.avatar'] = data.avatar
+      locationSet['restaurant.avatar'] = data.avatar
+    }
+    if (cover_photo) {
+      dealSet['restaurant.cover_photo'] = data.cover_photo
+      locationSet['restaurant.cover_photo'] = data.cover_photo
+    }
+
     if (cuisines) {
       dealSet.cuisines = data.cuisines
       locationSet.cuisines = data.cuisines
@@ -1152,6 +1160,8 @@ class DBService {
   //util priv
   #onRestUpdateCheckNewLocationAndDealDataChanges(restaurant, data) {
     return {
+      avatar: !!data.avatar,
+      cover_photo: !!data.cover_photo,
       cuisines: data.cuisines && this.#haveOptionsChanged(restaurant.cuisines, data.cuisines),
       dietary_requirements:
         data.dietary_requirements &&

@@ -22,8 +22,12 @@ class ImageService {
   }
 
   createImageName(uuid, imageType) {
-    const type = 'image/jpeg'
+    const type = 'jpeg'
     return `${uuid}-${imageType}.${type}`
+  }
+
+  appendLastUpdated(imgName) {
+    return `${imgName}?lu=${new Date().getTime()}`
   }
 
   resizeCoverPhoto(buffer) {
@@ -39,8 +43,7 @@ class ImageService {
   }
 
   prefixImageWithBaseUrlRest(imageName) {
-    const d = new Date()
-    return `${S3BaseUrl}${imageName}?${d.toTimeString().split(' ').join('').split('GMT')[0]}`
+    return `${S3BaseUrl}${imageName}`
   }
 }
 
