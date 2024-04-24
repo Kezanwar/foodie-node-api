@@ -9,7 +9,7 @@ const upload = multer({ storage: storage })
 import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
-import { appEnv } from '#app/config/config.js'
+import { isDev, isStaging } from '#app/config/config.js'
 
 import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
 
@@ -295,7 +295,7 @@ router.post(
   }
 )
 
-if (appEnv === 'development' || appEnv === 'staging') {
+if (isDev || isStaging) {
   router.get('/accept-application/:id', async (req, res) => {
     const {
       params: { id },
@@ -325,7 +325,7 @@ if (appEnv === 'development' || appEnv === 'staging') {
   })
 }
 
-if (appEnv === 'development' || appEnv === 'staging') {
+if (isDev || isStaging) {
   router.get('/decline-application/:id', async (req, res) => {
     const {
       params: { id },

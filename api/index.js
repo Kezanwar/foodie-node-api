@@ -7,7 +7,7 @@ import CustRouter from './cust/index.js'
 import OptionsRouter from './options/index.js'
 import PrototypeRouter from './prototype.js'
 
-import { appEnv } from '#app/config/config.js'
+import { isDev } from '#app/config/config.js'
 
 const router = Router()
 
@@ -19,7 +19,7 @@ router.use('/rest', RestRouter)
 router.use('/cust', CustRouter)
 router.use('/options', OptionsRouter)
 
-if (appEnv === 'development') {
+if (isDev) {
   router.use('/prototype', PrototypeRouter)
 }
 
