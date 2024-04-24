@@ -36,16 +36,17 @@ router.get(
 
       const locationsProm = DB.RGetRestaurantLocationsCount(restaurant._id)
 
-      const [active_deals, expired_deals, impressions_views_favourites, locations] = await Promise.all([
+      const followerProm = DB.RGetTotalRestaurantFollowersCount(restaurant._id)
+
+      const [active_deals, expired_deals, impressions_views_favourites, locations, followers] = await Promise.all([
         active_deals_prom,
         expired_deals_prom,
         impressions_views_favourites_prom,
         locationsProm,
+        followerProm,
       ])
 
       const booking_clicks = restaurant?.booking_clicks?.length || 0
-
-      const followers = restaurant?.followers?.length || 0
 
       return res
         .status(200)

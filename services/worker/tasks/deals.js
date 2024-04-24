@@ -23,7 +23,7 @@ const expAsPerc = (...args) => {
 //TASKS
 export const checkSingleDealFollowAndFav = (user, deal_id, location_id) => {
   const u = JSON.parse(user)
-  const is_following = !!u.following.find((follow) => follow.location_id === location_id)
+  const is_following = !!u.following.find((follow) => follow === location_id)
 
   const is_favourited = !!u.favourites.find(
     (favourite) => favourite.deal === deal_id && favourite.location_id === location_id
@@ -47,7 +47,7 @@ export const checkSingleRestaurantFollowAndFav = (user, location) => {
     })
   }
 
-  l.is_following = !!u.following.find((follow) => follow.location_id === l._id)
+  l.is_following = !!u.following.find((follow) => follow === l._id)
 
   return l
 }

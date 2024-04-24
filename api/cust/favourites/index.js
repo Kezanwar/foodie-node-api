@@ -1,9 +1,9 @@
 import { Router } from 'express'
 
-import { authWithCache, authWithFavFollow } from '#app/middleware/auth.js'
+import { authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validate.js'
 
-import { favouriteDealSchema } from '#app/validation/customer/deal.js'
+import { favouriteDealSchema, favouriteFollowSchema } from '#app/validation/customer/deal.js'
 
 import Err from '#app/services/error/index.js'
 import Redis from '#app/services/cache/redis.js'
@@ -40,11 +40,19 @@ router.patch('/', authWithCache, validate(favouriteDealSchema), async (req, res)
   }
 })
 
-router.get('/', authWithFavFollow, async (req, res) => {
-  const {
-    results: { following, favourites },
-  } = req
+router.get('/', validate(favouriteFollowSchema), authWithCache, async (req, res) => {
+  const { user } = req
+  const { page, lat, long } = req.query
+
+  const PAGE = Number(page)
+  const LAT = Number(lat)
+  const LONG = Number(long)
+
   try {
+    const [following, favourites] = await Promise.all([
+      DB.CGetFollowing(user, PAGE, LAT, LONG),
+      DB.CGetFavourites(user, PAGE, LAT, LONG),
+    ])
     return res.json({ following, favourites })
   } catch (error) {
     Err.send(res, error)

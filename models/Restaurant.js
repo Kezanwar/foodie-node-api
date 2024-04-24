@@ -2,7 +2,6 @@ import mongoose from 'mongoose'
 import { isMainThread } from 'node:worker_threads'
 
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
-import { FollowSchemaRestaurant } from './schemas/FollowSchema.js'
 
 import IMG from '#app/services/image/index.js'
 
@@ -82,7 +81,6 @@ const RestaurantSchema = new mongoose.Schema(
         type: String,
       },
     },
-    followers: [FollowSchemaRestaurant],
     cuisines: [CategorySchemaWithIndex],
     dietary_requirements: [CategorySchemaWithIndex],
     reviews: [
