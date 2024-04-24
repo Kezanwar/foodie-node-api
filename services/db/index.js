@@ -75,67 +75,6 @@ class DBService {
     await user.save()
   }
 
-  //usertype:customer user
-  async CGetUserWithFavAndFollow(id) {
-    const user = await User.aggregate([
-      {
-        $match: {
-          _id: this.makeMongoIDs(id),
-        },
-      },
-      {
-        $lookup: {
-          from: 'deals', // Replace with the name of your linked collection
-          localField: 'favourites.deal',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                name: 1,
-                description: 1,
-                start_date: 1,
-                end_date: 1,
-              },
-            },
-          ],
-          as: 'favourited_deals',
-        },
-      },
-      {
-        $lookup: {
-          from: 'locations', // Replace with the name of your linked collection
-          localField: 'following.location_id',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                location: {
-                  nickname: '$nickname',
-                  _id: '$_id',
-                },
-                restaurant: {
-                  id: '$restaurant.id',
-                  name: '$restaurant.name',
-                  avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
-                  cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
-                },
-              },
-            },
-          ],
-          as: 'following_locations',
-        },
-      },
-      {
-        $project: {
-          user: '$$ROOT',
-          favourites: '$favourited_deals',
-          following: '$following_locations',
-        },
-      },
-    ])
-    return user[0]
-  }
-
   //usertype:common options
   getCuisines() {
     return Cuisine.aggregate([
@@ -339,7 +278,31 @@ class DBService {
       }
     )
 
-    await Promise.all([locationProm, dealProm])
+    const userProm = User.bulkWrite([
+      {
+        updateMany: {
+          filter: {},
+          update: {
+            $pull: {
+              favourites: { location_id: location_id },
+            },
+          },
+        },
+      },
+      {
+        updateMany: {
+          filter: {},
+          update: {
+            $pull: {
+              following: location_id,
+            },
+          },
+        },
+      },
+    ])
+    //remove all favourites with location and all follows
+
+    await Promise.all([locationProm, dealProm, userProm])
   }
   async RUpdateOneLocation(rest_id, location_id, data) {
     const { nickname, address, phone_number, email, opening_times, long_lat } = data
@@ -424,6 +387,29 @@ class DBService {
   }
   RGetRestaurantLocationsCount(id) {
     return Location.countDocuments({ 'restaurant.id': id })
+  }
+  async RGetTotalRestaurantFollowersCount(id) {
+    const res = await Location.aggregate([
+      { $match: { 'restaurant.id': id } },
+      {
+        $project: {
+          followerLength: {
+            $cond: {
+              if: { $isArray: '$followers' }, // Check if the field is an array
+              then: { $size: '$followers' }, // If it's an array, get its size
+              else: 0, // If it's not an array (or doesn't exist), fallback to 0
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          count: { $sum: '$followerLength' },
+        },
+      },
+    ])
+    return res[0].count
   }
 
   //usertype:restaurant deals
@@ -638,7 +624,6 @@ class DBService {
     await Promise.all([dealProm, locProm])
   }
   async REditOneDeal(rest_id, currDeal, newData, newLocationsList) {
-    console.log(currDeal)
     const find = await Task.editDealFindLocationsToAddRemoveAndUpdate(currDeal, newLocationsList)
 
     const { remove, add, update } = find
@@ -740,7 +725,10 @@ class DBService {
       { $pull: { active_deals: { deal_id: deal._id } } }
     )
 
-    await Promise.all([dealProm, locationsProm])
+    //remove the deal from user favourites
+    const userProm = User.updateMany({}, { $pull: { favourites: { deal: deal._id } } })
+
+    await Promise.all([dealProm, locationsProm, userProm])
   }
 
   //usertype:customer deals
@@ -1114,32 +1102,106 @@ class DBService {
     const userProm = User.updateOne({ _id: user._id }, { $pull: { favourites: { deal: deal_id, location_id } } })
     await Promise.all([dealProm, userProm])
   }
+  async CGetFavourites(user, page, lat, long) {
+    const pageStart = page === 0 ? page : page * FEED_LIMIT - 1
+
+    const sliced = user.favourites.slice(pageStart, pageStart + FEED_LIMIT)
+    const locations = sliced.map((f) => f.location_id)
+    const deals = sliced.map((f) => f.deal)
+
+    const loctionsProm = Location.aggregate([
+      {
+        $match: {
+          _id: { $in: locations },
+        },
+      },
+      ...calculateDistancePipeline(lat, long, '$geometry.coordinates', 'distance_miles'),
+      {
+        $project: {
+          location: {
+            nickname: '$nickname',
+            distance_miles: '$distance_miles',
+            _id: '$_id',
+          },
+          restaurant: {
+            id: '$restaurant.id',
+            name: '$restaurant.name',
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+          },
+        },
+      },
+    ])
+
+    const dealsProm = Deal.find({
+      _id: { $in: deals },
+    })
+
+    const [l, d] = await Promise.all([loctionsProm, dealsProm])
+
+    console.log(d)
+
+    return d.map((deal, i) => ({ deal, location: l[i] }))
+  }
 
   //usertype:customer follow
-  async CFollowOneRestauarant(user, rest_id, location_id) {
-    const newRestFollower = { user: user._id, location_id }
-    const restProm = await Restaurant.updateOne(
+  async CFollowOneRestauarant(user, location_id) {
+    const locProm = await Location.updateOne(
       {
-        _id: rest_id,
+        _id: location_id,
       },
-      { $addToSet: { followers: newRestFollower } }
+      { $addToSet: { followers: user._id } }
     )
 
-    const newUserFollower = { restaurant: rest_id, location_id }
     const userProm = User.updateOne(
       {
         _id: user._id,
       },
-      { $addToSet: { following: newUserFollower } }
+      { $addToSet: { following: location_id } }
     )
 
-    await Promise.all([restProm, userProm])
+    await Promise.all([locProm, userProm])
   }
-  async CUnfollowOneRestaurant(user, rest_id, location_id) {
-    const restProm = Restaurant.updateOne({ _id: rest_id }, { $pull: { followers: { user: user._id, location_id } } })
-    const userProm = User.updateOne({ _id: user._id }, { $pull: { following: { restaurant: rest_id, location_id } } })
+  async CUnfollowOneRestaurant(user, location_id) {
+    const locProm = Location.updateOne(
+      {
+        _id: location_id,
+      },
+      { $pull: { followers: user._id } }
+    )
+    const userProm = User.updateOne({ _id: user._id }, { $pull: { following: { location_id } } })
 
-    await Promise.all([restProm, userProm])
+    await Promise.all([locProm, userProm])
+  }
+  async CGetFollowing(user, page, lat, long) {
+    const pageStart = page === 0 ? page : page * FEED_LIMIT - 1
+
+    const following = user.following.slice(pageStart, pageStart + FEED_LIMIT).map((f) => f.location_id)
+
+    const results = await Location.aggregate([
+      {
+        $match: {
+          _id: { $in: following },
+        },
+      },
+      ...calculateDistancePipeline(lat, long, '$geometry.coordinates', 'distance_miles'),
+      {
+        $project: {
+          location: {
+            nickname: '$nickname',
+            distance_miles: '$distance_miles',
+            _id: '$_id',
+          },
+          restaurant: {
+            id: '$restaurant.id',
+            name: '$restaurant.name',
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+          },
+        },
+      },
+    ])
+    return results
   }
 
   //usertype

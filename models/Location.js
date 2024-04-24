@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 
 import { isMainThread } from 'node:worker_threads'
+
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import GeoSchema from './schemas/GeoSchema.js'
 
@@ -81,6 +82,12 @@ const LocationSchema = new mongoose.Schema(
         close: { type: String },
       },
     },
+    followers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+      },
+    ],
     geometry: GeoSchema,
     restaurant: {
       id: {

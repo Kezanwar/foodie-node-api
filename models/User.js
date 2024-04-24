@@ -2,7 +2,6 @@ import { Schema, model } from 'mongoose'
 import { isMainThread } from 'node:worker_threads'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import { FavouriteSchemaUser } from './schemas/FavouriteSchema.js'
-import { FollowSchemaUser } from './schemas/FollowSchema.js'
 
 const UserSchema = new Schema(
   {
@@ -43,7 +42,12 @@ const UserSchema = new Schema(
       dietary_requirements: [CategorySchemaWithIndex],
     },
     favourites: [FavouriteSchemaUser],
-    following: [FollowSchemaUser],
+    following: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'location',
+      },
+    ],
     restaurant: {
       id: {
         type: Schema.Types.ObjectId,

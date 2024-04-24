@@ -17,7 +17,7 @@ router.post('/', validate(followRestSchema), authWithCache, async (req, res) => 
   } = req
 
   try {
-    await Promise.all([DB.CFollowOneRestauarant(user, rest_id, location_id), Redis.removeUserByID(user)])
+    await Promise.all([DB.CFollowOneRestauarant(user, location_id), Redis.removeUserByID(user)])
 
     return res.json({ rest_id, location_id, is_following: true })
   } catch (error) {
@@ -32,7 +32,7 @@ router.patch('/', authWithCache, validate(followRestSchema), async (req, res) =>
   } = req
 
   try {
-    await Promise.all([DB.CUnfollowOneRestaurant(user, rest_id, location_id), Redis.removeUserByID(user)])
+    await Promise.all([DB.CUnfollowOneRestaurant(user, location_id), Redis.removeUserByID(user)])
 
     return res.json({ rest_id, location_id, is_following: false })
   } catch (error) {

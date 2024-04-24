@@ -1,6 +1,7 @@
 import Deal from '#app/models/Deal.js'
 import Location from '#app/models/Location.js'
 import Restaurant from '#app/models/Restaurant.js'
+import User from '#app/models/User.js'
 
 import { addMonths } from 'date-fns'
 
@@ -46,6 +47,16 @@ class DevMigrations {
         l.restaurant.bio = rest.bio
         await l.save()
       }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async removeAllUserFavourites() {
+    try {
+      await User.updateMany({}, { favourites: [], following: [] })
+      await Deal.updateMany({}, { favourites: [] })
+      await Location.updateMany({}, { followers: [] })
     } catch (error) {
       console.error(error)
     }
