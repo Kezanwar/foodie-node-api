@@ -1,19 +1,15 @@
 export const baseUrl = process.env.BASE_URL
 
-export const appEnv = process.env.APP_ENV
+const appEnv = process.env.APP_ENV
 
-export const dashboardUrl =
-  appEnv === 'development'
-    ? 'http://localhost:3033'
-    : appEnv === 'staging'
-    ? 'https://dashboard.thefoodiestaging.app'
-    : appEnv === 'production'
-    ? 'https://dashboard.thefoodie.app'
-    : null
+export const isDev = appEnv === 'development'
+export const isStaging = appEnv === 'staging'
+export const isProd = appEnv === 'production'
 
-export const landingUrl =
-  appEnv === 'staging' || appEnv === 'development'
-    ? 'https://thefoodiestaging.app'
-    : appEnv === 'production'
-    ? 'https://thefoodie.app'
-    : null
+export const dashboardUrl = isStaging
+  ? 'https://dashboard.thefoodiestaging.app'
+  : isProd
+  ? 'https://dashboard.thefoodie.app'
+  : 'http://localhost:3033'
+
+export const landingUrl = isDev || isStaging ? 'https://thefoodiestaging.app' : isProd ? 'https://thefoodie.app' : null

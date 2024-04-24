@@ -1,3 +1,4 @@
+import { isDev } from '#app/config/config.js'
 import Deal from '#app/models/Deal.js'
 import Location from '#app/models/Location.js'
 import Restaurant from '#app/models/Restaurant.js'
@@ -63,6 +64,6 @@ class DevMigrations {
   }
 }
 
-const devMigrations = new DevMigrations()
+const devMigrations = isDev ? new DevMigrations() : null
 
 export default devMigrations
