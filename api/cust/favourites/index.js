@@ -8,6 +8,7 @@ import { favouriteDealSchema, favouriteFollowSchema } from '#app/validation/cust
 import Err from '#app/services/error/index.js'
 import Redis from '#app/services/cache/redis.js'
 import DB from '#app/services/db/index.js'
+import { FEED_LIMIT } from '#app/constants/deals.js'
 
 const router = Router()
 
@@ -40,7 +41,7 @@ router.patch('/', authWithCache, validate(favouriteDealSchema), async (req, res)
   }
 })
 
-router.get('/', validate(favouriteFollowSchema), authWithCache, async (req, res) => {
+router.get('/', authWithCache, validate(favouriteFollowSchema), async (req, res) => {
   const { user } = req
   const { page, lat, long } = req.query
 
@@ -49,11 +50,8 @@ router.get('/', validate(favouriteFollowSchema), authWithCache, async (req, res)
   const LONG = Number(long)
 
   try {
-    const [following, favourites] = await Promise.all([
-      DB.CGetFollowing(user, PAGE, LAT, LONG),
-      DB.CGetFavourites(user, PAGE, LAT, LONG),
-    ])
-    return res.json({ following, favourites })
+    const favourites = await DB.CGetFavourites(user, PAGE, LAT, LONG)
+    return res.json({ nextCursor: favourites.length < FEED_LIMIT ? null : PAGE + 1, deals: favourites })
   } catch (error) {
     Err.send(res, error)
   }

@@ -1084,7 +1084,7 @@ class DBService {
       {
         _id: deal_id,
       },
-      { $addToSet: { favourites: newDealFavourite } }
+      { $push: { favourites: { $each: [newDealFavourite], $position: 0 } } }
     )
 
     const newUserFavourite = { deal: deal_id, location_id }
@@ -1092,7 +1092,7 @@ class DBService {
       {
         _id: user._id,
       },
-      { $addToSet: { favourites: newUserFavourite } }
+      { $push: { favourites: { $each: [newUserFavourite], $position: 0 } } }
     )
 
     await Promise.all([dealProm, userProm])
@@ -1106,13 +1106,13 @@ class DBService {
     const pageStart = page === 0 ? page : page * FEED_LIMIT - 1
 
     const sliced = user.favourites.slice(pageStart, pageStart + FEED_LIMIT)
-    const locations = sliced.map((f) => f.location_id)
-    const deals = sliced.map((f) => f.deal)
+    const findLocations = sliced.map((f) => f.location_id)
+    const findDeals = sliced.map((f) => f.deal)
 
     const loctionsProm = Location.aggregate([
       {
         $match: {
-          _id: { $in: locations },
+          _id: { $in: findLocations },
         },
       },
       ...calculateDistancePipeline(lat, long, '$geometry.coordinates', 'distance_miles'),
@@ -1123,25 +1123,19 @@ class DBService {
             distance_miles: '$distance_miles',
             _id: '$_id',
           },
-          restaurant: {
-            id: '$restaurant.id',
-            name: '$restaurant.name',
-            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
-            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
-          },
         },
       },
     ])
 
     const dealsProm = Deal.find({
-      _id: { $in: deals },
-    })
+      _id: { $in: findDeals },
+    }).select('restaurant name is_expired')
 
-    const [l, d] = await Promise.all([loctionsProm, dealsProm])
+    const [locations, deals] = await Promise.all([loctionsProm, dealsProm])
 
-    console.log(d)
+    const results = await Task.buildCustomerFavouritesListFromResults(sliced, locations, deals)
 
-    return d.map((deal, i) => ({ deal, location: l[i] }))
+    return results
   }
 
   //usertype:customer follow
@@ -1150,14 +1144,14 @@ class DBService {
       {
         _id: location_id,
       },
-      { $addToSet: { followers: user._id } }
+      { $push: { followers: { $each: [user._id], $position: 0 } } }
     )
 
     const userProm = User.updateOne(
       {
         _id: user._id,
       },
-      { $addToSet: { following: location_id } }
+      { $push: { following: { $each: [location_id], $position: 0 } } }
     )
 
     await Promise.all([locProm, userProm])
@@ -1176,7 +1170,7 @@ class DBService {
   async CGetFollowing(user, page, lat, long) {
     const pageStart = page === 0 ? page : page * FEED_LIMIT - 1
 
-    const following = user.following.slice(pageStart, pageStart + FEED_LIMIT).map((f) => f.location_id)
+    const following = user.following.slice(pageStart, pageStart + FEED_LIMIT)
 
     const results = await Location.aggregate([
       {
