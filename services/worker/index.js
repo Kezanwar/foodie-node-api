@@ -45,6 +45,12 @@ class TaskService {
       params: [JSON.stringify(user), JSON.stringify(location)],
     })
   }
+  buildCustomerFavouritesListFromResults(sliced, locations, deals) {
+    return worker.call({
+      name: 'buildCustomerFavouritesListFromResults',
+      params: [JSON.stringify(sliced), JSON.stringify(locations), JSON.stringify(deals)],
+    })
+  }
 }
 
 const Task = new TaskService()

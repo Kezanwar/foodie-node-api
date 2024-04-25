@@ -3,6 +3,7 @@ import {
   orderSearchDealsByTextMatchRelevance,
   checkSingleDealFollowAndFav,
   checkSingleRestaurantFollowAndFav,
+  buildCustomerFavouritesListFromResults,
 } from './tasks/deals.js'
 import { getPopularRestaurantsAndCuisines } from './tasks/discover.js'
 import { editDealFindLocationsToAddRemoveAndUpdate, findCountryPhoneCode } from './tasks/locations.js'
@@ -14,6 +15,7 @@ export const workerConfig = await define({
   getPopularRestaurantsAndCuisines,
   orderSearchDealsByTextMatchRelevance,
   editDealFindLocationsToAddRemoveAndUpdate,
+  buildCustomerFavouritesListFromResults,
   // Functions don't have to be directly defined within the
   // object, they can be defined elsewhere outside, or even
   // imported from a totally different module.

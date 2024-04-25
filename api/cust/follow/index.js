@@ -9,6 +9,8 @@ import DB from '#app/services/db/index.js'
 
 import validate from '#app/middleware/validate.js'
 import { followRestSchema } from '#app/validation/customer/follow.js'
+import { favouriteFollowSchema } from '#app/validation/customer/deal.js'
+import { FEED_LIMIT } from '#app/constants/deals.js'
 
 router.post('/', validate(followRestSchema), authWithCache, async (req, res) => {
   const {
@@ -35,6 +37,22 @@ router.patch('/', authWithCache, validate(followRestSchema), async (req, res) =>
     await Promise.all([DB.CUnfollowOneRestaurant(user, location_id), Redis.removeUserByID(user)])
 
     return res.json({ rest_id, location_id, is_following: false })
+  } catch (error) {
+    Err.send(res, error)
+  }
+})
+
+router.get('/', authWithCache, validate(favouriteFollowSchema), async (req, res) => {
+  const { user } = req
+  const { page, lat, long } = req.query
+
+  const PAGE = Number(page)
+  const LAT = Number(lat)
+  const LONG = Number(long)
+
+  try {
+    const following = await DB.CGetFollowing(user, PAGE, LAT, LONG)
+    return res.json({ nextCursor: following.length < FEED_LIMIT ? null : PAGE + 1, restaurants: following })
   } catch (error) {
     Err.send(res, error)
   }

@@ -20,6 +20,14 @@ const expAsPerc = (...args) => {
   return sum / arg.length
 }
 
+const buildMapFromDocArray = (arr) =>
+  arr.reduce((map, obj) => {
+    if (!map[obj._id]) {
+      map[obj._id] = obj
+    }
+    return map
+  }, {})
+
 //TASKS
 export const checkSingleDealFollowAndFav = (user, deal_id, location_id) => {
   const u = JSON.parse(user)
@@ -99,4 +107,19 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
   }
 
   return sorted
+}
+
+export const buildCustomerFavouritesListFromResults = (slice, locations, deals) => {
+  const s = JSON.parse(slice)
+  const l = buildMapFromDocArray(JSON.parse(locations))
+  const d = buildMapFromDocArray(JSON.parse(deals))
+  return s.map(({ deal, location_id }) => {
+    return {
+      restaurant: d[deal].restaurant,
+      _id: d[deal]._id,
+      name: d[deal].name,
+      is_expired: d[deal].is_expired,
+      location: l[location_id].location,
+    }
+  })
 }
