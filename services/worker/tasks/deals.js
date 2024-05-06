@@ -1,4 +1,5 @@
 import levenshtein from '#app/utilities/levenshtein.js'
+import { S3BaseUrl } from '#app/services/aws/index.js'
 
 //UTILS
 const getOptionMatch = (search, arr) => {
@@ -114,12 +115,19 @@ export const buildCustomerFavouritesListFromResults = (slice, locations, deals) 
   const l = buildMapFromDocArray(JSON.parse(locations))
   const d = buildMapFromDocArray(JSON.parse(deals))
   return s.map(({ deal, location_id }) => {
-    return {
+    const r = {
       restaurant: d[deal].restaurant,
-      _id: d[deal]._id,
-      name: d[deal].name,
-      is_expired: d[deal].is_expired,
+      deal: {
+        _id: d[deal]._id,
+        name: d[deal].name,
+        is_expired: d[deal].is_expired,
+      },
       location: l[location_id].location,
     }
+    r.restaurant._id = r.restaurant.id
+    r.restaurant.cover_photo = `${S3BaseUrl}${r.restaurant.cover_photo}`
+    r.restaurant.avatar = `${S3BaseUrl}${r.restaurant.avatar}`
+    delete r.restaurant.id
+    return r
   })
 }
