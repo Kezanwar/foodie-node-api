@@ -238,7 +238,7 @@ class DBService {
             avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
             cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
             name: '$restaurant.name',
-            id: '$restaurant.id',
+            _id: '$restaurant.id',
           },
           address: 1,
           phone_number: 1,
@@ -801,7 +801,7 @@ class DBService {
           deal: {
             name: '$deals.name',
             description: '$deals.description',
-            id: '$deals._id',
+            _id: '$deals._id',
             is_favourited: {
               $cond: {
                 if: { $eq: [{ $size: { $ifNull: ['$deals.match_fav', []] } }, 1] },
@@ -811,13 +811,13 @@ class DBService {
             },
           },
           restaurant: {
-            id: '$restaurant.id',
+            _id: '$restaurant.id',
             name: '$restaurant.name',
             avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
             cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
           },
           location: {
-            id: '$_id',
+            _id: '$_id',
             nickname: '$nickname',
             distance_miles: '$distance_miles',
           },
@@ -895,7 +895,7 @@ class DBService {
           deal: {
             name: '$deals.name',
             description: '$deals.description',
-            id: '$deals._id',
+            _id: '$deals._id',
             is_favourited: {
               $cond: {
                 if: { $eq: [{ $size: { $ifNull: ['$deals.match_fav', []] } }, 1] },
@@ -905,7 +905,7 @@ class DBService {
             },
           },
           restaurant: {
-            id: '$restaurant.id',
+            _id: '$restaurant.id',
             name: '$restaurant.name',
             bio: '$restaurant.bio',
             avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
@@ -914,7 +914,7 @@ class DBService {
             dietary: '$dietary_requirements',
           },
           location: {
-            id: '$_id',
+            _id: '$_id',
             nickname: '$nickname',
             distance_miles: '$distance_miles',
           },
@@ -1102,7 +1102,7 @@ class DBService {
     const userProm = User.updateOne({ _id: user._id }, { $pull: { favourites: { deal: deal_id, location_id } } })
     await Promise.all([dealProm, userProm])
   }
-  async CGetFavourites(user, page, lat, long) {
+  async CGetFavourites(user, page) {
     const pageStart = page === 0 ? page : page * FEED_LIMIT - 1
 
     const sliced = user.favourites.slice(pageStart, pageStart + FEED_LIMIT)
@@ -1115,12 +1115,10 @@ class DBService {
           _id: { $in: findLocations },
         },
       },
-      ...calculateDistancePipeline(lat, long, '$geometry.coordinates', 'distance_miles'),
       {
         $project: {
           location: {
             nickname: '$nickname',
-            distance_miles: '$distance_miles',
             _id: '$_id',
           },
         },
@@ -1167,7 +1165,7 @@ class DBService {
 
     await Promise.all([locProm, userProm])
   }
-  async CGetFollowing(user, page, lat, long) {
+  async CGetFollowing(user, page) {
     const pageStart = page === 0 ? page : page * FEED_LIMIT - 1
 
     const following = user.following.slice(pageStart, pageStart + FEED_LIMIT)
@@ -1178,12 +1176,19 @@ class DBService {
           _id: { $in: following },
         },
       },
-      ...calculateDistancePipeline(lat, long, '$geometry.coordinates', 'distance_miles'),
+      {
+        $addFields: {
+          index: {
+            $indexOfArray: [following, '$_id'],
+          },
+        },
+      },
+      { $sort: { index: 1 } },
       {
         $project: {
           location: {
             nickname: '$nickname',
-            distance_miles: '$distance_miles',
+
             _id: '$_id',
           },
           restaurant: {

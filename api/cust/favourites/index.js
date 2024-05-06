@@ -43,14 +43,12 @@ router.patch('/', authWithCache, validate(favouriteDealSchema), async (req, res)
 
 router.get('/', authWithCache, validate(favouriteFollowSchema), async (req, res) => {
   const { user } = req
-  const { page, lat, long } = req.query
+  const { page } = req.query
 
   const PAGE = Number(page)
-  const LAT = Number(lat)
-  const LONG = Number(long)
 
   try {
-    const favourites = await DB.CGetFavourites(user, PAGE, LAT, LONG)
+    const favourites = await DB.CGetFavourites(user, PAGE)
     return res.json({ nextCursor: favourites.length < FEED_LIMIT ? null : PAGE + 1, deals: favourites })
   } catch (error) {
     Err.send(res, error)

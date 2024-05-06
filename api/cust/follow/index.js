@@ -44,14 +44,12 @@ router.patch('/', authWithCache, validate(followRestSchema), async (req, res) =>
 
 router.get('/', authWithCache, validate(favouriteFollowSchema), async (req, res) => {
   const { user } = req
-  const { page, lat, long } = req.query
+  const { page } = req.query
 
   const PAGE = Number(page)
-  const LAT = Number(lat)
-  const LONG = Number(long)
 
   try {
-    const following = await DB.CGetFollowing(user, PAGE, LAT, LONG)
+    const following = await DB.CGetFollowing(user, PAGE)
     return res.json({ nextCursor: following.length < FEED_LIMIT ? null : PAGE + 1, restaurants: following })
   } catch (error) {
     Err.send(res, error)
