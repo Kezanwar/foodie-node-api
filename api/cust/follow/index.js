@@ -11,6 +11,7 @@ import validate from '#app/middleware/validate.js'
 import { followRestSchema } from '#app/validation/customer/follow.js'
 import { favouriteFollowSchema } from '#app/validation/customer/deal.js'
 import { FEED_LIMIT } from '#app/constants/deals.js'
+import Task from '#app/services/worker/index.js'
 
 router.post('/', validate(followRestSchema), authWithCache, async (req, res) => {
   const {
@@ -19,6 +20,10 @@ router.post('/', validate(followRestSchema), authWithCache, async (req, res) => 
   } = req
 
   try {
+    if (await Task.userFollowsRestaurant(user, location_id)) {
+      Err.throw('You already follow this restaurant', 401)
+    }
+
     await Promise.all([DB.CFollowOneRestauarant(user, location_id), Redis.removeUserByID(user)])
 
     return res.json({ rest_id, location_id, is_following: true })
@@ -34,6 +39,10 @@ router.patch('/', authWithCache, validate(followRestSchema), async (req, res) =>
   } = req
 
   try {
+    if (!(await Task.userFollowsRestaurant(user, location_id))) {
+      Err.throw('You arent following this restaurant', 401)
+    }
+
     await Promise.all([DB.CUnfollowOneRestaurant(user, location_id), Redis.removeUserByID(user)])
 
     return res.json({ rest_id, location_id, is_following: false })
@@ -50,6 +59,7 @@ router.get('/', authWithCache, validate(favouriteFollowSchema), async (req, res)
 
   try {
     const following = await DB.CGetFollowing(user, PAGE)
+
     return res.json({ nextCursor: following.length < FEED_LIMIT ? null : PAGE + 1, restaurants: following })
   } catch (error) {
     Err.send(res, error)
