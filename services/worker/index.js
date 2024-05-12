@@ -51,6 +51,18 @@ class TaskService {
       params: [JSON.stringify(sliced), JSON.stringify(locations), JSON.stringify(deals)],
     })
   }
+  userFollowsRestaurant(user, location_id) {
+    return worker.call({
+      name: 'userFollowsRestaurant',
+      params: [JSON.stringify(user), location_id],
+    })
+  }
+  userHasFavouritedDeal(user, deal_id, location_id) {
+    return worker.call({
+      name: 'userHasFavouritedDeal',
+      params: [JSON.stringify(user), deal_id, location_id],
+    })
+  }
 }
 
 const Task = new TaskService()

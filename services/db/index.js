@@ -1103,7 +1103,7 @@ class DBService {
     await Promise.all([dealProm, userProm])
   }
   async CGetFavourites(user, page) {
-    const pageStart = page === 0 ? page : page * FEED_LIMIT - 1
+    const pageStart = page === 0 ? page : page * FEED_LIMIT
 
     const sliced = user.favourites.slice(pageStart, pageStart + FEED_LIMIT)
     const findLocations = sliced.map((f) => f.location_id)
@@ -1161,12 +1161,12 @@ class DBService {
       },
       { $pull: { followers: user._id } }
     )
-    const userProm = User.updateOne({ _id: user._id }, { $pull: { following: { location_id } } })
+    const userProm = User.updateOne({ _id: user._id }, { $pull: { following: location_id } })
 
     await Promise.all([locProm, userProm])
   }
   async CGetFollowing(user, page) {
-    const pageStart = page === 0 ? page : page * FEED_LIMIT - 1
+    const pageStart = page === 0 ? page : page * FEED_LIMIT
 
     const following = user.following.slice(pageStart, pageStart + FEED_LIMIT)
 

@@ -9,6 +9,7 @@ import Err from '#app/services/error/index.js'
 import Redis from '#app/services/cache/redis.js'
 import DB from '#app/services/db/index.js'
 import { FEED_LIMIT } from '#app/constants/deals.js'
+import Task from '#app/services/worker/index.js'
 
 const router = Router()
 
@@ -19,6 +20,10 @@ router.post('/', authWithCache, validate(favouriteDealSchema), async (req, res) 
   } = req
 
   try {
+    if (await Task.userHasFavouritedDeal(user, deal_id, location_id)) {
+      Err.throw('You already favourited this deal', 401)
+    }
+
     await Promise.all([DB.CFavouriteOneDeal(user, deal_id, location_id), Redis.removeUserByID(user)])
 
     return res.json({ deal_id, location_id, is_favourited: true })
@@ -33,6 +38,10 @@ router.patch('/', authWithCache, validate(favouriteDealSchema), async (req, res)
     user,
   } = req
   try {
+    if (!(await Task.userHasFavouritedDeal(user, deal_id, location_id))) {
+      Err.throw('You already dont have this deal favourited', 401)
+    }
+
     await Promise.all([DB.CUnfavouriteOneDeal(user, deal_id, location_id), Redis.removeUserByID(user)])
 
     return res.json({ deal_id, location_id, is_favourited: false })
