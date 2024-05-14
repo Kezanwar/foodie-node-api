@@ -190,14 +190,13 @@ class DBService {
   }
 
   //usertype:customer restaurant
-  CGetSingleRestaurantLocation(location_id, lat, long) {
+  CGetSingleRestaurantLocation(location_id) {
     return Location.aggregate([
       {
         $match: {
           _id: DB.makeMongoIDs(location_id),
         },
       },
-      ...calculateDistancePipeline(lat, long, '$geometry.coordinates', 'distance_miles'),
       {
         $lookup: {
           from: 'deals',
@@ -248,7 +247,7 @@ class DBService {
           cuisines: 1,
           distance_miles: 1,
           active_deals: '$deals',
-          geometry: 1,
+          coordinates: '$geometry.coordinates',
         },
       },
     ])
@@ -922,7 +921,7 @@ class DBService {
       },
     ])
   }
-  CGetSingleDeal(deal_id, location_id, long, lat) {
+  CGetSingleDeal(deal_id, location_id) {
     const [dealID, locationID] = this.makeMongoIDs(deal_id, location_id)
     return Deal.aggregate([
       {
@@ -960,7 +959,7 @@ class DBService {
                 address: 1,
                 phone_number: 1,
                 email: 1,
-                geometry: 1,
+                coordinates: '$geometry.coordinates',
                 nickname: 1,
               },
             },
@@ -983,9 +982,6 @@ class DBService {
           ],
         },
       },
-
-      ...calculateDistancePipeline(lat, long, '$matchedLocation.geometry.coordinates', 'distance_miles'),
-
       {
         $project: {
           restaurant: {
@@ -997,7 +993,6 @@ class DBService {
             booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
           },
           name: 1,
-          distance_miles: 1,
           description: 1,
           location: { $arrayElemAt: ['$loc', 0] },
           cuisines: 1,

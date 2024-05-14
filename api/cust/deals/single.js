@@ -16,14 +16,11 @@ dotenv.config()
 router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
   const {
     user,
-    query: { deal_id, location_id, long, lat },
+    query: { deal_id, location_id },
   } = req
 
   try {
-    const LONG = Number(long)
-    const LAT = Number(lat)
-
-    const dealProm = DB.CGetSingleDeal(deal_id, location_id, LONG, LAT)
+    const dealProm = DB.CGetSingleDeal(deal_id, location_id)
 
     const followFavProm = Task.checkSingleDealFollowAndFav(user, deal_id, location_id)
 
