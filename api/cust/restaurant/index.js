@@ -3,31 +3,23 @@ const router = Router()
 import dotenv from 'dotenv'
 
 import { authWithCache } from '#app/middleware/auth.js'
-import validate from '#app/middleware/validate.js'
 
 import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
 import Task from '#app/services/worker/index.js'
 
-import { singleRestaurantSchema } from '#app/validation/customer/restaurant.js'
-
 dotenv.config()
 
-router.get('/:id', authWithCache, validate(singleRestaurantSchema), async (req, res) => {
+router.get('/:id', authWithCache, async (req, res) => {
   const user = req.user
   const id = req.params?.id
-
-  const { long, lat } = req.query
-
-  const LONG = Number(long)
-  const LAT = Number(lat)
 
   try {
     if (!DB.isValidID(id)) {
       Err.throw('Restaurant not found', 404)
     }
 
-    const location = await DB.CGetSingleRestaurantLocation(id, LAT, LONG)
+    const location = await DB.CGetSingleRestaurantLocation(id)
 
     if (!location.length) {
       Err.throw('Restaurant not found', 404)
