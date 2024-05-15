@@ -1183,8 +1183,8 @@ class DBService {
         $project: {
           location: {
             nickname: '$nickname',
-
             _id: '$_id',
+            coordinates: '$geometry.coordinates',
           },
           restaurant: {
             id: '$restaurant.id',
