@@ -17,8 +17,8 @@ const S3 = new S3Client({
   region: bucketRegion,
 })
 
-class AWSService {
-  saveImage(name, buffer) {
+class AWS {
+  static saveImage(name, buffer) {
     const pc = new PutObjectCommand({
       Bucket: bucketName,
       Key: name,
@@ -28,7 +28,5 @@ class AWSService {
     return S3.send(pc)
   }
 }
-
-const AWS = new AWSService()
 
 export default AWS

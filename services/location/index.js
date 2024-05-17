@@ -5,19 +5,17 @@ import dotenv from 'dotenv'
 dotenv.config()
 const { upperCase, omit, capitalize } = pkg
 
-import { worker } from '#app/services/worker/index.js'
-
-class LocationService {
-  getID(doc) {
+class Loc {
+  static getID(doc) {
     if (doc._id) return doc._id.toHexString()
     if (doc.id) return doc?.id?.toHexString ? doc?.id?.toHexString() : doc.id
   }
 
-  shortPostocde(postcode) {
+  static shortPostocde(postcode) {
     return upperCase(postcode).split(' ').join('')
   }
 
-  createAddDealLocations(restaurantLocations, newDealLocationsIds) {
+  static createAddDealLocations(restaurantLocations, newDealLocationsIds) {
     return newDealLocationsIds.reduce((acc, curr) => {
       const location = restaurantLocations.find((rL) => this.getID(rL) === curr)
       if (location) {
@@ -27,28 +25,21 @@ class LocationService {
     }, [])
   }
 
-  editDealFindLocationsToAddRemoveAndUpdate(deal, newLocationIdList) {
-    return worker.call({
-      name: 'editDealFindLocationsToAddRemoveAndUpdate',
-      params: [JSON.stringify(deal), newLocationIdList],
-    })
-  }
-
-  checkIfAddLocationAlreadyExists(locations, address) {
+  static checkIfAddLocationAlreadyExists(locations, address) {
     return locations.some((l) => this.shortPostocde(l.address.postcode) === this.shortPostocde(address.postcode))
   }
 
-  checkIfEditLocationAlreadyExists(locations, id, address) {
+  static checkIfEditLocationAlreadyExists(locations, id, address) {
     return locations.some(
       (l) => this.getID(l) !== id && this.shortPostocde(l.address.postcode) === this.shortPostocde(address.postcode)
     )
   }
 
-  findLocationToEdit(locations, id) {
+  static findLocationToEdit(locations, id) {
     return locations.find((l) => this.getID(l) === id)
   }
 
-  async getTimezone({ lat, long }) {
+  static async getTimezone({ lat, long }) {
     if (!lat || !long) return undefined
     try {
       const response = await axios.get('https://timezone-by-location.p.rapidapi.com/timezone', {
@@ -72,7 +63,7 @@ class LocationService {
     }
   }
 
-  async getLongLat(address) {
+  static async getLongLat(address) {
     try {
       const sPostcode = address.postcode.toUpperCase()
       const sAddresLine1 = capitalize(address.address_line_1)
@@ -130,16 +121,14 @@ class LocationService {
     }
   }
 
-  pruneLocationForNewLocationResponse(location) {
+  static pruneLocationForNewLocationResponse(location) {
     const obj = location.toObject()
     return omit(obj, ['cuisines', 'dietary_requirements', 'restaurant', 'active_deals'])
   }
 
-  pruneLocationsListForDeleteLocationResponse(locations, deletedID) {
+  static pruneLocationsListForDeleteLocationResponse(locations, deletedID) {
     return [...locations.filter((rl) => this.getID(rl) !== deletedID)]
   }
 }
-
-const Loc = new LocationService()
 
 export default Loc

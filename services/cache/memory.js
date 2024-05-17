@@ -8,30 +8,28 @@ const KEYS = {
   RECENT_BLOGS: 'RECENT_BLOGS',
 }
 
-class MemoryCache {
+class Memory {
   //options
-  setCuisineOptions(cuisines) {
+  static setCuisineOptions(cuisines) {
     cache.put(KEYS.CUISINES, cuisines, ONE_DAY)
   }
-  getCuisineOptions() {
+  static getCuisineOptions() {
     return cache.get(KEYS.CUISINES)
   }
-  setDietaryOptions(dietary) {
+  static setDietaryOptions(dietary) {
     cache.put(KEYS.DIETARY, dietary, ONE_DAY)
   }
-  getDietaryOptions() {
+  static getDietaryOptions() {
     return cache.get(KEYS.DIETARY)
   }
 
   //blogs
-  setRecentBlogs(blogs) {
+  static setRecentBlogs(blogs) {
     cache.put(KEYS.RECENT_BLOGS, blogs, ONE_DAY)
   }
-  getRecentBlogs() {
+  static getRecentBlogs() {
     return cache.get(KEYS.RECENT_BLOGS)
   }
 }
-
-const Memory = new MemoryCache()
 
 export default Memory
