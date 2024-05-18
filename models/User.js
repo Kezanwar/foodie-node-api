@@ -48,6 +48,11 @@ const UserSchema = new Schema(
         ref: 'location',
       },
     ],
+    pushTokens: [
+      {
+        type: String,
+      },
+    ],
     restaurant: {
       id: {
         type: Schema.Types.ObjectId,

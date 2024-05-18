@@ -25,6 +25,7 @@ import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
 import Loc from '#app/services/location/index.js'
 import Str from '#app/services/string/index.js'
+import Notifications from '#app/services/notifications/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -171,6 +172,8 @@ router.post(
       })
 
       await DB.RCreateNewDeal(restaurant._id, newDeal, locations)
+
+      Notifications.emitNewDealNotification(newDeal)
 
       return res.status(200).json('Success')
     } catch (error) {

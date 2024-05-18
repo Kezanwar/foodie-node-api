@@ -150,6 +150,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       auth_method: Auth.jwtAuthMethod,
       auth_otp: Auth.createOTP(),
       email_confirmed: false,
+      pushTokens: [],
     })
 
     user.password = await Auth.hashUserGeneratedPW(password)
@@ -210,6 +211,7 @@ router.post('/register-google', async (req, res) => {
       email_confirmed: true,
       avatar: picture,
       auth_method: Auth.googleAuthMethod,
+      pushTokens: [],
     })
 
     user.password = await Auth.hashServerGeneratedPW(email)

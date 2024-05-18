@@ -62,6 +62,14 @@ class DevMigrations {
       console.error(error)
     }
   }
+
+  async setAllUserPushTokens() {
+    try {
+      await User.updateMany({}, { pushTokens: [] })
+    } catch (error) {
+      console.error(error)
+    }
+  }
 }
 
 const devMigrations = isDev ? new DevMigrations() : null

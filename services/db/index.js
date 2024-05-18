@@ -1198,6 +1198,31 @@ class DB {
     return results
   }
 
+  //notifications
+  static async getAllDealsLocationFollowersWithPushtokens(deal) {
+    //get locations
+    const locations = await Location.aggregate([
+      { $match: { _id: { $in: deal.locations.map((l) => l.location_id) } } },
+      {
+        $project: {
+          restaurant_name: '$restaurant.name',
+          location_name: '$nickname',
+        },
+      },
+    ])
+
+    //get followers pushtokens
+    const followerProms = locations.map((loc) => User.find({ following: loc._id }).select('first_name pushTokens'))
+    const followers = await Promise.all(followerProms)
+
+    //combine
+    followers.forEach((f, i) => {
+      locations[i].followers = f
+    })
+
+    return locations
+  }
+
   //usertype
 
   //util pub

@@ -63,6 +63,18 @@ class Task {
       params: [JSON.stringify(user), deal_id, location_id],
     })
   }
+  static createNewDealNotificationMessages(locations, deal) {
+    return worker.call({
+      name: 'createNewDealNotificationMessages',
+      params: [JSON.stringify(locations), JSON.stringify(deal)],
+    })
+  }
+  static chunkPushNotificationReceiptIds(receiptIds) {
+    return worker.call({
+      name: 'chunkPushNotificationReceiptIds',
+      params: [JSON.stringify(receiptIds)],
+    })
+  }
 }
 
 export default Task
