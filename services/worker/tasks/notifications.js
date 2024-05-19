@@ -1,5 +1,5 @@
 import { Expo } from 'expo-server-sdk'
-import { NOTIFICATION_TYPES } from '#app/constants/notifications.js'
+import { NOTICATION_NATIVE_APP_TYPES } from '#app/services/notifications/types.js'
 
 export const expo = new Expo()
 
@@ -19,9 +19,9 @@ export const createNewDealNotificationMessages = (locations, deal) => {
         messages.push({
           to: token,
           sound: 'default',
-          title: `${location.restaurant_name} ${location.location_name}`,
-          body: `Has posted a new deal, ${d.name}.`,
-          data: { type: NOTIFICATION_TYPES.NEW_DEAL, location_id: location._id, deal_id: d._id },
+          title: `Foodie`,
+          body: `${location.restaurant_name} ${location.location_name} has posted a new deal: ${d.name} - Check it out!`,
+          data: { type: NOTICATION_NATIVE_APP_TYPES.SINGLE_DEAL, location_id: location._id, deal_id: d._id },
         })
       }
     }
