@@ -6,7 +6,7 @@ import Task from '../worker/index.js'
 
 import { NOTIFICATION_TYPES } from '#app/constants/notifications.js'
 
-const expo = new Expo({ accessToken: '1' })
+const expo = new Expo()
 
 class Notifications {
   static #emitter = new EventEmitter()
@@ -51,17 +51,20 @@ class Notifications {
 
         // The receipts specify whether Apple or Google successfully received the
         // notification and information about an error, if one occurred.
-        for (let receipt of receipts) {
-          if (receipt.status === 'ok') {
-            continue
-          } else if (receipt.status === 'error') {
-            console.error(`There was an error sending a notification: ${receipt.message}`)
-            if (receipt.details && receipt.details.error) {
-              //TODO: Handle Reciept ERRORS
-              // The error codes are listed in the Expo documentation:
-              // https://docs.expo.dev/push-notifications/sending-notifications/#individual-errors
-              // You must handle the errors appropriately.
-              console.error(`The error code is ${receipt.details.error}`)
+
+        if (Array.isArray(receipts)) {
+          for (let receipt of receipts) {
+            if (receipt.status === 'ok') {
+              continue
+            } else if (receipt.status === 'error') {
+              console.error(`There was an error sending a notification: ${receipt.message}`)
+              if (receipt.details && receipt.details.error) {
+                //TODO: Handle Reciept ERRORS
+                // The error codes are listed in the Expo documentation:
+                // https://docs.expo.dev/push-notifications/sending-notifications/#individual-errors
+                // You must handle the errors appropriately.
+                console.error(`The error code is ${receipt.details.error}`)
+              }
             }
           }
         }
@@ -81,8 +84,10 @@ class Notifications {
     if (!locations.length) {
       return
     }
+
     const messages = await Task.createNewDealNotificationMessages(locations, deal)
-    await this.sendPushNotifications(messages)
+
+    await Notifications.sendPushNotifications(messages)
   }
 
   //start service

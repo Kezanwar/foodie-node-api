@@ -1,0 +1,7 @@
+export const NOTIFICATION_EVENT_TYPES = {
+  NEW_DEAL: 'NEW_DEAL',
+}
+
+export const NOTICATION_NATIVE_APP_TYPES = {
+  SINGLE_DEAL: 'SINGLE_DEAL',
+}
