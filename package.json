@@ -21,6 +21,7 @@
     "date-fns-tz": "^2.0.0",
     "dotenv": "^16.0.3",
     "ejs": "^3.1.9",
+    "expo-server-sdk": "^3.10.0",
     "express": "^4.17.2",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^6.7.0",

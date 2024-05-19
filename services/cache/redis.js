@@ -3,16 +3,16 @@ import dotenv from 'dotenv'
 import User from '#app/models/User.js'
 dotenv.config()
 
-class RedisCache {
-  #client = null
+class Redis {
+  static #client = null
 
-  #prefix = {
+  static #prefix = {
     user: 'user-',
     c_location: 'c-location-',
     c_deal: 'c-deal-',
   }
 
-  async connect() {
+  static async connect() {
     try {
       const connection = await createClient({ url: process.env.REDIS_URL }).connect()
       console.log('redis connected 🚀')
@@ -24,26 +24,24 @@ class RedisCache {
     }
   }
 
-  #getID(doc) {
+  static #getID(doc) {
     return doc._id.toHexString()
   }
 
-  async getUserByID(id) {
+  static async getUserByID(id) {
     const user = await this.#client.get(`${this.#prefix.user}${id}`)
     if (user) {
       return User.hydrate(JSON.parse(user))
     } else return null
   }
 
-  async setUserByID(user) {
+  static async setUserByID(user) {
     await this.#client.set(`${this.#prefix.user}${this.#getID(user)}`, JSON.stringify(user))
   }
 
-  async removeUserByID(user) {
+  static async removeUserByID(user) {
     await this.#client.del(`${this.#prefix.user}${this.#getID(user)}`)
   }
 }
-
-const Redis = new RedisCache()
 
 export default Redis

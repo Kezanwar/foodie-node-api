@@ -1,15 +1,13 @@
 import * as cron from 'node-cron'
 import expireDeals from './handlers/expire.js'
 
-class CronService {
-  #expireDeals() {
+class Crons {
+  static #expireDeals() {
     cron.schedule('0 * * * *', expireDeals, { scheduled: true })
   }
-  run() {
+  static start() {
     this.#expireDeals()
   }
 }
-
-const Crons = new CronService()
 
 export default Crons

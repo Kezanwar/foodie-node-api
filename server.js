@@ -18,16 +18,21 @@ const PORT = process.env.PORT
 
 //db
 import DB from './services/db/index.js'
-//crons
-import Crons from './services/crons/index.js'
 //redis
 import Redis from './services/cache/redis.js'
 //mixpanel
 import Mixpanel from './services/mixpanel/index.js'
+//notifications
+import Notifications from './services/notifications/index.js'
+//crons
+import Crons from './services/crons/index.js'
+
 //middlewares
 import rateLimiterMiddlware from './middleware/rate-limit.js'
+
 //api
 import api from './api/index.js'
+import devMigrations from './migrations/dev/index.js'
 
 //create app
 const app = express()
@@ -44,6 +49,12 @@ await Redis.connect()
 //connect to  mixpanel
 await Mixpanel.connect()
 
+//start notification service
+Notifications.start()
+
+//start crons
+Crons.start()
+
 //initialize middlewares
 app.use(json({ extended: false }))
 app.use(express.static(__dirname + '/public'))
@@ -58,9 +69,6 @@ app.use(
 //initialize api
 app.get('/', (req, res) => res.send('Foodie API Running'))
 app.use('/api', api)
-
-//start crons
-Crons.run()
 
 //start server
 app.listen(PORT, () => console.log(`server started on port ${PORT}`))

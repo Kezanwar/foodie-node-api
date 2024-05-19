@@ -1,9 +1,9 @@
 import mixpanel from 'mixpanel'
 
-class MixpanelService {
-  #client = null
+class Mixpanel {
+  static #client = null
 
-  async connect() {
+  static async connect() {
     try {
       this.#client = mixpanel.init(process.env.MIXPANEL_TOKEN, { host: 'api-eu.mixpanel.com' })
       console.log('mixpanel connected 🚀')
@@ -13,9 +13,9 @@ class MixpanelService {
     }
   }
 
-  #events = { cron_deals_expired: 'be_cron_deals_expired' }
+  static #events = { cron_deals_expired: 'be_cron_deals_expired' }
 
-  #track(eventName, props) {
+  static #track(eventName, props) {
     const _props = props ?? {}
     const _eventName = eventName ?? ''
     try {
@@ -25,11 +25,9 @@ class MixpanelService {
     }
   }
 
-  trackExpiredDeals(expiredResp) {
+  static trackExpiredDeals(expiredResp) {
     this.#track(this.#events.cron_deals_expired, expiredResp)
   }
 }
-
-const Mixpanel = new MixpanelService()
 
 export default Mixpanel

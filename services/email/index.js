@@ -16,12 +16,12 @@ const transporter = nodemailer.createTransport({
   },
 })
 
-class EmailService {
-  #getID(doc) {
+class Email {
+  static #getID(doc) {
     return doc._id.toHexString()
   }
 
-  async #createTestEmailHTMLFile(content) {
+  static async #createTestEmailHTMLFile(content) {
     try {
       await fs.writeFile('test.html', content)
     } catch (err) {
@@ -29,13 +29,13 @@ class EmailService {
     }
   }
 
-  #email_addresses = {
+  static #email_addresses = {
     no_reply: 'noreply@thefoodie.app',
     admins: ['shak@thefoodie.app', 'kez@thefoodie.app', 'admin@thefoodie.app'],
   }
 
   //html templates
-  #createActionEmailHTML(
+  static #createActionEmailHTML(
     data = {
       receiver: '',
       title: '',
@@ -49,7 +49,7 @@ class EmailService {
     return renderFile(process.cwd() + '/views/emails/action-email.ejs', data)
   }
 
-  async sendOTPEmail(user) {
+  static async sendOTPEmail(user) {
     try {
       const html = await this.#createActionEmailHTML({
         title: 'Please confirm your email address',
@@ -72,7 +72,7 @@ class EmailService {
     }
   }
 
-  async sendChangePasswordEmail(user, token) {
+  static async sendChangePasswordEmail(user, token) {
     try {
       const html = await this.#createActionEmailHTML({
         title: 'Change Password Request',
@@ -95,7 +95,7 @@ class EmailService {
     }
   }
 
-  async sendAdminReviewApplicationEmail({ restaurant, locations }) {
+  static async sendAdminReviewApplicationEmail({ restaurant, locations }) {
     try {
       const cuisinesText = restaurant.cuisines.map((c) => c.name).join(', ')
       const dietText = restaurant.dietary_requirements.map((c) => c.name).join(', ')
@@ -134,7 +134,7 @@ class EmailService {
     }
   }
 
-  async sendSuccessfulApplicationEmail(user, restaurant) {
+  static async sendSuccessfulApplicationEmail(user, restaurant) {
     const html = await this.#createActionEmailHTML({
       receiver: user.first_name,
       title: `Congratulations!`,
@@ -165,7 +165,7 @@ class EmailService {
     console.log('Successful application email sent: ' + info.response)
   }
 
-  async sendRejectedApplicationEmail(user, restaurant) {
+  static async sendRejectedApplicationEmail(user, restaurant) {
     const html = await this.#createActionEmailHTML({
       receiver: user.first_name,
       title: `Sorry!`,
@@ -185,7 +185,5 @@ class EmailService {
     console.log('Rejected application email sent: ' + info.response)
   }
 }
-
-export const Email = new EmailService()
 
 export default Email

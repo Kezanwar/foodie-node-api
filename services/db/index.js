@@ -20,10 +20,10 @@ import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 const MONGO_URI = process.env.MONGO_URI
 import { S3BaseUrl } from '#app/services/aws/index.js'
 
-class DBService {
+class DB {
   //admin
 
-  async setCuisineOptions() {
+  static async setCuisineOptions() {
     await Cuisine.deleteMany({})
 
     const data = this.#prepareOptionsForDB(CUISINES_DATA)
@@ -34,7 +34,7 @@ class DBService {
     }
   }
 
-  async setDietaryOptions() {
+  static async setDietaryOptions() {
     await DietaryRequirement.deleteMany({})
 
     const data = this.#prepareOptionsForDB(DIETARY_REQUIREMENTS)
@@ -46,7 +46,7 @@ class DBService {
   }
 
   //connection
-  async connect() {
+  static async connect() {
     try {
       await connect(MONGO_URI)
       console.log('mongo-db connected 🚀')
@@ -58,16 +58,16 @@ class DBService {
   }
 
   //usertype:common user
-  getUserByID(id) {
+  static getUserByID(id) {
     return User.findById(id)
   }
-  getUserByEmail(email) {
+  static getUserByEmail(email) {
     return User.findOne({ email: email.toLowerCase() })
   }
-  getUserByEmailWithPassword(email) {
+  static getUserByEmailWithPassword(email) {
     return User.findOne({ email: email.toLowerCase() }).select('+password')
   }
-  async updateUser(user, data) {
+  static async updateUser(user, data) {
     const dataArr = Object.entries(data)
     dataArr.forEach(([key, value]) => {
       user[key] = value
@@ -75,8 +75,14 @@ class DBService {
     await user.save()
   }
 
+  //usertype:customer
+  static async saveNewUserPushToken(user, pushToken) {
+    user.push_tokens.push(pushToken)
+    await user.save()
+  }
+
   //usertype:common options
-  getCuisines() {
+  static getCuisines() {
     return Cuisine.aggregate([
       {
         $project: {
@@ -86,7 +92,7 @@ class DBService {
       },
     ])
   }
-  getDietaryRequirements() {
+  static getDietaryRequirements() {
     return DietaryRequirement.aggregate([
       {
         $project: {
@@ -98,13 +104,13 @@ class DBService {
   }
 
   //usertype:restuarant restaurant
-  RGetRestaurantByID(id) {
+  static RGetRestaurantByID(id) {
     return Restaurant.findById(id)
   }
-  RGetRestaurantByIDWithSuperAdmin(id) {
+  static RGetRestaurantByIDWithSuperAdmin(id) {
     return Restaurant.findById(id).select('+super_admin')
   }
-  async RCreateNewRestaurant(company_info, user) {
+  static async RCreateNewRestaurant(company_info, user) {
     const rest = new Restaurant({
       company_info,
       super_admin: user._id,
@@ -117,14 +123,14 @@ class DBService {
     await Promise.all([rest.save(), user.save()])
     return { restaurant: rest, user: user }
   }
-  async RUpdateApplicationRestaurant(restaurant, data) {
+  static async RUpdateApplicationRestaurant(restaurant, data) {
     const dataArr = Object.entries(data)
     dataArr.forEach(([key, value]) => {
       restaurant[key] = value
     })
     await restaurant.save()
   }
-  async RUpdateAcceptedRestaurant(restaurant, data) {
+  static async RUpdateAcceptedRestaurant(restaurant, data) {
     const promises = []
 
     //if new data has changes that effect locations/deals
@@ -190,7 +196,7 @@ class DBService {
   }
 
   //usertype:customer restaurant
-  CGetSingleRestaurantLocation(location_id) {
+  static CGetSingleRestaurantLocation(location_id) {
     return Location.aggregate([
       {
         $match: {
@@ -254,15 +260,15 @@ class DBService {
   }
 
   //usertype:restaurant locations
-  RGetRestaurantLocations(id) {
+  static RGetRestaurantLocations(id) {
     return Location.find({ 'restaurant.id': id }).select('-cuisines -dietary_requirements -restaurant -active_deals')
   }
-  async RCreateNewLocation(data) {
+  static async RCreateNewLocation(data) {
     const location = new Location(data)
     await location.save()
     return location
   }
-  async RDeleteOneLocation(rest_id, location_id) {
+  static async RDeleteOneLocation(rest_id, location_id) {
     //delete the locations
     const locationProm = Location.deleteOne({ _id: location_id })
     //remove from all deals
@@ -303,7 +309,7 @@ class DBService {
 
     await Promise.all([locationProm, dealProm, userProm])
   }
-  async RUpdateOneLocation(rest_id, location_id, data) {
+  static async RUpdateOneLocation(rest_id, location_id, data) {
     const { nickname, address, phone_number, email, opening_times, long_lat } = data
     const locationID = this.makeMongoIDs(location_id)
 
@@ -341,19 +347,19 @@ class DBService {
   }
 
   //usertype:restaurant dashboard
-  RGetActiveDealsCount(id, current_date) {
+  static RGetActiveDealsCount(id, current_date) {
     return Deal.countDocuments({
       'restaurant.id': id,
       $or: [{ is_expired: false }, { end_date: { $gt: current_date } }],
     })
   }
-  RGetExpiredDealsCount(id, current_date) {
+  static RGetExpiredDealsCount(id, current_date) {
     return Deal.countDocuments({
       'restaurant.id': id,
       $or: [{ is_expired: true }, { end_date: { $lte: current_date } }],
     })
   }
-  RGetRestaurantImpressionsViewFavouritesStats(id) {
+  static RGetRestaurantImpressionsViewFavouritesStats(id) {
     return Deal.aggregate([
       {
         $match: {
@@ -384,10 +390,10 @@ class DBService {
       },
     ])
   }
-  RGetRestaurantLocationsCount(id) {
+  static RGetRestaurantLocationsCount(id) {
     return Location.countDocuments({ 'restaurant.id': id })
   }
-  async RGetTotalRestaurantFollowersCount(id) {
+  static async RGetTotalRestaurantFollowersCount(id) {
     const res = await Location.aggregate([
       { $match: { 'restaurant.id': id } },
       {
@@ -412,10 +418,10 @@ class DBService {
   }
 
   //usertype:restaurant deals
-  RGetDealByID(id) {
+  static RGetDealByID(id) {
     return Deal.findById(id)
   }
-  RGetActiveDeals(id, current_date) {
+  static RGetActiveDeals(id, current_date) {
     return Deal.aggregate([
       {
         $match: {
@@ -472,7 +478,7 @@ class DBService {
       },
     ]).sort({ updatedAt: -1 })
   }
-  RGetExpiredDeals(id, current_date) {
+  static RGetExpiredDeals(id, current_date) {
     return Deal.aggregate([
       {
         $match: {
@@ -510,7 +516,7 @@ class DBService {
       },
     ]).sort({ updatedAt: -1 })
   }
-  async RGetSingleDealWithStatsByID(rest_id, deal_id, current_date) {
+  static async RGetSingleDealWithStatsByID(rest_id, deal_id, current_date) {
     const deal = await Deal.aggregate([
       {
         $match: {
@@ -581,7 +587,7 @@ class DBService {
     ])
     return deal[0]
   }
-  async RGetDealAsTemplateByID(rest_id, deal_id) {
+  static async RGetDealAsTemplateByID(rest_id, deal_id) {
     const deal = await Deal.aggregate([
       {
         $match: {
@@ -607,7 +613,7 @@ class DBService {
     ])
     return deal[0]
   }
-  async RCreateNewDeal(rest_id, newDeal, newLocationsList) {
+  static async RCreateNewDeal(rest_id, newDeal, newLocationsList) {
     //save new deal
     const dealProm = newDeal.save()
 
@@ -622,7 +628,7 @@ class DBService {
 
     await Promise.all([dealProm, locProm])
   }
-  async REditOneDeal(rest_id, currDeal, newData, newLocationsList) {
+  static async REditOneDeal(rest_id, currDeal, newData, newLocationsList) {
     const find = await Task.editDealFindLocationsToAddRemoveAndUpdate(currDeal, newLocationsList)
 
     const { remove, add, update } = find
@@ -684,7 +690,7 @@ class DBService {
 
     await Promise.all(promises)
   }
-  async RExpireOneDeal(rest_id, deal, end_date) {
+  static async RExpireOneDeal(rest_id, deal, end_date) {
     //remove from location active deals
     const locationsProm = Location.updateMany(
       {
@@ -697,7 +703,7 @@ class DBService {
     deal.end_date = end_date
     await Promise.all([locationsProm, deal.save()])
   }
-  async RBulkExpireDealsFromDate(date) {
+  static async RBulkExpireDealsFromDate(date) {
     const filter = { end_date: { $lte: date }, is_expired: false }
     const toExpire = await Deal.find(filter)
     const proms = toExpire.map((deal) =>
@@ -712,7 +718,7 @@ class DBService {
     const expiredReq = await Deal.updateMany(filter, { is_expired: true })
     return expiredReq
   }
-  async RDeleteOneDeal(rest_id, deal) {
+  static async RDeleteOneDeal(rest_id, deal) {
     // delete the deal
     const dealProm = deal.deleteOne()
 
@@ -731,7 +737,7 @@ class DBService {
   }
 
   //usertype:customer deals
-  CGetFeed(user, page, long, lat, cuisines, dietary_requirements) {
+  static CGetFeed(user, page, long, lat, cuisines, dietary_requirements) {
     const query = { active_deals: { $ne: [], $exists: true } }
     if (cuisines) {
       query.cuisines = {
@@ -824,7 +830,7 @@ class DBService {
       },
     ]).sort({ 'location.distance_miles': 1 })
   }
-  CGetSearchFeed(user, long, lat, text) {
+  static CGetSearchFeed(user, long, lat, text) {
     return Location.aggregate([
       {
         $search: {
@@ -921,7 +927,7 @@ class DBService {
       },
     ])
   }
-  CGetSingleDeal(deal_id, location_id) {
+  static CGetSingleDeal(deal_id, location_id) {
     const [dealID, locationID] = this.makeMongoIDs(deal_id, location_id)
     return Deal.aggregate([
       {
@@ -1005,7 +1011,7 @@ class DBService {
   }
 
   //usertype:customer discover
-  CGetDiscover(long, lat) {
+  static CGetDiscover(long, lat) {
     return Location.aggregate([
       {
         $geoNear: {
@@ -1073,7 +1079,7 @@ class DBService {
   }
 
   //usertype:customer favourite
-  async CFavouriteOneDeal(user, deal_id, location_id) {
+  static async CFavouriteOneDeal(user, deal_id, location_id) {
     const newDealFavourite = { user: user._id, location_id }
     const dealProm = Deal.updateOne(
       {
@@ -1092,12 +1098,12 @@ class DBService {
 
     await Promise.all([dealProm, userProm])
   }
-  async CUnfavouriteOneDeal(user, deal_id, location_id) {
+  static async CUnfavouriteOneDeal(user, deal_id, location_id) {
     const dealProm = Deal.updateOne({ _id: deal_id }, { $pull: { favourites: { user: user._id, location_id } } })
     const userProm = User.updateOne({ _id: user._id }, { $pull: { favourites: { deal: deal_id, location_id } } })
     await Promise.all([dealProm, userProm])
   }
-  async CGetFavourites(user, page) {
+  static async CGetFavourites(user, page) {
     const pageStart = page === 0 ? page : page * FEED_LIMIT
 
     const sliced = user.favourites.slice(pageStart, pageStart + FEED_LIMIT)
@@ -1132,7 +1138,7 @@ class DBService {
   }
 
   //usertype:customer follow
-  async CFollowOneRestauarant(user, location_id) {
+  static async CFollowOneRestauarant(user, location_id) {
     const locProm = await Location.updateOne(
       {
         _id: location_id,
@@ -1149,7 +1155,7 @@ class DBService {
 
     await Promise.all([locProm, userProm])
   }
-  async CUnfollowOneRestaurant(user, location_id) {
+  static async CUnfollowOneRestaurant(user, location_id) {
     const locProm = Location.updateOne(
       {
         _id: location_id,
@@ -1160,7 +1166,7 @@ class DBService {
 
     await Promise.all([locProm, userProm])
   }
-  async CGetFollowing(user, page) {
+  static async CGetFollowing(user, page) {
     const pageStart = page === 0 ? page : page * FEED_LIMIT
 
     const following = user.following.slice(pageStart, pageStart + FEED_LIMIT)
@@ -1198,23 +1204,48 @@ class DBService {
     return results
   }
 
+  //notifications
+  static async getAllDealsLocationFollowersWithPushtokens(deal) {
+    //get locations
+    const locations = await Location.aggregate([
+      { $match: { _id: { $in: deal.locations.map((l) => l.location_id) } } },
+      {
+        $project: {
+          restaurant_name: '$restaurant.name',
+          location_name: '$nickname',
+        },
+      },
+    ])
+
+    //get followers pushtokens
+    const followerProms = locations.map((loc) => User.find({ following: loc._id }).select('first_name push_tokens'))
+    const followers = await Promise.all(followerProms)
+
+    //combine
+    followers.forEach((f, i) => {
+      locations[i].followers = f
+    })
+
+    return locations
+  }
+
   //usertype
 
   //util pub
-  makeMongoIDs(...args) {
+  static makeMongoIDs(...args) {
     if (args.length === 1) return new Types.ObjectId(args[0])
     else return args.map((i) => new Types.ObjectId(i))
   }
-  getID(doc) {
+  static getID(doc) {
     if (doc._id) return doc._id.toHexString()
     if (doc.id) return doc?.id?.toHexString ? doc?.id?.toHexString() : doc.id
   }
-  isValidID(str) {
+  static isValidID(str) {
     return isValidObjectId(str)
   }
 
   //util priv
-  #onRestUpdateCheckNewLocationAndDealDataChanges(restaurant, data) {
+  static #onRestUpdateCheckNewLocationAndDealDataChanges(restaurant, data) {
     return {
       avatar: !!data.avatar,
       cover_photo: !!data.cover_photo,
@@ -1226,23 +1257,21 @@ class DBService {
       bio: restaurant.bio !== data.bio,
     }
   }
-  #haveOptionsChanged(currentList, newList) {
+  static #haveOptionsChanged(currentList, newList) {
     return (
       newList.length !== currentList.length ||
       !!newList.filter((nc) => !currentList.find((rc) => rc.slug === nc.slug)).length
     )
   }
-  #sortOptions(a, b) {
+  static #sortOptions(a, b) {
     return a > b ? 1 : -1
   }
-  #prepareOptionsForDB(options) {
+  static #prepareOptionsForDB(options) {
     return options.sort(this.#sortOptions).map((c) => ({
       name: c,
       slug: c.split(' ').join('-').toLowerCase().replace(/&/g, 'and'),
     }))
   }
 }
-
-const DB = new DBService()
 
 export default DB
