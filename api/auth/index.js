@@ -7,6 +7,7 @@ import Auth from '#app/services/auth/index.js'
 import Email from '#app/services/email/index.js'
 import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
+import Str from '#app/services/string/index.js'
 
 import User from '#app/models/User.js'
 
@@ -15,7 +16,7 @@ import validate from '#app/middleware/validate.js'
 import { loginUserSchema, registerUserSchema } from '#app/validation/auth/auth.js'
 
 import { dashboardUrl } from '#app/config/config.js'
-import Str from '#app/services/string/index.js'
+import Notifications from '#app/services/notifications/index.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -41,7 +42,7 @@ router.get('/initialize', authWithCache, async (req, res) => {
 
 router.post('/login', validate(loginUserSchema), async (req, res) => {
   try {
-    const { email, password } = req.body
+    const { email, password, pushToken } = req.body
 
     let user = await DB.getUserByEmailWithPassword(email)
 
@@ -57,6 +58,16 @@ router.post('/login', validate(loginUserSchema), async (req, res) => {
 
     if (!isMatch) {
       Err.throw('Invalid credentials', 400)
+    }
+
+    if (pushToken) {
+      if (!Notifications.isValidPushToken(pushToken)) {
+        Err.throw('Invalid push token', 400)
+      }
+
+      if (!user.push_tokens.includes(pushToken)) {
+        await DB.saveNewUserPushToken(user, pushToken)
+      }
     }
 
     const payload = {
@@ -80,7 +91,7 @@ router.post('/login', validate(loginUserSchema), async (req, res) => {
 
 router.post('/login-google', async (req, res) => {
   try {
-    const { token } = req.body
+    const { token, pushToken } = req.body
 
     if (!token) {
       Err.throw('No token authentication error', 500)
@@ -98,6 +109,16 @@ router.post('/login-google', async (req, res) => {
 
     if (Auth.isJWTAuthMethod(user?.auth_method)) {
       Err.throw('User didnt sign up with google, please sign in with email & password')
+    }
+
+    if (pushToken) {
+      if (!Notifications.isValidPushToken(pushToken)) {
+        Err.throw('Invalid push token', 400)
+      }
+
+      if (!user.push_tokens.includes(pushToken)) {
+        await DB.saveNewUserPushToken(user, pushToken)
+      }
     }
 
     await Redis.setUserByID(user)
@@ -132,13 +153,19 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 
   try {
     // destructuring from req.body
-    const { first_name, last_name, email, password } = req.body
+    const { first_name, last_name, email, password, pushToken } = req.body
 
     // checking if user exists, if they do then send err
     let user = await DB.getUserByEmail(email)
 
     if (user) {
       Err.throw('User aleady exists', 400)
+    }
+
+    if (pushToken) {
+      if (!Notifications.isValidPushToken(pushToken)) {
+        Err.throw('Invalid push token', 400)
+      }
     }
 
     // create a new user with our schema and users details from req
@@ -150,7 +177,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       auth_method: Auth.jwtAuthMethod,
       auth_otp: Auth.createOTP(),
       email_confirmed: false,
-      pushTokens: [],
+      push_tokens: pushToken ? [pushToken] : [],
     })
 
     user.password = await Auth.hashUserGeneratedPW(password)
@@ -190,7 +217,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 router.post('/register-google', async (req, res) => {
   try {
     // destructuring from req.body
-    const { token } = req.body
+    const { token, pushToken } = req.body
     if (!token) Err.throw('No token authentication error', 500)
 
     const userRequested = await Auth.fetchGoogleOAuthUser(token)
@@ -203,6 +230,12 @@ router.post('/register-google', async (req, res) => {
       Err.throw('User already exists', 400)
     }
 
+    if (pushToken) {
+      if (!Notifications.isValidPushToken(pushToken)) {
+        Err.throw('Invalid push token', 400)
+      }
+    }
+
     // create a new user with our schema and users details from req
     user = new User({
       first_name: Str.capitalizeFirstLetter(given_name),
@@ -211,7 +244,7 @@ router.post('/register-google', async (req, res) => {
       email_confirmed: true,
       avatar: picture,
       auth_method: Auth.googleAuthMethod,
-      pushTokens: [],
+      push_tokens: pushToken ? [pushToken] : [],
     })
 
     user.password = await Auth.hashServerGeneratedPW(email)

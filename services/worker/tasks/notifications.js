@@ -15,7 +15,7 @@ export const createNewDealNotificationMessages = (locations, deal) => {
   const messages = []
   for (const location of l) {
     for (const follower of location.followers) {
-      for (const token of follower.pushTokens) {
+      for (const token of follower.push_tokens) {
         messages.push({
           to: token,
           sound: 'default',

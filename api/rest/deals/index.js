@@ -173,9 +173,9 @@ router.post(
 
       await DB.RCreateNewDeal(restaurant._id, newDeal, locations)
 
-      Notifications.emitNewDealNotification(newDeal)
+      res.status(200).json('Success')
 
-      return res.status(200).json('Success')
+      Notifications.emitNewDealNotification(newDeal)
     } catch (error) {
       Err.send(res, error)
     }

@@ -75,6 +75,12 @@ class DB {
     await user.save()
   }
 
+  //usertype:customer
+  static async saveNewUserPushToken(user, pushToken) {
+    user.push_tokens.push(pushToken)
+    await user.save()
+  }
+
   //usertype:common options
   static getCuisines() {
     return Cuisine.aggregate([
@@ -1212,7 +1218,7 @@ class DB {
     ])
 
     //get followers pushtokens
-    const followerProms = locations.map((loc) => User.find({ following: loc._id }).select('first_name pushTokens'))
+    const followerProms = locations.map((loc) => User.find({ following: loc._id }).select('first_name push_tokens'))
     const followers = await Promise.all(followerProms)
 
     //combine

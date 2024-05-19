@@ -32,6 +32,7 @@ import rateLimiterMiddlware from './middleware/rate-limit.js'
 
 //api
 import api from './api/index.js'
+import devMigrations from './migrations/dev/index.js'
 
 //create app
 const app = express()

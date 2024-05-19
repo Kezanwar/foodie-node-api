@@ -65,7 +65,15 @@ class DevMigrations {
 
   async setAllUserPushTokens() {
     try {
-      await User.updateMany({}, { pushTokens: [] })
+      await User.updateMany({}, { push_tokens: [] })
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async changePushTokensToSnakeCase() {
+    try {
+      await User.updateMany({}, { $unset: { pushTokens: 1 } })
     } catch (error) {
       console.error(error)
     }

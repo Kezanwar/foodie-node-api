@@ -48,7 +48,7 @@ const UserSchema = new Schema(
         ref: 'location',
       },
     ],
-    pushTokens: [
+    push_tokens: [
       {
         type: String,
       },
