@@ -28,19 +28,26 @@ class Redis {
     return doc._id.toHexString()
   }
 
+  static #getUserKey(arg) {
+    if (typeof arg === 'string') {
+      return `${this.#prefix.user}${arg}`
+    }
+    return `${this.#prefix.user}${this.#getID(arg)}`
+  }
+
   static async getUserByID(id) {
-    const user = await this.#client.get(`${this.#prefix.user}${id}`)
+    const user = await this.#client.get(this.#getUserKey(id))
     if (user) {
       return User.hydrate(JSON.parse(user))
     } else return null
   }
 
   static async setUserByID(user) {
-    await this.#client.set(`${this.#prefix.user}${this.#getID(user)}`, JSON.stringify(user))
+    await this.#client.set(this.#getUserKey(user), JSON.stringify(user))
   }
 
   static async removeUserByID(user) {
-    await this.#client.del(`${this.#prefix.user}${this.#getID(user)}`)
+    await this.#client.del(this.#getUserKey(user))
   }
 }
 

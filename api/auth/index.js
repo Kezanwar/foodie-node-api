@@ -65,6 +65,8 @@ router.post('/login', validate(loginUserSchema), async (req, res) => {
         Err.throw('Invalid push token', 400)
       }
 
+      await DB.clearPushTokenFromOtherUsers(pushToken, user._id)
+
       if (!user.push_tokens.includes(pushToken)) {
         await DB.saveNewUserPushToken(user, pushToken)
       }
@@ -116,6 +118,8 @@ router.post('/login-google', async (req, res) => {
         Err.throw('Invalid push token', 400)
       }
 
+      await DB.clearPushTokenFromOtherUsers(pushToken, user._id)
+
       if (!user.push_tokens.includes(pushToken)) {
         await DB.saveNewUserPushToken(user, pushToken)
       }
@@ -166,6 +170,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       if (!Notifications.isValidPushToken(pushToken)) {
         Err.throw('Invalid push token', 400)
       }
+      await DB.clearPushTokenFromOtherUsers(pushToken)
     }
 
     // create a new user with our schema and users details from req
@@ -234,6 +239,7 @@ router.post('/register-google', async (req, res) => {
       if (!Notifications.isValidPushToken(pushToken)) {
         Err.throw('Invalid push token', 400)
       }
+      await DB.clearPushTokenFromOtherUsers(pushToken)
     }
 
     // create a new user with our schema and users details from req
