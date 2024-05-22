@@ -13,7 +13,11 @@ import { getPopularRestaurantsAndCuisines } from './tasks/discover.js'
 
 import { editDealFindLocationsToAddRemoveAndUpdate, findCountryPhoneCode } from './tasks/locations.js'
 
-import { createNewDealNotificationMessages, chunkPushNotificationReceiptIds } from './tasks/notifications.js'
+import {
+  createNewDealNotificationMessages,
+  createCheckoutFeedNotificationMessages,
+  chunkPushNotificationReceiptIds,
+} from './tasks/notifications.js'
 
 export const workerConfig = await define({
   findCountryPhoneCode,
@@ -26,6 +30,7 @@ export const workerConfig = await define({
   userFollowsRestaurant,
   userHasFavouritedDeal,
   createNewDealNotificationMessages,
+  createCheckoutFeedNotificationMessages,
   chunkPushNotificationReceiptIds,
   // Functions don't have to be directly defined within the
   // object, they can be defined elsewhere outside, or even

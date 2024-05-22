@@ -69,6 +69,12 @@ class Task {
       params: [JSON.stringify(locations), JSON.stringify(deal)],
     })
   }
+  static createCheckoutFeedNotificationMessages(users) {
+    return worker.call({
+      name: 'createCheckoutFeedNotificationMessages',
+      params: [JSON.stringify(users)],
+    })
+  }
   static chunkPushNotificationReceiptIds(receiptIds) {
     return worker.call({
       name: 'chunkPushNotificationReceiptIds',

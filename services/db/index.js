@@ -1205,6 +1205,13 @@ class DB {
   }
 
   //notifications
+  static clearPushTokenFromOtherUsers(pushToken, user_id) {
+    const filter = user_id
+      ? { $and: [{ push_tokens: pushToken }, { _id: { $ne: user_id } }] }
+      : { push_tokens: pushToken }
+
+    return User.updateMany(filter, { $pull: { push_tokens: pushToken } })
+  }
   static async getAllDealsLocationFollowersWithPushtokens(deal) {
     //get locations
     const locations = await Location.aggregate([
@@ -1227,6 +1234,9 @@ class DB {
     })
 
     return locations
+  }
+  static async getAllUsersWithPushTokens() {
+    return User.find({ push_tokens: { $exists: true, $not: { $size: 0 } } }).select('push_tokens first_name email')
   }
 
   //usertype

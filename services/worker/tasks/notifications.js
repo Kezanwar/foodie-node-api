@@ -34,3 +34,23 @@ export const createNewDealNotificationMessages = (locations, deal) => {
 
   return expo.chunkPushNotifications(messages)
 }
+
+export const createCheckoutFeedNotificationMessages = (users) => {
+  const u = JSON.parse(users)
+  const messages = []
+  const title = 'Foodie'
+  const body = 'Chak de phatte!!'
+  const data = { type: NOTICATION_NATIVE_APP_TYPES.HOME_FEED }
+  for (const user of u) {
+    for (const token of user.push_tokens) {
+      messages.push({
+        to: token,
+        sound: 'default',
+        title,
+        body,
+        data,
+      })
+    }
+  }
+  return expo.chunkPushNotifications(messages)
+}

@@ -4,7 +4,7 @@ import { Expo } from 'expo-server-sdk'
 import DB from '../db/index.js'
 import Task from '../worker/index.js'
 
-import { NOTIFICATION_TYPES } from '#app/constants/notifications.js'
+import { NOTIFICATION_EVENT_TYPES } from './types.js'
 
 const expo = new Expo()
 
@@ -76,7 +76,7 @@ class Notifications {
 
   //events
   static emitNewDealNotification(deal) {
-    this.#emitter.emit(NOTIFICATION_TYPES.NEW_DEAL, deal)
+    this.#emitter.emit(NOTIFICATION_EVENT_TYPES.NEW_DEAL, deal)
   }
 
   static async handleNewDealNotification(deal) {
@@ -90,9 +90,25 @@ class Notifications {
     await Notifications.sendPushNotifications(messages)
   }
 
+  static emitCheckoutFeedNotification() {
+    this.#emitter.emit(NOTIFICATION_EVENT_TYPES.CHECKOUT_FEED)
+  }
+
+  static async handleCheckoutFeedNotification() {
+    const users = await DB.getAllUsersWithPushTokens()
+    if (!users.length) {
+      return
+    }
+    const messages = await Task.createCheckoutFeedNotificationMessages(users)
+    // console.log(messages)
+    // console.log(users)
+    Notifications.sendPushNotifications(messages)
+  }
+
   //start service
   static start() {
-    this.#emitter.on(NOTIFICATION_TYPES.NEW_DEAL, this.handleNewDealNotification)
+    this.#emitter.on(NOTIFICATION_EVENT_TYPES.NEW_DEAL, this.handleNewDealNotification)
+    this.#emitter.on(NOTIFICATION_EVENT_TYPES.CHECKOUT_FEED, this.handleCheckoutFeedNotification)
   }
 }
 

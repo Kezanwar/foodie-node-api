@@ -1,12 +1,23 @@
 import * as cron from 'node-cron'
-import expireDeals from './handlers/expire.js'
+
+import expireDealsHandler from './handlers/expire.js'
+import checkoutFeedNotificationHandler from './handlers/notifications.js'
+
+const SCHEDULES = {
+  DAILY_EVERY_HOUR: '0 * * * *',
+  DAILY_2PM: '0 14 * * *',
+}
 
 class Crons {
   static #expireDeals() {
-    cron.schedule('0 * * * *', expireDeals, { scheduled: true })
+    cron.schedule(SCHEDULES.DAILY_EVERY_HOUR, expireDealsHandler)
+  }
+  static #checkoutFeedNotification() {
+    cron.schedule(SCHEDULES.DAILY_2PM, checkoutFeedNotificationHandler)
   }
   static start() {
     this.#expireDeals()
+    this.#checkoutFeedNotification()
   }
 }
 

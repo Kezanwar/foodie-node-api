@@ -8,7 +8,7 @@ export const createExpiryDate = () => {
   return formatInTimeZone(new Date(), 'Etc/GMT+12', 'yyyy-MM-dd')
 }
 
-const expireDeals = async () => {
+const expireDealsHandler = async () => {
   try {
     const expireFrom = createExpiryDate()
     const expiredResults = await DB.RBulkExpireDealsFromDate(expireFrom)
@@ -18,4 +18,4 @@ const expireDeals = async () => {
   }
 }
 
-export default expireDeals
+export default expireDealsHandler
