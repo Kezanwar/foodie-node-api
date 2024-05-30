@@ -9,6 +9,7 @@ import Loc from '#app/services/location/index.js'
 
 import validate from '#app/middleware/validate.js'
 import { geoSchema } from '#app/validation/customer/geo.js'
+import Redis from '#app/services/cache/redis.js'
 
 router.post('/', validate(geoSchema), authWithCache, async (req, res) => {
   const {
@@ -23,7 +24,7 @@ router.post('/', validate(geoSchema), authWithCache, async (req, res) => {
       }
     }
 
-    await DB.setUserGeometry(user, long, lat)
+    await Promise.all([DB.setUserGeometry(user, long, lat), Redis.removeUserByID(user)])
     return res.json('success')
   } catch (error) {
     Err.send(res, error)
