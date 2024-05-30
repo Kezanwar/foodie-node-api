@@ -81,9 +81,8 @@ class DB {
     await user.save()
   }
 
-  static async setUserGeometry(user, long, lat) {
-    user.geometry = { coordinates: [long, lat] }
-    await user.save()
+  static setUserGeometry(user, long, lat) {
+    return User.updateOne({ _id: user._id }, { $set: { geometry: { coordinates: [long, lat] } } })
   }
 
   //usertype:common options
