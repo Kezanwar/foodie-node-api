@@ -1,6 +1,7 @@
 import pkg from 'lodash'
 import axios from 'axios'
 import dotenv from 'dotenv'
+import { getDistanceInMiles } from './util.js'
 
 dotenv.config()
 const { upperCase, omit, capitalize } = pkg
@@ -9,6 +10,10 @@ class Loc {
   static getID(doc) {
     if (doc._id) return doc._id.toHexString()
     if (doc.id) return doc?.id?.toHexString ? doc?.id?.toHexString() : doc.id
+  }
+
+  static getDistanceInMiles(geo1, geo2) {
+    return getDistanceInMiles(geo1, geo2)
   }
 
   static shortPostocde(postcode) {

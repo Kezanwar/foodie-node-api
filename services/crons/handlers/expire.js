@@ -4,7 +4,7 @@ import Err from '#app/services/error/index.js'
 import Mixpanel from '#app/services/mixpanel/index.js'
 import DB from '#app/services/db/index.js'
 
-export const createExpiryDate = () => {
+const createExpiryDate = () => {
   return formatInTimeZone(new Date(), 'Etc/GMT+12', 'yyyy-MM-dd')
 }
 

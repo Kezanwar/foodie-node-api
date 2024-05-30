@@ -2,6 +2,7 @@ import { Schema, model } from 'mongoose'
 import { isMainThread } from 'node:worker_threads'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import { FavouriteSchemaUser } from './schemas/FavouriteSchema.js'
+import GeoSchema from './schemas/GeoSchema.js'
 
 const UserSchema = new Schema(
   {
@@ -53,6 +54,7 @@ const UserSchema = new Schema(
         type: String,
       },
     ],
+    geometry: GeoSchema,
     restaurant: {
       id: {
         type: Schema.Types.ObjectId,

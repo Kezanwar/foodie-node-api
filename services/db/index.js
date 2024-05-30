@@ -81,6 +81,11 @@ class DB {
     await user.save()
   }
 
+  static async setUserGeometry(user, long, lat) {
+    user.geometry = { coordinates: [long, lat] }
+    await user.save()
+  }
+
   //usertype:common options
   static getCuisines() {
     return Cuisine.aggregate([
