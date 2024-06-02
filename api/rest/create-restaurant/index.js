@@ -11,7 +11,7 @@ import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
 import { isDev, isStaging } from '#app/config/config.js'
 
-import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
+import { RESTAURANT_REG_STEPS, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
 
 import Email from '#app/services/email/index.js'
 import IMG from '#app/services/image/index.js'
@@ -27,6 +27,7 @@ import {
   restaurantDetailsSchema,
   restaurantSubmitApplicationSchema,
 } from '#app/validation/restaurant/create-restaurant.js'
+import Permissions from '#app/services/permissions/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -64,7 +65,7 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
         Err.throw('Unable to find Restaurant or User Permissions')
       }
 
-      if (uRole !== RESTAURANT_ROLES.SUPER_ADMIN) {
+      if (!Permissions.hasEditPermission(uRole)) {
         Err.throw('Access denied - user permissions', 400)
       }
 
@@ -74,16 +75,14 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
         Err.throw('Restaurant doesnt exist', 400)
       }
 
-      if (currentRest.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+      if (Permissions.isApplicationProcessing(currentRest.status)) {
         Err.throw(
           'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
           400
         )
       }
 
-      if (currentRest) {
-        await DB.RUpdateApplicationRestaurant(currentRest, { company_info })
-      }
+      await DB.RUpdateApplicationRestaurant(currentRest, { company_info })
 
       return res.status(200).json(currentRest.toClient())
     }
@@ -99,7 +98,7 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
 router.post(
   '/details',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
+  restRoleGuard(Permissions.EDIT, { applicationOnly: true }),
   upload.fields([
     { name: 'avatar', maxCount: 1 },
     { name: 'cover_photo', maxCount: 1 },
@@ -121,7 +120,7 @@ router.post(
     // then destringifyd on the server
 
     try {
-      if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+      if (Permissions.isApplicationProcessing(restaurant.status)) {
         Err.throw(
           'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
           400
@@ -205,12 +204,12 @@ router.post(
 router.post(
   '/locations',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
+  restRoleGuard(Permissions.EDIT, { applicationOnly: true }),
   async (req, res) => {
     const { restaurant } = req
 
     try {
-      if (restaurant?.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+      if (Permissions.isApplicationProcessing(restaurant.status)) {
         Err.throw(
           'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
           400
@@ -249,7 +248,7 @@ router.post(
   '/submit-application',
   authWithCache,
   validate(restaurantSubmitApplicationSchema),
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
+  restRoleGuard(Permissions.EDIT, { applicationOnly: true }),
   async (req, res) => {
     const {
       restaurant,
@@ -257,7 +256,7 @@ router.post(
     } = req
 
     try {
-      if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+      if (Permissions.isApplicationProcessing(restaurant.status)) {
         Err.throw(
           'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
           400
