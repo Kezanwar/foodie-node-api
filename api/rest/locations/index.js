@@ -4,8 +4,6 @@ const router = Router()
 import dotenv from 'dotenv'
 dotenv.config()
 
-import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES } from '#app/constants/restaurant.js'
-
 import { authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validate.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
@@ -16,6 +14,7 @@ import Err from '#app/services/error/index.js'
 import Loc from '#app/services/location/index.js'
 import DB from '#app/services/db/index.js'
 import Task from '#app/services/worker/index.js'
+import Permissions from '#app/services/permissions/index.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check
@@ -24,7 +23,7 @@ import Task from '#app/services/worker/index.js'
 router.post(
   '/check',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { getLocations: true }),
+  restRoleGuard(Permissions.EDIT, { getLocations: true }),
   validate(checkLocationSchema),
   async (req, res) => {
     const {
@@ -56,7 +55,7 @@ router.post(
 router.post(
   '/add',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { getLocations: true }),
+  restRoleGuard(Permissions.EDIT, { getLocations: true }),
   validate(addLocationSchema),
   async (req, res) => {
     const {
@@ -114,48 +113,44 @@ router.post(
   }
 )
 
-router.post(
-  '/delete/:id',
-  authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { getLocations: true }),
-  async (req, res) => {
-    const {
-      restaurant,
-      locations,
-      params: { id },
-    } = req
-    try {
-      if (!id) {
-        Err.throw('Location ID is required', 401)
-      }
-
-      const rLocToDelete = Loc.findLocationToEdit(locations, id)
-
-      if (!rLocToDelete) {
-        Err.throw('Location not found', 401)
-      }
-
-      if (locations.length === 1) {
-        if (restaurant.registration_step === RESTAURANT_REG_STEPS.STEP_3_COMPLETE) {
-          await DB.RUpdateApplicationRestaurant({ registration_step: RESTAURANT_REG_STEPS.STEP_2_COMPLETE })
-        }
-      }
-
-      await DB.RDeleteOneLocation(restaurant._id, rLocToDelete._id)
-
-      const response = Loc.pruneLocationsListForDeleteLocationResponse(locations, id)
-
-      res.status(200).json(response)
-    } catch (error) {
-      Err.send(res, error)
+router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { getLocations: true }), async (req, res) => {
+  const {
+    restaurant,
+    locations,
+    params: { id },
+  } = req
+  try {
+    if (!id) {
+      Err.throw('Location ID is required', 401)
     }
+
+    const rLocToDelete = Loc.findLocationToEdit(locations, id)
+
+    if (!rLocToDelete) {
+      Err.throw('Location not found', 401)
+    }
+
+    if (locations.length === 1) {
+      console.log(Permissions.REG_STEP_2_COMPLETE)
+      if (Permissions.isStep3Complete(restaurant.registration_step)) {
+        await DB.RUpdateApplicationRestaurant(restaurant, { registration_step: Permissions.REG_STEP_2_COMPLETE })
+      }
+    }
+
+    await DB.RDeleteOneLocation(restaurant._id, rLocToDelete._id)
+
+    const response = Loc.pruneLocationsListForDeleteLocationResponse(locations, id)
+
+    res.status(200).json(response)
+  } catch (error) {
+    Err.send(res, error)
   }
-)
+})
 
 router.post(
   '/edit/check/:id',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { getLocations: true }),
+  restRoleGuard(Permissions.EDIT, { getLocations: true }),
   validate(checkLocationSchema),
   async (req, res) => {
     const {
@@ -196,7 +191,7 @@ router.post(
 router.patch(
   '/edit/:id',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { getLocations: true }),
+  restRoleGuard(Permissions.EDIT, { getLocations: true }),
   validate(addLocationSchema),
   async (req, res) => {
     const {
@@ -259,7 +254,7 @@ router.patch(
   }
 )
 
-router.get('/', authWithCache, restRoleGuard(RESTAURANT_ROLES.USER, { getLocations: true }), async (req, res) => {
+router.get('/', authWithCache, restRoleGuard(Permissions.EDIT, { getLocations: true }), async (req, res) => {
   const { locations } = req
   try {
     res.status(200).json(locations)

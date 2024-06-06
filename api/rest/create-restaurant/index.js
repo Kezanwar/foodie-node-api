@@ -11,8 +11,6 @@ import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
 import { isDev, isStaging } from '#app/config/config.js'
 
-import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
-
 import Email from '#app/services/email/index.js'
 import IMG from '#app/services/image/index.js'
 import AWS from '#app/services/aws/index.js'
@@ -27,6 +25,7 @@ import {
   restaurantDetailsSchema,
   restaurantSubmitApplicationSchema,
 } from '#app/validation/restaurant/create-restaurant.js'
+import Permissions from '#app/services/permissions/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -64,7 +63,7 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
         Err.throw('Unable to find Restaurant or User Permissions')
       }
 
-      if (uRole !== RESTAURANT_ROLES.SUPER_ADMIN) {
+      if (!Permissions.hasEditPermission(uRole)) {
         Err.throw('Access denied - user permissions', 400)
       }
 
@@ -74,16 +73,14 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
         Err.throw('Restaurant doesnt exist', 400)
       }
 
-      if (currentRest.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+      if (Permissions.isApplicationProcessing(currentRest.status)) {
         Err.throw(
           'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
           400
         )
       }
 
-      if (currentRest) {
-        await DB.RUpdateApplicationRestaurant(currentRest, { company_info })
-      }
+      await DB.RUpdateApplicationRestaurant(currentRest, { company_info })
 
       return res.status(200).json(currentRest.toClient())
     }
@@ -99,7 +96,7 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
 router.post(
   '/details',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
+  restRoleGuard(Permissions.EDIT, { applicationOnly: true }),
   upload.fields([
     { name: 'avatar', maxCount: 1 },
     { name: 'cover_photo', maxCount: 1 },
@@ -121,7 +118,7 @@ router.post(
     // then destringifyd on the server
 
     try {
-      if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+      if (Permissions.isApplicationProcessing(restaurant.status)) {
         Err.throw(
           'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
           400
@@ -180,8 +177,8 @@ router.post(
         ...(social_media && { social_media: JSON.parse(social_media) }),
       }
 
-      if (restaurant?.registration_step === RESTAURANT_REG_STEPS.STEP_1_COMPLETE) {
-        newData.registration_step = RESTAURANT_REG_STEPS.STEP_2_COMPLETE
+      if (Permissions.isStep1Complete(restaurant.registration_step)) {
+        newData.registration_step = Permissions.REG_STEP_2_COMPLETE
       }
 
       await DB.RUpdateApplicationRestaurant(restaurant, newData)
@@ -205,19 +202,19 @@ router.post(
 router.post(
   '/locations',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
+  restRoleGuard(Permissions.EDIT, { applicationOnly: true }),
   async (req, res) => {
     const { restaurant } = req
 
     try {
-      if (restaurant?.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+      if (Permissions.isApplicationProcessing(restaurant.status)) {
         Err.throw(
           'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
           400
         )
       }
 
-      if (!restaurant?.registration_step || restaurant?.registration_step === RESTAURANT_REG_STEPS.STEP_1_COMPLETE) {
+      if (Permissions.isStep1Complete(restaurant.registration_step)) {
         Err.throw('Error: Must complete step 1 & 2 first')
         return
       }
@@ -229,8 +226,8 @@ router.post(
         return
       }
 
-      if (restaurant.registration_step === RESTAURANT_REG_STEPS.STEP_2_COMPLETE) {
-        await DB.RUpdateApplicationRestaurant(restaurant, { registration_step: RESTAURANT_REG_STEPS.STEP_3_COMPLETE })
+      if (Permissions.isStep2Complete(restaurant.registration_step)) {
+        await DB.RUpdateApplicationRestaurant(restaurant, { registration_step: Permissions.REG_STEP_3_COMPLETE })
       }
 
       return res.status(200).json(restaurant.toClient())
@@ -249,7 +246,7 @@ router.post(
   '/submit-application',
   authWithCache,
   validate(restaurantSubmitApplicationSchema),
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { applicationOnly: true }),
+  restRoleGuard(Permissions.EDIT, { applicationOnly: true }),
   async (req, res) => {
     const {
       restaurant,
@@ -257,14 +254,14 @@ router.post(
     } = req
 
     try {
-      if (restaurant.status === RESTAURANT_STATUS.APPLICATION_PROCESSING) {
+      if (Permissions.isApplicationProcessing(restaurant.status)) {
         Err.throw(
           'Error: We are processing your application, please wait for an update via email before editing and resubmitting',
           400
         )
       }
 
-      if (restaurant.registration_step !== RESTAURANT_REG_STEPS.STEP_3_COMPLETE) {
+      if (!Permissions.isStep3Complete(restaurant.registration_step)) {
         Err.throw('Error: Must complete step 1 & 2 & 3 first')
         return
       }
@@ -279,8 +276,8 @@ router.post(
       const newData = {
         terms_and_conditions,
         privacy_policy,
-        registration_step: RESTAURANT_REG_STEPS.STEP_4_COMPLETE,
-        status: RESTAURANT_STATUS.APPLICATION_PROCESSING,
+        registration_step: Permissions.REG_STEP_4_COMPLETE,
+        status: Permissions.STATUS_APPLICATION_PROCESSING,
       }
 
       await Promise.all([
@@ -314,7 +311,7 @@ if (isDev || isStaging) {
         Err.throw('No user found', 401)
       }
 
-      await DB.RUpdateApplicationRestaurant(restaurant, { status: RESTAURANT_STATUS.APPLICATION_ACCEPTED })
+      await DB.RUpdateApplicationRestaurant(restaurant, { status: Permissions.STATUS_LIVE })
 
       await Email.sendSuccessfulApplicationEmail(user, restaurant)
 
@@ -344,7 +341,7 @@ if (isDev || isStaging) {
         Err.throw('No user found', 401)
       }
 
-      await DB.RUpdateApplicationRestaurant(restaurant, { status: RESTAURANT_STATUS.APPLICATION_REJECTED })
+      await DB.RUpdateApplicationRestaurant(restaurant, { status: Permissions.STATUS_APPLICATION_REJECTED })
 
       await Email.sendRejectedApplicationEmail(user, restaurant)
 
