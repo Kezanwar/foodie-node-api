@@ -61,7 +61,7 @@ const UserSchema = new Schema(
         ref: 'restaurant',
       },
       role: {
-        type: String,
+        type: Number,
       },
     },
   },
