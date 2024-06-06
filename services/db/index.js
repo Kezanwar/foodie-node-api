@@ -2,7 +2,6 @@ import dotenv from 'dotenv'
 dotenv.config()
 import { connect, isValidObjectId, Types } from 'mongoose'
 
-import { RESTAURANT_REG_STEPS, RESTAURANT_ROLES, RESTAURANT_STATUS } from '#app/constants/restaurant.js'
 import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.js'
 import { FEED_LIMIT, METER_TO_MILE_CONVERSION, RADIUS_METRES } from '#app/constants/deals.js'
 
@@ -19,6 +18,7 @@ import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 const MONGO_URI = process.env.MONGO_URI
 import { S3BaseUrl } from '#app/services/aws/index.js'
+import Permissions from '../permissions/index.js'
 
 class DB {
   //admin
@@ -118,11 +118,9 @@ class DB {
     const rest = new Restaurant({
       company_info,
       super_admin: user._id,
-      registration_step: RESTAURANT_REG_STEPS.STEP_1_COMPLETE,
-      status: RESTAURANT_STATUS.APPLICATION_PENDING,
       image_uuid: IMG.createImgUUID(),
     })
-    user.restaurant = { id: rest._id, role: RESTAURANT_ROLES.SUPER_ADMIN }
+    user.restaurant = { id: rest._id, role: Permissions.ROLE_SUPER_ADMIN }
 
     await Promise.all([rest.save(), user.save()])
     return { restaurant: rest, user: user }

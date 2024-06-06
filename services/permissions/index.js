@@ -37,7 +37,7 @@ class Permissions {
     NONE: 0,
     APPLICATION_PENDING: 1,
     APPLICATION_PROCESSING: 2,
-    APPLICATION_ACCEPTED: 4,
+    APPLICATION_ACCEPTED: 16,
     APPLICATION_REJECTED: 8,
     LIVE: 16,
     DISABLED: 32,
@@ -94,8 +94,65 @@ class Permissions {
     this.check(this.#RESTAURANT_STATUSES.APPLICATION_PROCESSING, status)
   }
 
+  static isRestaurantLive(status) {
+    return this.check(this.#RESTAURANT_STATUSES.LIVE, status)
+  }
+
   static isRestaurantDisabled(status) {
     return this.check(this.#RESTAURANT_STATUSES.DISABLED, status)
+  }
+
+  static #REGISTRATION_STEPS = {
+    NONE: 0,
+    STEP_1_COMPLETE: 1,
+    STEP_2_COMPLETE: 2,
+    STEP_3_COMPLETE: 4,
+    STEP_4_COMPLETE: 8,
+  }
+
+  static get REG_STEP_1_COMPLETE() {
+    return this.#REGISTRATION_STEPS.STEP_1_COMPLETE
+  }
+
+  static get REG_STEP_2_COMPLETE() {
+    return this.#REGISTRATION_STEPS.STEP_2_COMPLETE
+  }
+
+  static get REG_STEP_3_COMPLETE() {
+    return this.#REGISTRATION_STEPS.STEP_3_COMPLETE
+  }
+
+  static get REG_STEP_4_COMPLETE() {
+    return this.#REGISTRATION_STEPS.STEP_4_COMPLETE
+  }
+
+  static isStep1Complete(step) {
+    return this.check(this.#REGISTRATION_STEPS.STEP_1_COMPLETE, step)
+  }
+
+  static isStep2Complete(step) {
+    return this.check(this.#REGISTRATION_STEPS.STEP_2_COMPLETE, step)
+  }
+
+  static isStep3Complete(step) {
+    return this.check(this.#REGISTRATION_STEPS.STEP_3_COMPLETE, step)
+  }
+
+  static isStep4Complete(step) {
+    return this.check(this.#REGISTRATION_STEPS.STEP_4_COMPLETE, step)
+  }
+
+  static #SUBSCRIBES_STATUS = {
+    NOT_SUBSCRIBED: 0,
+    SUBSCRIBED: 1,
+  }
+
+  static get SUBSCRIBED() {
+    return this.#SUBSCRIBES_STATUS.SUBSCRIBED
+  }
+
+  static get NOT_SUBSCRIBED() {
+    return this.#SUBSCRIBES_STATUS.NOT_SUBSCRIBED
   }
 
   //generic

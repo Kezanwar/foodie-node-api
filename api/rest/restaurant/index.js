@@ -17,7 +17,7 @@ import validate from '#app/middleware/validate.js'
 
 import { restaurantDetailsSchema } from '#app/validation/restaurant/create-restaurant.js'
 
-import { RESTAURANT_ROLES } from '#app/constants/restaurant.js'
+import Permissions from '#app/services/permissions/index.js'
 
 router.get('/', authWithCache, async (req, res) => {
   const { user } = req
@@ -38,7 +38,7 @@ router.get('/', authWithCache, async (req, res) => {
 router.patch(
   '/edit',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
+  restRoleGuard(Permissions.EDIT, { acceptedOnly: true }),
   upload.fields([
     { name: 'avatar', maxCount: 1 },
     { name: 'cover_photo', maxCount: 1 },

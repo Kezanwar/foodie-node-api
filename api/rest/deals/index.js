@@ -9,7 +9,6 @@ import { isBefore } from 'date-fns'
 import Deal from '#app/models/Deal.js'
 
 // constants
-import { RESTAURANT_ROLES } from '#app/constants/restaurant.js'
 import { DEALS_PER_LOCATION } from '#app/constants/deals.js'
 
 // middlewares
@@ -26,84 +25,70 @@ import DB from '#app/services/db/index.js'
 import Loc from '#app/services/location/index.js'
 import Str from '#app/services/string/index.js'
 import Notifications from '#app/services/notifications/index.js'
+import Permissions from '#app/services/permissions/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
 //! @access authenticated & no restauant || restaurant
 
-router.get(
-  '/active',
-  authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
-  async (req, res) => {
-    const {
-      restaurant,
-      query: { current_date },
-    } = req
-    try {
-      let currentDate = current_date ? new Date(current_date) : new Date()
-
-      const active_deals = await DB.RGetActiveDeals(restaurant._id, currentDate)
-
-      res.json(active_deals)
-    } catch (error) {
-      Err.send(res, error)
-    }
-  }
-)
-
-router.get(
-  '/expired',
-  authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
-  async (req, res) => {
-    const {
-      restaurant,
-      query: { current_date },
-    } = req
-    try {
-      let currentDate = current_date ? new Date(current_date) : new Date()
-
-      const expired_deals = await DB.RGetExpiredDeals(restaurant._id, currentDate)
-
-      res.json(expired_deals)
-    } catch (error) {
-      Err.send(res, error)
-    }
-  }
-)
-
-router.get(
-  '/single/:id',
-  authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
-  async (req, res) => {
-    const {
-      params: { id },
-      restaurant,
-      query: { current_date },
-    } = req
-
+router.get('/active', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedOnly: true }), async (req, res) => {
+  const {
+    restaurant,
+    query: { current_date },
+  } = req
+  try {
     let currentDate = current_date ? new Date(current_date) : new Date()
 
-    try {
-      const deal = await DB.RGetSingleDealWithStatsByID(restaurant._id, id, currentDate)
+    const active_deals = await DB.RGetActiveDeals(restaurant._id, currentDate)
 
-      if (!deal) {
-        Err.throw('Deal not found', 402)
-      }
-
-      res.json(deal)
-    } catch (error) {
-      Err.send(res, error)
-    }
+    res.json(active_deals)
+  } catch (error) {
+    Err.send(res, error)
   }
-)
+})
+
+router.get('/expired', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedOnly: true }), async (req, res) => {
+  const {
+    restaurant,
+    query: { current_date },
+  } = req
+  try {
+    let currentDate = current_date ? new Date(current_date) : new Date()
+
+    const expired_deals = await DB.RGetExpiredDeals(restaurant._id, currentDate)
+
+    res.json(expired_deals)
+  } catch (error) {
+    Err.send(res, error)
+  }
+})
+
+router.get('/single/:id', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedOnly: true }), async (req, res) => {
+  const {
+    params: { id },
+    restaurant,
+    query: { current_date },
+  } = req
+
+  let currentDate = current_date ? new Date(current_date) : new Date()
+
+  try {
+    const deal = await DB.RGetSingleDealWithStatsByID(restaurant._id, id, currentDate)
+
+    if (!deal) {
+      Err.throw('Deal not found', 402)
+    }
+
+    res.json(deal)
+  } catch (error) {
+    Err.send(res, error)
+  }
+})
 
 router.get(
   '/use-template/:id',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
+  restRoleGuard(Permissions.EDIT, { acceptedOnly: true }),
   async (req, res) => {
     const {
       params: { id },
@@ -127,7 +112,7 @@ router.get(
 router.post(
   '/add',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true, getLocations: true }),
+  restRoleGuard(Permissions.EDIT, { acceptedOnly: true, getLocations: true }),
   validate(addDealSchema),
   async (req, res) => {
     const {
@@ -185,7 +170,7 @@ router.post(
 router.patch(
   '/edit/:id',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true, getLocations: true }),
+  restRoleGuard(Permissions.EDIT, { acceptedOnly: true, getLocations: true }),
   validate(editDealSchema),
   async (req, res) => {
     const {
@@ -235,39 +220,34 @@ router.patch(
   }
 )
 
-router.post(
-  '/delete/:id',
-  authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
-  async (req, res) => {
-    const {
-      restaurant,
-      params: { id },
-    } = req
+router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedOnly: true }), async (req, res) => {
+  const {
+    restaurant,
+    params: { id },
+  } = req
 
-    try {
-      const deal = await DB.RGetDealByID(id)
-      if (!deal) {
-        Err.throw('Deal not found', 400)
-      }
-
-      if (DB.getID(deal.restaurant) !== DB.getID(restaurant)) {
-        Err.throw('Unauthorized to delete this deal', 400)
-      }
-
-      await DB.RDeleteOneDeal(restaurant._id, deal)
-
-      return res.status(200).json('Success')
-    } catch (error) {
-      Err.send(res, error)
+  try {
+    const deal = await DB.RGetDealByID(id)
+    if (!deal) {
+      Err.throw('Deal not found', 400)
     }
+
+    if (DB.getID(deal.restaurant) !== DB.getID(restaurant)) {
+      Err.throw('Unauthorized to delete this deal', 400)
+    }
+
+    await DB.RDeleteOneDeal(restaurant._id, deal)
+
+    return res.status(200).json('Success')
+  } catch (error) {
+    Err.send(res, error)
   }
-)
+})
 
 router.patch(
   '/expire/:id',
   authWithCache,
-  restRoleGuard(RESTAURANT_ROLES.SUPER_ADMIN, { acceptedOnly: true }),
+  restRoleGuard(Permissions.EDIT, { acceptedOnly: true }),
   async (req, res) => {
     const {
       restaurant,

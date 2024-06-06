@@ -4,6 +4,7 @@ import { isMainThread } from 'node:worker_threads'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 
 import IMG from '#app/services/image/index.js'
+import Permissions from '#app/services/permissions/index.js'
 
 const RestaurantSchema = new mongoose.Schema(
   {
@@ -110,16 +111,18 @@ const RestaurantSchema = new mongoose.Schema(
       type: String,
     },
     is_subscribed: {
-      type: Boolean,
+      type: Number,
+      default: Permissions.NOT_SUBSCRIBED,
     },
     registration_step: {
-      type: String,
-      required: true,
+      type: Number,
+      default: Permissions.REG_STEP_1_COMPLETE,
     },
     status: {
-      type: String,
-      required: true,
+      type: Number,
+      default: Permissions.STATUS_APPLICATION_PENDING,
     },
+
     terms_and_conditions: {
       type: Boolean,
     },
