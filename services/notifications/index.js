@@ -100,8 +100,6 @@ class Notifications {
       return
     }
     const messages = await Task.createCheckoutFeedNotificationMessages(users)
-    // console.log(messages)
-    // console.log(users)
     Notifications.sendPushNotifications(messages)
   }
 

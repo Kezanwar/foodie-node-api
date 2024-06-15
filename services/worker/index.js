@@ -81,6 +81,12 @@ class Task {
       params: [JSON.stringify(receiptIds)],
     })
   }
+  static parseRecentlyViewedStatsIntoDealViews(recently_viewed, user_id) {
+    return worker.call({
+      name: 'parseRecentlyViewedStatsIntoDealViews',
+      params: [JSON.stringify(recently_viewed), user_id],
+    })
+  }
 }
 
 export default Task

@@ -7,6 +7,7 @@ import FollowRouter from './follow/index.js'
 import DiscoverRouter from './discover/index.js'
 import RestaurantRouter from './restaurant/index.js'
 import GeoRouter from './geo/index.js'
+import StatsRouter from './stats/index.js'
 
 const router = Router()
 
@@ -19,5 +20,6 @@ router.use('/following', FollowRouter)
 router.use('/discover', DiscoverRouter)
 router.use('/restaurant', RestaurantRouter)
 router.use('/geo', GeoRouter)
+router.use('/stats', StatsRouter)
 
 export default router

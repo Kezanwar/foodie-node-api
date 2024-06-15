@@ -22,12 +22,7 @@ const DealSchema = new mongoose.Schema(
       type: Boolean,
       index: true,
     },
-    views: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
-      },
-    ],
+    views: [FavouriteSchemaDeal],
     favourites: [FavouriteSchemaDeal],
     cuisines: [CategorySchemaWithIndex],
     dietary_requirements: [CategorySchemaWithIndex],
