@@ -32,6 +32,7 @@ import rateLimiterMiddlware from './middleware/rate-limit.js'
 
 //api
 import api from './api/index.js'
+import Stats from './services/stats/index.js'
 
 //create app
 const app = express()
@@ -53,6 +54,9 @@ Notifications.start()
 
 //start crons
 Crons.start()
+
+//start stats
+Stats.start()
 
 //initialize middlewares
 app.use(json({ extended: false }))

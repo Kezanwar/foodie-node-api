@@ -142,17 +142,23 @@ class Permissions {
     return this.check(this.#REGISTRATION_STEPS.STEP_4_COMPLETE, step)
   }
 
-  static #SUBSCRIBES_STATUS = {
+  static #SUBSCRIBED_STATUS = {
     NOT_SUBSCRIBED: 0,
     SUBSCRIBED: 1,
   }
 
+  static #SUBSCRIPTION_TIER = {
+    TIER_1: 1,
+    TIER_2: 2,
+    TIER_3: 4,
+  }
+
   static get SUBSCRIBED() {
-    return this.#SUBSCRIBES_STATUS.SUBSCRIBED
+    return this.#SUBSCRIBED_STATUS.SUBSCRIBED
   }
 
   static get NOT_SUBSCRIBED() {
-    return this.#SUBSCRIBES_STATUS.NOT_SUBSCRIBED
+    return this.#SUBSCRIBED_STATUS.NOT_SUBSCRIBED
   }
 
   //generic

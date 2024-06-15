@@ -10,6 +10,7 @@ class Redis {
     user: 'user-',
     c_location: 'c-location-',
     c_deal: 'c-deal-',
+    s_recently_viewed: 's-rec-view',
   }
 
   static async connect() {
@@ -19,7 +20,7 @@ class Redis {
       this.#client = connection
       await this.#client.flushAll()
     } catch (error) {
-      console.log('Error: Redis failed to connect...')
+      console.log('redis failed to connect... 😡')
       process.exit(1)
     }
   }

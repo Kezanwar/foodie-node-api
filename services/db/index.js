@@ -51,7 +51,7 @@ class DB {
       await connect(MONGO_URI)
       console.log('mongo-db connected 🚀')
     } catch (error) {
-      console.error(error)
+      console.error('mongo-db failed to connect... 😡')
       // Exit proccess with failure
       process.exit(1)
     }
@@ -736,6 +736,9 @@ class DB {
     const userProm = User.updateMany({}, { $pull: { favourites: { deal: deal._id } } })
 
     await Promise.all([dealProm, locationsProm, userProm])
+  }
+  static async RBulkAddDealViewStats(dealStatMap) {
+    //TODO: bulk write stats to deals....
   }
 
   //usertype:customer deals

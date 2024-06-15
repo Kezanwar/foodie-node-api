@@ -19,6 +19,8 @@ import {
   chunkPushNotificationReceiptIds,
 } from './tasks/notifications.js'
 
+import { parseRecentlyViewedStatsIntoDealViews } from './tasks/stats.js'
+
 export const workerConfig = await define({
   findCountryPhoneCode,
   checkSingleDealFollowAndFav,
@@ -32,6 +34,7 @@ export const workerConfig = await define({
   createNewDealNotificationMessages,
   createCheckoutFeedNotificationMessages,
   chunkPushNotificationReceiptIds,
+  parseRecentlyViewedStatsIntoDealViews,
   // Functions don't have to be directly defined within the
   // object, they can be defined elsewhere outside, or even
   // imported from a totally different module.
