@@ -713,7 +713,7 @@ class DB {
         {
           'restaurant.id': deal.restaurant.id,
         },
-        { $pull: { active_deals: deal._id } }
+        { $pull: { active_deals: { deal_id: deal._id } } }
       )
     )
     await Promise.all(proms)
@@ -739,6 +739,22 @@ class DB {
   }
   static async RBulkAddDealViewStats(dealStatMap) {
     //TODO: bulk write stats to deals....
+    const updates = Object.entries(dealStatMap).map(([deal_id, recent_views]) => {
+      return {
+        updateOne: {
+          filter: {
+            _id: deal_id,
+          },
+          update: {
+            $push: {
+              views: { $each: recent_views },
+            },
+          },
+        },
+      }
+    })
+
+    return Deal.bulkWrite(updates)
   }
 
   //usertype:customer deals
@@ -1085,7 +1101,7 @@ class DB {
 
   //usertype:customer favourite
   static async CFavouriteOneDeal(user, deal_id, location_id) {
-    const newDealFavourite = { user: user._id, location_id }
+    const newDealFavourite = { user: user._id, location_id, user_geo: user.geometry.coordinates }
     const dealProm = Deal.updateOne(
       {
         _id: deal_id,

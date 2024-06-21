@@ -10,7 +10,6 @@ class Redis {
     user: 'user-',
     c_location: 'c-location-',
     c_deal: 'c-deal-',
-    s_recently_viewed: 's-rec-view',
   }
 
   static async connect() {
