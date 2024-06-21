@@ -28,6 +28,11 @@ class DevMigrations {
     }
   }
 
+  async expireAllDeals() {
+    await Deal.updateMany({}, { is_expired: true })
+    await Location.updateMany({}, { active_deals: [] })
+  }
+
   // clears all deals from the platform
   async clearDeals() {
     try {

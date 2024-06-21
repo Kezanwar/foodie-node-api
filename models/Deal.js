@@ -2,7 +2,22 @@ import mongoose from 'mongoose'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import GeoSchema from './schemas/GeoSchema.js'
 import { isMainThread } from 'node:worker_threads'
-import { FavouriteSchemaDeal } from './schemas/FavouriteSchema.js'
+
+const DealStatSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user',
+    },
+    user_geo: [{ type: Number }], //! [long, lat]
+    //? not using 2dSphere data type here as we will never query the DB using this geometry.
+    //? will be used purely for restaurant stat insights.
+    location_id: {
+      type: mongoose.Schema.Types.ObjectId,
+    },
+  },
+  { timestamps: true }
+)
 
 const DealSchema = new mongoose.Schema(
   {
@@ -22,8 +37,8 @@ const DealSchema = new mongoose.Schema(
       type: Boolean,
       index: true,
     },
-    views: [FavouriteSchemaDeal],
-    favourites: [FavouriteSchemaDeal],
+    views: [DealStatSchema],
+    favourites: [DealStatSchema],
     cuisines: [CategorySchemaWithIndex],
     dietary_requirements: [CategorySchemaWithIndex],
     locations: [
