@@ -1,24 +1,31 @@
 import { EventEmitter } from 'node:events'
-import { STAT_EVENTS } from './types.js'
 
 import Task from '../worker/index.js'
 import DB from '../db/index.js'
 
+const EVENTS = {
+  SYNC_APP_USER_STATS: 'SYNC_APP_USER_STATS',
+}
+
 class Stats {
   static #emitter = new EventEmitter()
 
-  static emitCacheNewRecentlyViewed(recently_viewed, user) {
-    this.#emitter.emit(STAT_EVENTS.CACHE_NEW_RECENTLY_VIEWED, recently_viewed, user)
+  static emitSyncAppUserStatsEvent(data, user) {
+    this.#emitter.emit(EVENTS.SYNC_APP_USER_STATS, data, user)
   }
 
-  static async handleCacheNewRecentlyViewed(recently_viewed, user) {
-    const stats = await Task.parseRecentlyViewedStatsIntoDealViews(recently_viewed, user)
-    await DB.RBulkAddDealViewStats(stats)
+  static async handleSyncAppUserStatsEvent(data, user) {
+    try {
+      const stats = await Task.parseAppUserStatsForSyncing(data, user)
+      await DB.RBulkAddAppUserStats(stats)
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   //start service
   static start() {
-    this.#emitter.on(STAT_EVENTS.CACHE_NEW_RECENTLY_VIEWED, this.handleCacheNewRecentlyViewed)
+    this.#emitter.on(EVENTS.SYNC_APP_USER_STATS, this.handleSyncAppUserStatsEvent)
   }
 }
 

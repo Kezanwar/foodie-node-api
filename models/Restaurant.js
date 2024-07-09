@@ -95,18 +95,6 @@ const RestaurantSchema = new mongoose.Schema(
       // need to add to this
       select: false,
     },
-    booking_clicks: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'user',
-        },
-        deal: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'deal',
-        },
-      },
-    ],
     booking_link: {
       type: String,
     },

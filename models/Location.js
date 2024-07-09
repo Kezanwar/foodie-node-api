@@ -5,6 +5,19 @@ import { isMainThread } from 'node:worker_threads'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import GeoSchema from './schemas/GeoSchema.js'
 
+const LocationStatSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user',
+    },
+    user_geo: [{ type: Number }], //! [long, lat]
+    //? not using 2dSphere data type here as we will never query the DB using this geometry.
+    //? will be used purely for restaurant stat insights.
+  },
+  { timestamps: true }
+)
+
 const LocationSchema = new mongoose.Schema(
   {
     nickname: {
@@ -88,6 +101,8 @@ const LocationSchema = new mongoose.Schema(
         ref: 'user',
       },
     ],
+    booking_clicks: [LocationStatSchema],
+    views: [LocationStatSchema],
     geometry: GeoSchema,
     restaurant: {
       id: {

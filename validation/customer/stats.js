@@ -1,7 +1,11 @@
-import { array, object } from 'yup'
+import { object } from 'yup'
 
-export const recentlyViewedSchema = object({
+export const syncStatSchema = object({
   body: object({
-    recently_viewed: object().required(),
+    stats: object({
+      deals: object().required(),
+      locations: object().required(),
+      booking_clicks: object().required(),
+    }),
   }),
 })

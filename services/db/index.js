@@ -737,9 +737,8 @@ class DB {
 
     await Promise.all([dealProm, locationsProm, userProm])
   }
-  static async RBulkAddDealViewStats(dealStatMap) {
-    //TODO: bulk write stats to deals....
-    const updates = Object.entries(dealStatMap).map(([deal_id, recent_views]) => {
+  static async RBulkAddAppUserStats(statsMap) {
+    const dealUpdates = Object.entries(statsMap.deals).map(([deal_id, recent_views]) => {
       return {
         updateOne: {
           filter: {
@@ -754,7 +753,25 @@ class DB {
       }
     })
 
-    return Deal.bulkWrite(updates)
+    const locationUpdates = Object.entries(statsMap.locations).map(
+      ([location_id, { views = [], booking_clicks = [] }]) => {
+        return {
+          updateOne: {
+            filter: {
+              _id: location_id,
+            },
+            update: {
+              $push: {
+                views: { $each: views },
+                booking_clicks: { $each: booking_clicks },
+              },
+            },
+          },
+        }
+      }
+    )
+
+    await Promise.all([Deal.bulkWrite(dealUpdates), Location.bulkWrite(locationUpdates)])
   }
 
   //usertype:customer deals
