@@ -24,29 +24,39 @@ router.get('/overview', authWithCache, restRoleGuard(Permissions.EDIT, { accepte
   let currentDate = current_date ? new Date(current_date) : new Date()
 
   try {
-    const active_deals_prom = DB.RGetActiveDealsCount(restaurant._id, currentDate)
+    const active_deals_count_prom = DB.RGetActiveDealsCount(restaurant._id, currentDate)
 
-    const expired_deals_prom = DB.RGetExpiredDealsCount(restaurant._id, currentDate)
+    const expired_deals_count_prom = DB.RGetExpiredDealsCount(restaurant._id, currentDate)
 
-    const impressions_views_favourites_prom = DB.RGetRestaurantImpressionsViewFavouritesStats(restaurant._id)
+    const deal_stats_prom = DB.RGetDealStats(restaurant._id)
 
-    const locationsProm = DB.RGetRestaurantLocationsCount(restaurant._id)
+    const locations_count_proms = DB.RGetRestaurantLocationsCount(restaurant._id)
 
-    const followerProm = DB.RGetTotalRestaurantFollowersCount(restaurant._id)
+    const location_stats_prom = DB.RGetLocationStats(restaurant._id)
 
-    const [active_deals, expired_deals, impressions_views_favourites, locations, followers] = await Promise.all([
-      active_deals_prom,
-      expired_deals_prom,
-      impressions_views_favourites_prom,
-      locationsProm,
-      followerProm,
+    const [active_deals_count, expired_deals_count, deal_stats, locations_count, location_stats] = await Promise.all([
+      active_deals_count_prom,
+      expired_deals_count_prom,
+      deal_stats_prom,
+      locations_count_proms,
+      location_stats_prom,
     ])
 
-    const booking_clicks = restaurant?.booking_clicks?.length || 0
+    const overview = {
+      deals: {
+        active: active_deals_count,
+        expired: expired_deals_count,
+      },
+      locations: locations_count,
+      stats: {
+        views: deal_stats.views_count + location_stats.views_count,
+        favourites: deal_stats.favourites_count,
+        booking_clicks: location_stats.booking_clicks_count,
+        followers: location_stats.followers_count,
+      },
+    }
 
-    return res
-      .status(200)
-      .json({ active_deals, expired_deals, impressions_views_favourites, booking_clicks, followers, locations })
+    return res.status(200).json(overview)
   } catch (error) {
     Err.send(res, error)
   }

@@ -263,7 +263,9 @@ class DB {
 
   //usertype:restaurant locations
   static RGetRestaurantLocations(id) {
-    return Location.find({ 'restaurant.id': id }).select('-cuisines -dietary_requirements -restaurant -active_deals')
+    return Location.find({ 'restaurant.id': id }).select(
+      '-cuisines -dietary_requirements -restaurant -active_deals -views -followers -booking_clicks'
+    )
   }
   static async RCreateNewLocation(data) {
     const location = new Location(data)
@@ -361,21 +363,15 @@ class DB {
       $or: [{ is_expired: true }, { end_date: { $lte: current_date } }],
     })
   }
-  static RGetRestaurantImpressionsViewFavouritesStats(id) {
-    return Deal.aggregate([
+  static async RGetDealStats(id) {
+    const res = await Deal.aggregate([
       {
         $match: {
           'restaurant.id': id,
         },
       },
-
       {
         $addFields: {
-          unique_views: {
-            $sum: {
-              $size: { $setUnion: [[], '$views'] },
-            },
-          },
           views: { $size: '$views' },
           favourites: { $size: '$favourites' },
         },
@@ -383,27 +379,39 @@ class DB {
       {
         $group: {
           _id: null,
-          impressions: {
-            $sum: '$unique_views',
-          },
-          views: { $sum: '$views' },
-          favourites: { $sum: '$favourites' },
+          views_count: { $sum: '$views' },
+          favourites_count: { $sum: '$favourites' },
         },
       },
     ])
+    return res[0]
   }
   static RGetRestaurantLocationsCount(id) {
     return Location.countDocuments({ 'restaurant.id': id })
   }
-  static async RGetTotalRestaurantFollowersCount(id) {
+  static async RGetLocationStats(id) {
     const res = await Location.aggregate([
       { $match: { 'restaurant.id': id } },
       {
         $project: {
-          followerLength: {
+          followersLength: {
             $cond: {
               if: { $isArray: '$followers' }, // Check if the field is an array
               then: { $size: '$followers' }, // If it's an array, get its size
+              else: 0, // If it's not an array (or doesn't exist), fallback to 0
+            },
+          },
+          bookingClickLength: {
+            $cond: {
+              if: { $isArray: '$booking_clicks' }, // Check if the field is an array
+              then: { $size: '$booking_clicks' }, // If it's an array, get its size
+              else: 0, // If it's not an array (or doesn't exist), fallback to 0
+            },
+          },
+          viewsLength: {
+            $cond: {
+              if: { $isArray: '$views' }, // Check if the field is an array
+              then: { $size: '$views' }, // If it's an array, get its size
               else: 0, // If it's not an array (or doesn't exist), fallback to 0
             },
           },
@@ -412,11 +420,13 @@ class DB {
       {
         $group: {
           _id: null,
-          count: { $sum: '$followerLength' },
+          followers_count: { $sum: '$followersLength' },
+          booking_clicks_count: { $sum: '$bookingClickLength' },
+          views_count: { $sum: '$viewsLength' },
         },
       },
     ])
-    return res[0].count
+    return res[0]
   }
 
   //usertype:restaurant deals

@@ -128,7 +128,15 @@ class Loc {
 
   static pruneLocationForNewLocationResponse(location) {
     const obj = location.toObject()
-    return omit(obj, ['cuisines', 'dietary_requirements', 'restaurant', 'active_deals'])
+    return omit(obj, [
+      'cuisines',
+      'dietary_requirements',
+      'restaurant',
+      'active_deals',
+      'followers',
+      'booking_clicks',
+      'views',
+    ])
   }
 
   static pruneLocationsListForDeleteLocationResponse(locations, deletedID) {

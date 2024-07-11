@@ -46,13 +46,13 @@ const restRoleGuard =
 
       if (acceptedOnly) {
         if (Permissions.isApplicationPending(restaurant.status)) {
-          Err.throw('Restaurant is unable to access these resources due to current status', 401)
+          Err.throw('Restaurant is unable to access these resources due to current status: Pending', 401)
         }
       }
 
       if (applicationOnly) {
         if (!Permissions.isApplicationPending(restaurant.status)) {
-          Err.throw('Restaurant is unable to access these resources due to current status', 401)
+          Err.throw('Restaurant is unable to access these resources due to current status: Not Pending', 401)
         }
       }
 
