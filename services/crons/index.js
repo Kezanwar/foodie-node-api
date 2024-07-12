@@ -6,6 +6,7 @@ import checkoutFeedNotificationHandler from './handlers/notifications.js'
 const SCHEDULES = {
   DAILY_EVERY_HOUR: '0 * * * *',
   DAILY_2PM: '0 14 * * *',
+  DAILY_MIDNIGHT: '0 0 * * *',
 }
 
 class Crons {

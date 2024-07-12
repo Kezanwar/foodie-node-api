@@ -27,6 +27,7 @@ class AWS {
     })
     return S3.send(pc)
   }
+  static saveDBBackup() {}
 }
 
 export default AWS

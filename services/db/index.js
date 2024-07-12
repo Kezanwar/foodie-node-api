@@ -16,7 +16,7 @@ import DietaryRequirement from '#app/models/DietaryRequirement.js'
 
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
-const MONGO_URI = process.env.MONGO_URI
+export const MONGO_URI = process.env.MONGO_URI
 import { S3BaseUrl } from '#app/services/aws/index.js'
 import Permissions from '../permissions/index.js'
 
@@ -44,6 +44,8 @@ class DB {
       await option.save()
     }
   }
+
+  static async getDBBackup() {}
 
   //connection
   static async connect() {
@@ -384,7 +386,7 @@ class DB {
         },
       },
     ])
-    return res[0]
+    return res[0] ? res[0] : { views_count: 0, favourites_count: 0 }
   }
   static RGetRestaurantLocationsCount(id) {
     return Location.countDocuments({ 'restaurant.id': id })
@@ -426,7 +428,7 @@ class DB {
         },
       },
     ])
-    return res[0]
+    return res[0] ? res[0] : { views_count: 0, booking_clicks_count: 0, followers_count: 0 }
   }
 
   //usertype:restaurant deals
