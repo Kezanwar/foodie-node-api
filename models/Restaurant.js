@@ -102,6 +102,15 @@ const RestaurantSchema = new mongoose.Schema(
       type: Number,
       default: Permissions.NOT_SUBSCRIBED,
     },
+    plan: {
+      type: Number,
+      default: 0,
+    },
+    subscription: {
+      session_id: {
+        type: String,
+      },
+    },
     registration_step: {
       type: Number,
       default: Permissions.REG_STEP_1_COMPLETE,

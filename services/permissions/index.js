@@ -1,3 +1,5 @@
+import { enterprisePriceID, inidividualPriceID, premiumPriceID } from '#app/config/config.js'
+
 class Permissions {
   //user permissions
   static #USER_ROLES = {
@@ -148,9 +150,23 @@ class Permissions {
   }
 
   static #SUBSCRIPTION_TIER = {
-    TIER_1: 1,
-    TIER_2: 2,
-    TIER_3: 4,
+    INDIVIDUAL: 1,
+    PREMIUM: 2,
+    ENTERPRISE: 4,
+  }
+
+  static #SUB_PRICE_IDS = {
+    1: inidividualPriceID,
+    2: premiumPriceID,
+    4: enterprisePriceID,
+  }
+
+  static getSubscriptionTier(plan) {
+    return this.#SUBSCRIPTION_TIER[plan.toUpperCase()]
+  }
+
+  static getPriceID(tier) {
+    return this.#SUB_PRICE_IDS[tier]
   }
 
   static get SUBSCRIBED() {
