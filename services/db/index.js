@@ -1091,7 +1091,6 @@ class DB {
             name: '$restaurant.name',
             avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
             cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
-            followers: '$followCount',
             cuisines: '$cuisines',
             dietary: '$dietary_requirements',
           },
@@ -1100,7 +1099,6 @@ class DB {
             nickname: '$nickname',
             distance_miles: '$distance_miles',
           },
-          followCount: '$followCount',
         },
       },
     ])
