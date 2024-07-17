@@ -1073,33 +1073,10 @@ class DB {
           query: { active_deals: { $ne: [], $exists: true } },
         },
       },
-      {
-        $lookup: {
-          from: 'restaurants', // Replace with the name of your linked collection
-          localField: 'restaurant.id',
-          foreignField: '_id',
-          let: { locationId: '$_id' },
-          pipeline: [
-            {
-              $project: {
-                followMatch: {
-                  $filter: {
-                    input: '$followers',
-                    as: 'foll',
-                    cond: {
-                      $eq: ['$$foll.location_id', '$$locationId'],
-                    },
-                  },
-                },
-              },
-            },
-          ],
-          as: 'rest',
-        },
-      },
+
       {
         $addFields: {
-          followCount: { $size: { $arrayElemAt: ['$rest.followMatch', 0] } },
+          followCount: { $size: '$followers' },
         },
       },
       {
@@ -1123,6 +1100,7 @@ class DB {
             nickname: '$nickname',
             distance_miles: '$distance_miles',
           },
+          followCount: '$followCount',
         },
       },
     ])
