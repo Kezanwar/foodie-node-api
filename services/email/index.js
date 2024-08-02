@@ -6,6 +6,7 @@ import fs from 'node:fs/promises'
 
 import Err from '#app/services/error/index.js'
 import { baseUrl } from '#app/config/config.js'
+import Permissions from '../permissions/index.js'
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.sendgrid.net',
@@ -183,6 +184,43 @@ class Email {
     }
     const info = await transporter.sendMail(mailOptions)
     console.log('Rejected application email sent: ' + info.response)
+  }
+
+  static async sendEnterpriseContactSalesEnquiry(restaurant, contact) {
+    /* 
+    restaurant = {name, ...restaurant}
+    (if no ...rest the enquiry has come from the Landing Page)
+
+    contact = {email, first_name, ...user}
+    (if no ...user the enquiry has come from the Landing Page)
+    */
+
+    const source = restaurant._id ? 'Restaurant Dashboard' : 'Landing Page'
+    const currentTier = restaurant?.tier ? Permissions.getCurrentTierName(restaurant.tier) : 'None'
+
+    const html = await this.#createActionEmailHTML({
+      receiver: 'Admin',
+      title: `Enterpise Price Enquiry!`,
+      content: [
+        `Great news! An enquiry for Enterprise Pricing has come through from <strong class="primary">${restaurant.name}.</strong>,`,
+        `This enquiry came from the <span class="primary">${source}</span>`,
+      ],
+      list: [
+        `<strong>Restaurant:</strong> ${restaurant.name}`,
+        `<strong>Current Subscription:</strong> ${currentTier}`,
+        `<strong>Contact Name:</strong> ${contact.first_name}`,
+        `<strong>Contact Email:</strong> ${contact.email}`,
+      ],
+    })
+
+    const mailOptions = {
+      from: this.#email_addresses.no_reply,
+      to: this.#email_addresses.admins,
+      subject: `Enterprise Sales Enquiry`,
+      html,
+    }
+    const info = await transporter.sendMail(mailOptions)
+    console.log('Successful application email sent: ' + info.response)
   }
 }
 

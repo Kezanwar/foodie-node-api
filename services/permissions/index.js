@@ -161,6 +161,20 @@ class Permissions {
     4: enterprisePriceID,
   }
 
+  static #TIER_NAME_MAP = {
+    1: 'Individual',
+    2: 'Premium',
+    4: 'Enterprise',
+  }
+
+  static getCurrentTierName(tier) {
+    return this.#TIER_NAME_MAP[tier]
+  }
+
+  static isEnterprise(tier) {
+    return this.check(this.#SUBSCRIPTION_TIER.ENTERPRISE, tier)
+  }
+
   static getSubscriptionTier(plan) {
     return this.#SUBSCRIPTION_TIER[plan.toUpperCase()]
   }

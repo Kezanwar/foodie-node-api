@@ -9,6 +9,7 @@ import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import stripe from '#app/services/stripe/index.js'
+import Email from '#app/services/email/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -32,6 +33,11 @@ router.post(
 
       if (!priceID) {
         Err.throw('Plan not found', 500)
+      }
+
+      if (Permissions.isEnterprise(tier)) {
+        await Email.sendEnterpriseContactSalesEnquiry(restaurant, req.user)
+        return res.status(200).json('success')
       }
 
       //   const session_url = await stripe.checkout.sessions.create({
