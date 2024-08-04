@@ -10,6 +10,8 @@ import DB from '#app/services/db/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import Stripe from '#app/services/stripe/index.js'
 import Email from '#app/services/email/index.js'
+import Redis from '#app/services/cache/redis.js'
+import { dashboardUrl } from '#app/config/config.js'
 
 router.post(
   '/choose-plan',
@@ -44,14 +46,44 @@ router.post(
 )
 
 router.get('/checkout-success', async (req, res) => {
-  const { session_id, user_id } = req.query
+  const { session_id } = req.query
   try {
-    const [session, user] = await Promise.allSettled([
-      Stripe.getSuccessfulSubcriptionsSession(session_id),
-      DB.getUserByID(user_id),
+    const session = await Stripe.getSuccessfulSubcriptionsSession(session_id)
+
+    if (!session) {
+      Err.throw('Access denied', 402)
+    }
+
+    let user = await Redis.getUserByID(session.metadata.user_id)
+
+    if (!user) {
+      user = await DB.getUserByID(session.metadata.user_id)
+    }
+
+    if (!user) {
+      Err.throw('Access denied', 402)
+    }
+
+    const restaurant = await DB.RGetRestaurantByID(user.restaurant.id)
+
+    const tier = Number(session.metadata.tier)
+
+    const subscription = {
+      stripe_customer_id: session.customer,
+      stripe_subscription_id: session.subscription,
+      subscription_tier: tier,
+    }
+
+    restaurant.is_subscribed = Permissions.SUBSCRIBED
+    restaurant.tier = tier
+
+    await Promise.all([
+      DB.updateUser(user, { subscription }),
+      restaurant.save(),
+      Redis.removeUserByID(session.metadata.user_id),
     ])
 
-    return res.json({ session, user })
+    return res.redirect(`${dashboardUrl}/dashboard/subscription`)
   } catch (error) {
     Err.send(res, error)
   }

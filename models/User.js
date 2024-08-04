@@ -1,8 +1,28 @@
-import { Schema, model } from 'mongoose'
+import mongoose, { Schema, model } from 'mongoose'
 import { isMainThread } from 'node:worker_threads'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import { FavouriteSchemaUser } from './schemas/FavouriteSchema.js'
 import GeoSchema from './schemas/GeoSchema.js'
+import Permissions from '#app/services/permissions/index.js'
+
+const SubscriptionSchema = new mongoose.Schema(
+  {
+    stripe_customer_id: {
+      type: String,
+    },
+    stripe_subscription_id: {
+      type: String,
+    },
+    stripe_price_id: {
+      type: String,
+    },
+    subscription_tier: {
+      type: Number,
+      default: Permissions.NOT_SUBSCRIBED,
+    },
+  },
+  { timestamps: true }
+)
 
 const UserSchema = new Schema(
   {
@@ -26,7 +46,6 @@ const UserSchema = new Schema(
     },
     password: {
       type: String,
-      required: true,
       select: false,
     },
     auth_method: {
@@ -64,6 +83,7 @@ const UserSchema = new Schema(
         type: Number,
       },
     },
+    subscription: SubscriptionSchema,
   },
   { timestamps: true }
 )

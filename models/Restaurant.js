@@ -102,14 +102,12 @@ const RestaurantSchema = new mongoose.Schema(
       type: Number,
       default: Permissions.NOT_SUBSCRIBED,
     },
-    plan: {
+    location_limit: {
+      type: Number,
+    },
+    tier: {
       type: Number,
       default: 0,
-    },
-    subscription: {
-      session_id: {
-        type: String,
-      },
     },
     registration_step: {
       type: Number,
@@ -119,7 +117,6 @@ const RestaurantSchema = new mongoose.Schema(
       type: Number,
       default: Permissions.STATUS_APPLICATION_PENDING,
     },
-
     terms_and_conditions: {
       type: Boolean,
     },
