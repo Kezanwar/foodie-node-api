@@ -202,16 +202,14 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 
     const userResponse = user.toClient()
 
+    await Email.sendOTPEmail(sendEmail)
+
     res.json({
       accessToken: access_token,
       user: userResponse,
     })
   } catch (err) {
     Err.send(res, err)
-  }
-
-  if (sendEmail) {
-    Email.sendOTPEmail(sendEmail).catch(Err.log)
   }
 })
 

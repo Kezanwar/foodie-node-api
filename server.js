@@ -33,7 +33,7 @@ import rateLimiterMiddlware from './middleware/rate-limit.js'
 //api
 import api from './api/index.js'
 import Stats from './services/stats/index.js'
-import { inidividualPriceID } from './config/config.js'
+import Email from './services/email/index.js'
 
 //create app
 const app = express()
@@ -52,6 +52,9 @@ await Mixpanel.connect()
 
 //start notification service
 Notifications.start()
+
+//start email service
+Email.start()
 
 //start crons
 Crons.start()

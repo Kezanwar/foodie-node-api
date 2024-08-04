@@ -4,9 +4,9 @@ import nodemailer from 'nodemailer'
 import { renderFile } from 'ejs'
 import fs from 'node:fs/promises'
 
-import Err from '#app/services/error/index.js'
 import { baseUrl } from '#app/config/config.js'
 import Permissions from '../permissions/index.js'
+import EventEmitter from 'node:events'
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.sendgrid.net',
@@ -18,6 +18,26 @@ const transporter = nodemailer.createTransport({
 })
 
 class Email {
+  static #emitter = new EventEmitter()
+
+  static send(mailOptions) {
+    this.#emitter.emit('send_email', mailOptions)
+  }
+
+  static async onSendEmail(mailOptions) {
+    try {
+      const info = await transporter.sendMail(mailOptions)
+      console.log('OTP email sent: ' + info.response)
+    } catch (error) {
+      console.log('email error')
+      console.error(error)
+    }
+  }
+
+  static start() {
+    this.#emitter.on('send_email', this.onSendEmail)
+  }
+
   static #getID(doc) {
     return doc._id.toHexString()
   }
@@ -51,88 +71,74 @@ class Email {
   }
 
   static async sendOTPEmail(user) {
-    try {
-      const html = await this.#createActionEmailHTML({
-        title: 'Please confirm your email address',
-        receiver: user.first_name,
-        content: [
-          `You registered an account on Foodie, before being able to use your account you need to verify that this is your email address using the following OTP. 
+    const html = await this.#createActionEmailHTML({
+      title: 'Please confirm your email address',
+      receiver: user.first_name,
+      content: [
+        `You registered an account on Foodie, before being able to use your account you need to verify that this is your email address using the following OTP. 
         <p class="otp"><strong>${user.auth_otp}</strong><p>`,
-        ],
-      })
-      const mailOptions = {
-        from: this.#email_addresses.no_reply,
-        to: user.email,
-        subject: 'Please confirm your email address',
-        html,
-      }
-      const info = await transporter.sendMail(mailOptions)
-      console.log('OTP email sent: ' + info.response)
-    } catch (error) {
-      Err.throw(error)
+      ],
+    })
+    const mailOptions = {
+      from: this.#email_addresses.no_reply,
+      to: user.email,
+      subject: 'Please confirm your email address',
+      html,
     }
+
+    this.send(mailOptions)
   }
 
   static async sendChangePasswordEmail(user, token) {
-    try {
-      const html = await this.#createActionEmailHTML({
-        title: 'Change Password Request',
-        receiver: user.first_name,
-        content: [
-          'You requested a password change, please click the button below to change your password. This link expires in 15mins.',
-        ],
-        action_primary: { text: 'Change your password', url: `${baseUrl}/auth/change-password/${token}` },
-      })
-      const mailOptions = {
-        from: this.#email_addresses.no_reply,
-        to: user.email,
-        subject: 'Change password request',
-        html,
-      }
-      const info = await transporter.sendMail(mailOptions)
-      console.log('Change password email sent: ' + info.response)
-    } catch (err) {
-      Err.throw(err)
+    const html = await this.#createActionEmailHTML({
+      title: 'Change Password Request',
+      receiver: user.first_name,
+      content: [
+        'You requested a password change, please click the button below to change your password. This link expires in 15mins.',
+      ],
+      action_primary: { text: 'Change your password', url: `${baseUrl}/auth/change-password/${token}` },
+    })
+    const mailOptions = {
+      from: this.#email_addresses.no_reply,
+      to: user.email,
+      subject: 'Change password request',
+      html,
     }
+    this.send(mailOptions)
   }
 
   static async sendAdminReviewApplicationEmail({ restaurant, locations }) {
-    try {
-      const cuisinesText = restaurant.cuisines.map((c) => c.name).join(', ')
-      const dietText = restaurant.dietary_requirements.map((c) => c.name).join(', ')
-      const locationsText = locations.map((c) => `${c.address.address_line_1}, ${c.address.postcode}`).join(' - ')
+    const cuisinesText = restaurant.cuisines.map((c) => c.name).join(', ')
+    const dietText = restaurant.dietary_requirements.map((c) => c.name).join(', ')
+    const locationsText = locations.map((c) => `${c.address.address_line_1}, ${c.address.postcode}`).join(' - ')
 
-      const html = await this.#createActionEmailHTML({
-        title: `New restaurant application: ${restaurant.name}`,
-        content: ['Review the application and accept / decline using the actions below.'],
-        receiver: 'Admin',
-        list: [
-          `Bio: ${restaurant.bio}`,
-          `Cuisines: ${cuisinesText}`,
-          `Dietary requirements: ${dietText}`,
-          `Company name: ${restaurant.company_info.company_name}`,
-          `Locations: ${locationsText}`,
-        ],
-        action_primary: {
-          text: 'Accept',
-          url: `${baseUrl}/rest/create-restaurant/accept-application/${this.#getID(restaurant)}`,
-        },
-        action_secondary: {
-          text: 'Decline',
-          url: `${baseUrl}/rest/create-restaurant/decline-application/${this.#getID(restaurant)}`,
-        },
-      })
-      const mailOptions = {
-        from: this.#email_addresses.no_reply,
-        to: this.#email_addresses.admins,
-        subject: `New restaurant application: ${restaurant.name}`,
-        html,
-      }
-      const info = await transporter.sendMail(mailOptions)
-      console.log('Application to admin email sent: ' + info.response)
-    } catch (error) {
-      Err.throw(error)
+    const html = await this.#createActionEmailHTML({
+      title: `New restaurant application: ${restaurant.name}`,
+      content: ['Review the application and accept / decline using the actions below.'],
+      receiver: 'Admin',
+      list: [
+        `Bio: ${restaurant.bio}`,
+        `Cuisines: ${cuisinesText}`,
+        `Dietary requirements: ${dietText}`,
+        `Company name: ${restaurant.company_info.company_name}`,
+        `Locations: ${locationsText}`,
+      ],
+      action_primary: {
+        text: 'Accept',
+        url: `${baseUrl}/rest/create-restaurant/accept-application/${this.#getID(restaurant)}`,
+      },
+      action_secondary: {
+        text: 'Decline',
+        url: `${baseUrl}/rest/create-restaurant/decline-application/${this.#getID(restaurant)}`,
+      },
+    })
+    const mailOptions = {
+      from: this.#email_addresses.no_reply,
+      to: this.#email_addresses.admins,
+      subject: `New restaurant application: ${restaurant.name}`,
+      html,
     }
+    this.send(mailOptions)
   }
 
   static async sendSuccessfulApplicationEmail(user, restaurant) {
@@ -162,8 +168,7 @@ class Email {
       subject: `Foodie Application Accepted!`,
       html,
     }
-    const info = await transporter.sendMail(mailOptions)
-    console.log('Successful application email sent: ' + info.response)
+    this.send(mailOptions)
   }
 
   static async sendRejectedApplicationEmail(user, restaurant) {
@@ -182,8 +187,8 @@ class Email {
       subject: `Foodie Application`,
       html,
     }
-    const info = await transporter.sendMail(mailOptions)
-    console.log('Rejected application email sent: ' + info.response)
+
+    this.send(mailOptions)
   }
 
   static async sendEnterpriseContactSalesEnquiry(restaurant, contact) {
@@ -219,8 +224,8 @@ class Email {
       subject: `Enterprise Sales Enquiry`,
       html,
     }
-    const info = await transporter.sendMail(mailOptions)
-    console.log('Successful application email sent: ' + info.response)
+
+    this.send(mailOptions)
   }
 }
 

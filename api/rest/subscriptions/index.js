@@ -8,12 +8,8 @@ import restRoleGuard from '#app/middleware/rest-role-guard.js'
 import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
 import Permissions from '#app/services/permissions/index.js'
-import stripe from '#app/services/stripe/index.js'
+import Stripe from '#app/services/stripe/index.js'
 import Email from '#app/services/email/index.js'
-
-//* route POST api/create-restaurant/company-info (STEP 1)
-//? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
-//! @access authenticated & no restauant || restaurant
 
 router.post(
   '/choose-plan',
@@ -25,13 +21,7 @@ router.post(
     try {
       const tier = Permissions.getSubscriptionTier(plan)
 
-      if (tier === restaurant.plan) {
-        return res.status(200).json('Youre already on this plan')
-      }
-
-      const priceID = Permissions.getPriceID(tier)
-
-      if (!priceID) {
+      if (!tier) {
         Err.throw('Plan not found', 500)
       }
 
@@ -40,27 +30,31 @@ router.post(
         return res.status(200).json('success')
       }
 
-      //   const session_url = await stripe.checkout.sessions.create({
-      //     mode: 'subscription',
-      //     line_items: [
-      //       {
-      //         price: priceID,
-      //         // For metered billing, do not pass quantity
-      //         quantity: 1,
-      //       },
-      //     ],
-      //     // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
-      //     // the actual Session ID is returned in the query parameter when your customer
-      //     // is redirected to the success page.
-      //     success_url: 'https://example.com/success.html?session_id={CHECKOUT_SESSION_ID}',
-      //     cancel_url: 'https://example.com/canceled.html',
-      //   })
+      if (tier === restaurant.subscription_tier) {
+        Err.throw("You're already on this plan", 500)
+      }
 
-      return res.status(200).json('success')
+      const session_url = await Stripe.createSubscriptionCheckoutLink(tier, req.user)
+
+      return res.status(200).json({ checkout_url: session_url.url })
     } catch (error) {
       Err.send(res, error)
     }
   }
 )
+
+router.get('/checkout-success', async (req, res) => {
+  const { session_id, user_id } = req.query
+  try {
+    const [session, user] = await Promise.allSettled([
+      Stripe.getSuccessfulSubcriptionsSession(session_id),
+      DB.getUserByID(user_id),
+    ])
+
+    return res.json({ session, user })
+  } catch (error) {
+    Err.send(res, error)
+  }
+})
 
 export default router
