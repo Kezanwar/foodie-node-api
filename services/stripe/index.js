@@ -47,6 +47,15 @@ class Stripe {
     return stripe.checkout.sessions.retrieve(session_id)
   }
 
+  static #TIER_PRICE_TEXT_MAP = {
+    1: '£49.99',
+    2: '£89.99',
+  }
+
+  static getTierPriceText(tier) {
+    return this.#TIER_PRICE_TEXT_MAP[tier]
+  }
+
   static getCustomer
 }
 

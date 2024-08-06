@@ -7,6 +7,7 @@ import fs from 'node:fs/promises'
 import { baseUrl } from '#app/config/config.js'
 import Permissions from '../permissions/index.js'
 import EventEmitter from 'node:events'
+import Stripe from '../stripe/index.js'
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.sendgrid.net',
@@ -27,6 +28,7 @@ class Email {
   static async onSendEmail(mailOptions) {
     try {
       const info = await transporter.sendMail(mailOptions)
+      // await Email.createTestEmailHTMLFile(mailOptions.html)
       console.log('OTP email sent: ' + info.response)
     } catch (error) {
       console.log('email error')
@@ -42,7 +44,7 @@ class Email {
     return doc._id.toHexString()
   }
 
-  static async #createTestEmailHTMLFile(content) {
+  static async createTestEmailHTMLFile(content) {
     try {
       await fs.writeFile('test.html', content)
     } catch (err) {
@@ -201,7 +203,7 @@ class Email {
     */
 
     const source = restaurant._id ? 'Restaurant Dashboard' : 'Landing Page'
-    const currentTier = restaurant?.tier ? Permissions.getCurrentTierName(restaurant.tier) : 'None'
+    const currentTier = restaurant?.tier ? Permissions.getTierName(restaurant.tier) : 'None'
 
     const html = await this.#createActionEmailHTML({
       receiver: 'Admin',
@@ -225,6 +227,33 @@ class Email {
       html,
     }
 
+    this.send(mailOptions)
+  }
+
+  static async sendSuccessfulSubscriptionSetupEmail(user, restaurant, tier) {
+    const tier_name = Permissions.getTierName(tier)
+    const html = await this.#createActionEmailHTML({
+      receiver: user.first_name,
+      title: `${tier_name} Subcription Created!`,
+      content: [
+        `Great news! Your subscription for <strong class="primary">${restaurant.name}</strong> is all setup 🚀`,
+      ],
+      bottom_content: [
+        `Head back to your dashboard, create some deals and start boosting footfall and increasing your sales!`,
+        `Remember, your <strong class="primary">${tier_name.toLowerCase()} subscription</strong /> comes with the <strong class="primary">1st month free</strong>, allowing you to test and see the results first hand! Followed by ${Stripe.getTierPriceText(
+          tier
+        )} recurring monthy (cancelable at any time).`,
+        'You can manage your subscription through your dashboard.',
+        "We're thrilled to have you on board!",
+      ],
+    })
+
+    const mailOptions = {
+      from: this.#email_addresses.no_reply,
+      to: user.email,
+      subject: `Foodie - ${tier_name} Subcription Created!`,
+      html,
+    }
     this.send(mailOptions)
   }
 }

@@ -171,7 +171,7 @@ class Permissions {
     4: 'Enterprise',
   }
 
-  static getCurrentTierName(tier) {
+  static getTierName(tier) {
     return this.#TIER_NAME_MAP[tier]
   }
 

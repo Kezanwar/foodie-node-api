@@ -78,6 +78,7 @@ router.get('/checkout-success', async (req, res) => {
     restaurant.tier = tier
 
     await Promise.all([
+      Email.sendSuccessfulSubscriptionSetupEmail(user, restaurant, tier),
       DB.updateUser(user, { subscription }),
       restaurant.save(),
       Redis.removeUserByID(session.metadata.user_id),
