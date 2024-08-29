@@ -39,7 +39,7 @@ class Str {
   }
 
   static formatTimestampToUKDateString(timestamp) {
-    return format(new Date(timestamp), 'dd-MM-yyyy')
+    return format(new Date(timestamp), 'dd/MM/yyyy')
   }
 }
 
