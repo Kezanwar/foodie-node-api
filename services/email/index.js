@@ -8,6 +8,7 @@ import { baseUrl } from '#app/config/config.js'
 import Permissions from '../permissions/index.js'
 import EventEmitter from 'node:events'
 import Stripe from '../stripe/index.js'
+import Str from '../string/index.js'
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.sendgrid.net',
@@ -232,7 +233,7 @@ class Email {
 
   static async sendSuccessfulSubscriptionSetupEmail(user, restaurant, tier) {
     const tier_name = Permissions.getTierName(tier)
-    const html = await this.#createActionEmailHTML({
+    const user_html = await this.#createActionEmailHTML({
       receiver: user.first_name,
       title: `${tier_name} Subcription Created!`,
       content: [
@@ -248,11 +249,48 @@ class Email {
       ],
     })
 
-    const mailOptions = {
+    const userMailOptions = {
       from: this.#email_addresses.no_reply,
       to: user.email,
       subject: `Foodie - ${tier_name} Subcription Created!`,
-      html,
+      html: user_html,
+    }
+    this.send(userMailOptions)
+
+    const admin_html = await this.#createActionEmailHTML({
+      receiver: 'Admin',
+      title: `${restaurant.name} Subscribed!`,
+      content: [`Great news! ${restaurant.name} created a ${tier_name} subscription 🚀`],
+    })
+
+    const adminMailOptions = {
+      from: this.#email_addresses.no_reply,
+      to: this.#email_addresses.admins,
+      subject: `${restaurant.name} Subcription Created!`,
+      html: admin_html,
+    }
+    this.send(adminMailOptions)
+  }
+
+  static async sendSuccessfulInvoicePaidEmail(user, restaurant, event) {
+    const period_start = Str.formatTimestampToUKDateString(event.period_start)
+    const period_end = Str.formatTimestampToUKDateString(event.period_end)
+
+    const html = await this.#createActionEmailHTML({
+      receiver: user.first_name,
+      title: `Successful Payment`,
+      content: [
+        `Great news! We received a subscripton payment for ${restaurant.name}, for the period of <span class="primary">${period_start} - ${period_end}</span> 🚀`,
+      ],
+      bottom_content: [`You can view your payment history and manage your subscription through your dashboard.`],
+      action_primary: { text: 'View/Download Invoice', url: event.hosted_invoice_url },
+    })
+
+    const mailOptions = {
+      from: this.#email_addresses.no_reply,
+      to: user.email,
+      subject: `Foodie - Successful Payment`,
+      html: html,
     }
     this.send(mailOptions)
   }

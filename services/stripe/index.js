@@ -1,4 +1,4 @@
-import { baseUrl, dashboardUrl, stripeSecretApiKey } from '#app/config/config.js'
+import { baseUrl, dashboardUrl, stripeSecretApiKey, stripeWebhookSecret } from '#app/config/config.js'
 import { inidividualPriceID, premiumPriceID } from '#app/config/config.js'
 import StripeSdk from 'stripe'
 import Permissions from '../permissions/index.js'
@@ -33,6 +33,16 @@ class Stripe {
           quantity: 1,
         },
       ],
+      subscription_data: !user?.subscription.had_free_trial
+        ? {
+            trial_settings: {
+              end_behavior: {
+                missing_payment_method: 'cancel',
+              },
+            },
+            trial_period_days: 30,
+          }
+        : undefined,
       // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
       // the actual Session ID is returned in the query parameter when your customer
       // is redirected to the success page.
@@ -41,6 +51,10 @@ class Stripe {
     })
 
     return session_url
+  }
+
+  static verifyEventRequest(request) {
+    return stripe.webhooks.constructEvent(request.rawBody, request.headers['stripe-signature'], stripeWebhookSecret)
   }
 
   static getSuccessfulSubcriptionsSession(session_id) {

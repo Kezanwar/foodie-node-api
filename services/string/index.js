@@ -1,3 +1,4 @@
+import { format } from 'date-fns'
 import { decode } from 'html-entities'
 
 class Str {
@@ -35,6 +36,10 @@ class Str {
     /* eslint-disable no-useless-escape */
     const regex = /(?:https?):\/\/(\w+:?\w*)?(\S+)(:\d+)?(\/|\/([\w#!:.?+=&%!\-\/]))?/
     return regex.test(str)
+  }
+
+  static formatTimestampToUKDateString(timestamp) {
+    return format(new Date(timestamp), 'dd-MM-yyyy')
   }
 }
 

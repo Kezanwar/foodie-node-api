@@ -3,6 +3,7 @@ export const baseUrl = process.env.BASE_URL
 const appEnv = process.env.APP_ENV
 
 export const stripeSecretApiKey = process.env.STRIPE_SECRET_KEY
+export const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
 export const isDev = appEnv === 'development'
 export const isStaging = appEnv === 'staging'

@@ -20,6 +20,12 @@ const SubscriptionSchema = new mongoose.Schema(
       type: Number,
       default: Permissions.NOT_SUBSCRIBED,
     },
+    has_failed: {
+      type: Boolean,
+    },
+    had_free_trial: {
+      type: Boolean,
+    },
   },
   { timestamps: true }
 )

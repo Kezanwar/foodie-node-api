@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit'
 
-const rateLimiterMiddlware = rateLimit({
+const rateLimiter = rateLimit({
   //   windowMs: 24 * 60 * 60 * 1000, // 24 hrs in milliseconds
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 60,
@@ -9,4 +9,4 @@ const rateLimiterMiddlware = rateLimit({
   legacyHeaders: false,
 })
 
-export default rateLimiterMiddlware
+export default rateLimiter

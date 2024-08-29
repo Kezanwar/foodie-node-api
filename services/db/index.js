@@ -87,6 +87,33 @@ class DB {
     return User.updateOne({ _id: user._id }, { $set: { geometry: { coordinates: [long, lat] } } })
   }
 
+  static async getUserAndRestaurantByStripeCustomerID(customer_id) {
+    const res = await User.aggregate([
+      { $match: { 'subscription.stripe_customer_id': customer_id } },
+      {
+        $lookup: {
+          from: 'restaurants',
+          foreignField: '_id',
+          localField: 'restaurant.id',
+          as: 'rest',
+        },
+      },
+      {
+        $project: {
+          user: {
+            _id: '$_id',
+            first_name: '$first_name',
+            last_name: '$last_name',
+            email: '$email',
+            subscription: '$subsciption',
+          },
+          restaurant: { $arrayElemAt: ['$rest', 0] },
+        },
+      },
+    ])
+    return res[0]
+  }
+
   //usertype:common options
   static getCuisines() {
     return Cuisine.aggregate([

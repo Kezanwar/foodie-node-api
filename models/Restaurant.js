@@ -98,12 +98,12 @@ const RestaurantSchema = new mongoose.Schema(
     booking_link: {
       type: String,
     },
+    location_limit: {
+      type: Number,
+    },
     is_subscribed: {
       type: Number,
       default: Permissions.NOT_SUBSCRIBED,
-    },
-    location_limit: {
-      type: Number,
     },
     tier: {
       type: Number,

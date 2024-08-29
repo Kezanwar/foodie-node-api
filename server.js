@@ -4,36 +4,37 @@
 //  |__| |_____|_____|_____|__|_____|
 
 //defaults
-import express, { json } from 'express'
+import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 dotenv.config()
-import ExpressMongoSanitize from 'express-mongo-sanitize'
-import path from 'path'
-import { fileURLToPath } from 'url'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 const PORT = process.env.PORT
 
-//db
+//services
 import DB from './services/db/index.js'
-//redis
 import Redis from './services/cache/redis.js'
-//mixpanel
 import Mixpanel from './services/mixpanel/index.js'
-//notifications
 import Notifications from './services/notifications/index.js'
-//crons
 import Crons from './services/crons/index.js'
+import Stats from './services/stats/index.js'
+import Email from './services/email/index.js'
 
 //middlewares
-import rateLimiterMiddlware from './middleware/rate-limit.js'
+import rateLimiter from './middleware/rate-limiter.js'
+import bodyParser from './middleware/body-parser.js'
+import mongoSanitize from './middleware/mongo-sanitize.js'
 
 //api
 import api from './api/index.js'
-import Stats from './services/stats/index.js'
-import Email from './services/email/index.js'
+
+await DB.connect()
+await Redis.connect()
+await Mixpanel.connect()
+Notifications.start()
+Email.start()
+Crons.start()
+Stats.start()
 
 //create app
 const app = express()
@@ -41,37 +42,12 @@ const app = express()
 //initialize view engine
 app.set('view engine', 'ejs')
 
-//connect to database
-await DB.connect()
-
-//connect to redis
-await Redis.connect()
-
-//connect to  mixpanel
-await Mixpanel.connect()
-
-//start notification service
-Notifications.start()
-
-//start email service
-Email.start()
-
-//start crons
-Crons.start()
-
-//start stats
-Stats.start()
-
 //initialize middlewares
-app.use(json({ extended: false }))
-app.use(express.static(__dirname + '/public'))
+app.use(bodyParser)
+app.use(express.static(process.cwd() + '/public'))
 app.use(cors())
-app.use(rateLimiterMiddlware)
-app.use(
-  ExpressMongoSanitize({
-    allowDots: true,
-  })
-)
+app.use(rateLimiter)
+app.use(mongoSanitize)
 
 //initialize api
 app.get('/', (req, res) => res.send('Foodie API Running'))

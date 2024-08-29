@@ -72,6 +72,7 @@ router.get('/checkout-success', async (req, res) => {
       stripe_customer_id: session.customer,
       stripe_subscription_id: session.subscription,
       subscription_tier: tier,
+      had_free_trial: true,
     }
 
     restaurant.is_subscribed = Permissions.SUBSCRIBED
