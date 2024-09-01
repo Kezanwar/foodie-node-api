@@ -79,6 +79,7 @@ router.get('/checkout-success', async (req, res) => {
     restaurant.tier = tier
 
     await Promise.all([
+      DB.RSetLocationsIsSubscribed(restaurant._id, Permissions.SUBSCRIBED),
       Email.sendSuccessfulSubscriptionSetupEmail(user, restaurant, tier),
       DB.updateUser(user, { subscription }),
       restaurant.save(),

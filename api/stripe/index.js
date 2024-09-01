@@ -12,7 +12,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (reques
     await WebhookHandler.processEvent(event)
     response.json({ received: true })
   } catch (err) {
-    console.log(err)
+    console.error(err)
     response.status(400).send(`Webhook Error: ${err.message}`)
   }
 })

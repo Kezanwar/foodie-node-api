@@ -147,6 +147,10 @@ class Permissions {
     SUBSCRIBED: 1,
   }
 
+  static isSubscribed(sub) {
+    return this.check(this.#SUBSCRIBED_STATUS.SUBSCRIBED, sub)
+  }
+
   static #SUBSCRIPTION_TIER = {
     INDIVIDUAL: 1,
     PREMIUM: 2,

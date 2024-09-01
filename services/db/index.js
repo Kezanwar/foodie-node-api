@@ -96,6 +96,17 @@ class DB {
           foreignField: '_id',
           localField: 'restaurant.id',
           as: 'rest',
+          pipeline: [
+            {
+              $project: {
+                name: 1,
+                super_admin: 1,
+                status: 1,
+                is_subscribed: 1,
+                tier: 1,
+              },
+            },
+          ],
         },
       },
       {
@@ -112,6 +123,17 @@ class DB {
       },
     ])
     return res[0]
+  }
+
+  static setUserSubscriptionHasFailed(id, has_failed) {
+    return User.updateOne(
+      { _id: id },
+      {
+        $set: {
+          'subscription.has_failed': has_failed,
+        },
+      }
+    )
   }
 
   //usertype:common options
@@ -224,6 +246,17 @@ class DB {
     promises.push(restaurant.save())
 
     await Promise.all(promises)
+  }
+
+  static RSetRestaurantIsSubscribed(rest_id, is_subscribed) {
+    return Restaurant.updateOne(
+      { _id: rest_id },
+      {
+        $set: {
+          is_subscribed: is_subscribed,
+        },
+      }
+    )
   }
 
   //usertype:customer restaurant
@@ -377,6 +410,17 @@ class DB {
       }
     )
     await Promise.all([locationUpdateProm, allDealUpdateProm])
+  }
+
+  static RSetLocationsIsSubscribed(rest_id, is_subscribed) {
+    return Location.updateMany(
+      { 'restaurant.id': rest_id },
+      {
+        $set: {
+          'restaurant.is_subscribed': is_subscribed,
+        },
+      }
+    )
   }
 
   //usertype:restaurant dashboard
@@ -815,7 +859,8 @@ class DB {
 
   //usertype:customer deals
   static CGetFeed(user, page, long, lat, cuisines, dietary_requirements) {
-    const query = { active_deals: { $ne: [], $exists: true } }
+    const query = { is_subscribed: Permissions.SUBSCRIBED, active_deals: { $ne: [], $exists: true } }
+
     if (cuisines) {
       query.cuisines = {
         $elemMatch: {

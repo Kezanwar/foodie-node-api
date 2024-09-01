@@ -122,6 +122,9 @@ const LocationSchema = new mongoose.Schema(
       cover_photo: {
         type: String,
       },
+      is_subscribed: {
+        type: Number,
+      },
     },
     cuisines: [CategorySchemaWithIndex],
     dietary_requirements: [CategorySchemaWithIndex],

@@ -294,6 +294,48 @@ class Email {
     }
     this.send(mailOptions)
   }
+
+  static async sendFailedInvoicePaymentEmail(user, restaurant, event) {
+    const period_start = Str.formatTimestampToUKDateString(event.period_start)
+    const period_end = Str.formatTimestampToUKDateString(event.period_end)
+
+    const html = await this.#createActionEmailHTML({
+      receiver: user.first_name,
+      title: `Payment Failed`,
+      content: [
+        `Unfortunately we failed to take a subscription payment for ${restaurant.name}, for the period of <span class="primary">${period_start} - ${period_end}</span>`,
+        'All your deals and locations have been temporarily removed from the platform.',
+        'To rectify this, use the button below below and make your payment.',
+      ],
+      action_primary: { text: 'Pay Invoice', url: event.hosted_invoice_url },
+    })
+
+    const mailOptions = {
+      from: this.#email_addresses.no_reply,
+      to: user.email,
+      subject: `Foodie - Failed Payment`,
+      html: html,
+    }
+    this.send(mailOptions)
+
+    const adminHtml = await this.#createActionEmailHTML({
+      receiver: 'Admin',
+      title: `${restaurant.name} Payment Failed`,
+      content: [
+        `Unfortunately we failed to take a subscription payment for ${restaurant.name}, for the period of <span class="primary">${period_start} - ${period_end}</span>`,
+        'All their deals and locations have been temporarily removed from the platform and they have been notified.',
+      ],
+    })
+
+    const adminMailOptions = {
+      from: this.#email_addresses.no_reply,
+      to: this.#email_addresses.admins,
+      subject: `${restaurant.name} Payment Failed`,
+      html: adminHtml,
+    }
+
+    this.send(adminMailOptions)
+  }
 }
 
 export default Email

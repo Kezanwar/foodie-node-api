@@ -101,6 +101,7 @@ router.post(
           name: restaurant.name,
           avatar: restaurant.avatar,
           cover_photo: restaurant.cover_photo,
+          is_subscribed: restaurant.is_subscribed,
         },
         cuisines: restaurant.cuisines,
         dietary_requirements: restaurant.dietary_requirements,
