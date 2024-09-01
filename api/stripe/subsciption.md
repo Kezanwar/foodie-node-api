@@ -10,3 +10,8 @@ This is a field on the Restaurant and each of its Locations which is
    3 on failed payment we need to set restaurant and all its locations to is_subscribed false
    4 on successful payment, check if rest is_subsribed is false and if so set rest and all its locations to is_subscribed true
 ```
+
+TODO:
+
+When customer viewing a restaurant or a deal must check is rest is subscribed to show
+When customer viewing favourited list or following list must check is rest is subscribed to show

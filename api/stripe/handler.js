@@ -63,7 +63,7 @@ class WebhookHandler {
     // period_start -->  timestamp for period start (int)
     // hosted_invoice_url --> this is a url link to the invoice (string)
 
-    // const customer_id = TEST_CUST_ID  // TODO: remove hardcoded test value
+    // const customer_id = TEST_CUST_ID // TODO: remove hardcoded test value
     const customer_id = event.customer
     const res = await DB.getUserAndRestaurantByStripeCustomerID(customer_id)
 
@@ -90,8 +90,8 @@ class WebhookHandler {
     // period_start -->  timestamp for period start (int)
     // hosted_invoice_url --> this is a url link to the invoice (string)
 
-    const customer_id = TEST_CUST_ID
-    // const customer_id = event.customer
+    // const customer_id = TEST_CUST_ID // TODO: remove hardcoded test value
+    const customer_id = event.customer
     const res = await DB.getUserAndRestaurantByStripeCustomerID(customer_id)
 
     if (!res) {
