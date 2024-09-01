@@ -90,8 +90,8 @@ class WebhookHandler {
     // period_start -->  timestamp for period start (int)
     // hosted_invoice_url --> this is a url link to the invoice (string)
 
-    // const customer_id = TEST_CUST_ID  // TODO: remove hardcoded test value
-    const customer_id = event.customer
+    const customer_id = TEST_CUST_ID
+    // const customer_id = event.customer
     const res = await DB.getUserAndRestaurantByStripeCustomerID(customer_id)
 
     if (!res) {
@@ -103,7 +103,7 @@ class WebhookHandler {
     //email user with invoice
     const proms = [Email.sendSuccessfulInvoicePaidEmail(user, restaurant, event)]
 
-    if (!Permissions.isSubscribed(restaurant.is_subscribed) && user.subsciption.has_failed) {
+    if (!Permissions.isSubscribed(restaurant.is_subscribed) && user.subscription.has_failed) {
       //make subscribed true again if previously payment failed
       proms.push(
         DB.setUserSubscriptionHasFailed(user._id, false),

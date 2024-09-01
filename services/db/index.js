@@ -116,7 +116,7 @@ class DB {
             first_name: '$first_name',
             last_name: '$last_name',
             email: '$email',
-            subscription: '$subsciption',
+            subscription: '$subscription',
           },
           restaurant: { $arrayElemAt: ['$rest', 0] },
         },
@@ -859,7 +859,7 @@ class DB {
 
   //usertype:customer deals
   static CGetFeed(user, page, long, lat, cuisines, dietary_requirements) {
-    const query = { is_subscribed: Permissions.SUBSCRIBED, active_deals: { $ne: [], $exists: true } }
+    const query = { 'restaurant.is_subscribed': Permissions.SUBSCRIBED, active_deals: { $ne: [], $exists: true } }
 
     if (cuisines) {
       query.cuisines = {
@@ -984,6 +984,11 @@ class DB {
               },
             ],
           },
+        },
+      },
+      {
+        $match: {
+          'restaurant.is_subscribed': Permissions.SUBSCRIBED,
         },
       },
       ...calculateDistancePipeline(lat, long, '$geometry.coordinates', 'distance_miles'),
