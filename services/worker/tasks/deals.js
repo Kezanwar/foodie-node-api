@@ -111,10 +111,20 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
 }
 
 export const buildCustomerFavouritesListFromResults = (slice, locations, deals) => {
-  const s = JSON.parse(slice)
-  const l = buildMapFromDocArray(JSON.parse(locations))
+  let l = JSON.parse(locations)
+  l = l.filter((item) => {
+    return !!item.location.restaurant?.is_subscribed
+  })
+  l = buildMapFromDocArray(l)
+
   const d = buildMapFromDocArray(JSON.parse(deals))
-  return s.map(({ deal, location_id }) => {
+
+  const s = JSON.parse(slice)
+
+  const results = s.map(({ deal, location_id }) => {
+    if (!l[location_id]) {
+      return false
+    }
     const r = {
       restaurant: d[deal].restaurant,
       deal: {
@@ -130,4 +140,6 @@ export const buildCustomerFavouritesListFromResults = (slice, locations, deals) 
     delete r.restaurant.id
     return r
   })
+
+  return results.filter(Boolean)
 }

@@ -10,6 +10,7 @@ import { singleDealSchema } from '#app/validation/customer/deal.js'
 import Err from '#app/services/error/index.js'
 import Task from '#app/services/worker/index.js'
 import DB from '#app/services/db/index.js'
+import Permissions from '#app/services/permissions/index.js'
 
 dotenv.config()
 
@@ -25,6 +26,10 @@ router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
     const followFavProm = Task.checkSingleDealFollowAndFav(user, deal_id, location_id)
 
     const [deal, followFav] = await Promise.all([dealProm, followFavProm])
+
+    if (!Permissions.isSubscribed(deal.restaurant?.is_subscribed)) {
+      Err.throw('Restaurant not subscribed', 404)
+    }
 
     if (!deal.length) {
       Err.throw('Deal not found', 404)

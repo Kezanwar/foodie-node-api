@@ -21,11 +21,11 @@ router.get('/:id', authWithCache, async (req, res) => {
 
     const location = await DB.CGetSingleRestaurantLocation(id)
 
-    if (!location.length) {
+    if (!location) {
       Err.throw('Restaurant not found', 404)
     }
 
-    const resp = await Task.checkSingleRestaurantFollowAndFav(user, location[0])
+    const resp = await Task.checkSingleRestaurantFollowAndFav(user, location)
 
     res.json(resp)
   } catch (error) {

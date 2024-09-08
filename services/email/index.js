@@ -323,7 +323,7 @@ class Email {
       title: `${restaurant.name} Payment Failed`,
       content: [
         `Unfortunately we failed to take a subscription payment for ${restaurant.name}, for the period of <span class="primary">${period_start} - ${period_end}</span>`,
-        'All their deals and locations have been temporarily removed from the platform and they have been notified.',
+        'All their deals and locations have been temporarily dectivated from the platform and they have been notified.',
       ],
     })
 

@@ -260,8 +260,8 @@ class DB {
   }
 
   //usertype:customer restaurant
-  static CGetSingleRestaurantLocation(location_id) {
-    return Location.aggregate([
+  static async CGetSingleRestaurantLocation(location_id) {
+    const res = await Location.aggregate([
       {
         $match: {
           _id: DB.makeMongoIDs(location_id),
@@ -308,6 +308,7 @@ class DB {
             cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
             name: '$restaurant.name',
             _id: '$restaurant.id',
+            is_subscribed: { $arrayElemAt: ['$rest.is_subscribed', 0] },
           },
           address: 1,
           phone_number: 1,
@@ -321,6 +322,7 @@ class DB {
         },
       },
     ])
+    return res[0]
   }
 
   //usertype:restaurant locations
@@ -1110,6 +1112,7 @@ class DB {
               $project: {
                 bio: 1,
                 booking_link: 1,
+                is_subscribed: 1,
               },
             },
           ],
@@ -1124,6 +1127,7 @@ class DB {
             cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
             bio: '$restaurant.bio',
             booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
+            is_subscribed: { $arrayElemAt: ['$rest.is_subscribed', 0] },
           },
           name: 1,
           description: 1,
@@ -1150,7 +1154,11 @@ class DB {
           query: { active_deals: { $ne: [], $exists: true } },
         },
       },
-
+      {
+        $match: {
+          'restaurant.is_subscribed': Permissions.SUBSCRIBED,
+        },
+      },
       {
         $addFields: {
           followCount: { $size: '$followers' },
@@ -1223,6 +1231,7 @@ class DB {
         $project: {
           location: {
             nickname: '$nickname',
+            restaurant: '$restaurant',
             _id: '$_id',
           },
         },
@@ -1278,6 +1287,7 @@ class DB {
       {
         $match: {
           _id: { $in: following },
+          'restaurant.is_subscribed': Permissions.SUBSCRIBED,
         },
       },
       {
