@@ -10,6 +10,7 @@ import Redis from '#app/services/cache/redis.js'
 import DB from '#app/services/db/index.js'
 import { FEED_LIMIT } from '#app/constants/deals.js'
 import Task from '#app/services/worker/index.js'
+import Resp from '#app/services/response/index.js'
 
 const router = Router()
 
@@ -26,9 +27,9 @@ router.post('/', authWithCache, validate(favouriteDealSchema), async (req, res) 
 
     await Promise.all([DB.CFavouriteOneDeal(user, deal_id, location_id), Redis.removeUserByID(user)])
 
-    return res.json({ deal_id, location_id, is_favourited: true })
+    return Resp.json(req, res, { deal_id, location_id, is_favourited: true })
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -44,9 +45,9 @@ router.patch('/', authWithCache, validate(favouriteDealSchema), async (req, res)
 
     await Promise.all([DB.CUnfavouriteOneDeal(user, deal_id, location_id), Redis.removeUserByID(user)])
 
-    return res.json({ deal_id, location_id, is_favourited: false })
+    return Resp.json(req, res, { deal_id, location_id, is_favourited: false })
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -58,9 +59,9 @@ router.get('/', authWithCache, validate(favouriteFollowSchema), async (req, res)
 
   try {
     const favourites = await DB.CGetFavourites(user, PAGE)
-    return res.json({ nextCursor: favourites.length < FEED_LIMIT ? null : PAGE + 1, deals: favourites })
+    return Resp.json(req, res, { nextCursor: favourites.length < FEED_LIMIT ? null : PAGE + 1, deals: favourites })
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

@@ -15,6 +15,7 @@ import Loc from '#app/services/location/index.js'
 import DB from '#app/services/db/index.js'
 import Task from '#app/services/worker/index.js'
 import Permissions from '#app/services/permissions/index.js'
+import Resp from '#app/services/response/index.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check
@@ -45,9 +46,9 @@ router.post(
         )
       }
 
-      res.status(200).json({ long_lat })
+      Resp.json(req, res, { long_lat })
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )
@@ -107,9 +108,9 @@ router.post(
         dietary_requirements: restaurant.dietary_requirements,
       })
 
-      res.status(200).json([...locations, Loc.pruneLocationForNewLocationResponse(newLocation)])
+      Resp.json(req, res, [...locations, Loc.pruneLocationForNewLocationResponse(newLocation)])
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )
@@ -142,9 +143,9 @@ router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { getL
 
     const response = Loc.pruneLocationsListForDeleteLocationResponse(locations, id)
 
-    res.status(200).json(response)
+    Resp.json(req, res, response)
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -182,9 +183,9 @@ router.post(
         )
       }
 
-      res.status(200).json({ long_lat })
+      Resp.json(req, res, { long_lat })
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )
@@ -248,9 +249,9 @@ router.patch(
 
       const newLocs = await DB.RGetRestaurantLocations(restaurant._id)
 
-      res.status(200).json(newLocs)
+      Resp.json(req, res, newLocs)
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )
@@ -258,9 +259,9 @@ router.patch(
 router.get('/', authWithCache, restRoleGuard(Permissions.EDIT, { getLocations: true }), async (req, res) => {
   const { locations } = req
   try {
-    res.status(200).json(locations)
+    Resp.json(req, res, locations)
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

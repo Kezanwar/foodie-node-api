@@ -1,5 +1,7 @@
 // * custom middleware for Yup Schema validation on routes
 
+import Logger from '../services/log/index.js'
+
 const validate = (schema) => async (req, res, next) => {
   try {
     await schema.validate(
@@ -13,7 +15,8 @@ const validate = (schema) => async (req, res, next) => {
     next()
     return
   } catch (err) {
-    console.error(err)
+    Logger.red(err)
+    Logger.red(`ERROR ${500}`)
     res.status(500).json({ type: err.name, message: err.errors })
     return
   }

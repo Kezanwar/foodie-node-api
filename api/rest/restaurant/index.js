@@ -18,20 +18,21 @@ import validate from '#app/middleware/validate.js'
 import { restaurantDetailsSchema } from '#app/validation/restaurant/create-restaurant.js'
 
 import Permissions from '#app/services/permissions/index.js'
+import Resp from '#app/services/response/index.js'
 
 router.get('/', authWithCache, async (req, res) => {
   const { user } = req
 
   try {
-    if (!user?.restaurant) return res.status(200).json({})
+    if (!user?.restaurant) return Resp.json(req, res, {})
 
     const uRest = await DB.RGetRestaurantByID(user.restaurant.id)
 
-    if (!uRest) return res.status(200).json({})
+    if (!uRest) return Resp.json(req, res, {})
 
-    return res.status(200).json(uRest.toClient())
+    return Resp.json(req, res, uRest.toClient())
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -110,9 +111,9 @@ router.patch(
 
       if (!restaurant.cover_photo || !restaurant.avatar) return Err.throw('Must provide an Avatar and Cover Photo')
 
-      return res.status(200).json(restaurant.toClient())
+      return Resp.json(req, res, restaurant.toClient())
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )

@@ -10,6 +10,7 @@ import Loc from '#app/services/location/index.js'
 import validate from '#app/middleware/validate.js'
 import { geoSchema } from '#app/validation/customer/geo.js'
 import Redis from '#app/services/cache/redis.js'
+import Resp from '#app/services/response/index.js'
 
 router.post('/', validate(geoSchema), authWithCache, async (req, res) => {
   const {
@@ -20,14 +21,14 @@ router.post('/', validate(geoSchema), authWithCache, async (req, res) => {
   try {
     if (user?.geometry?.coordinates) {
       if (Loc.getDistanceInMiles(user.geometry.coordinates, [long, lat]) < 1) {
-        return res.json('success')
+        return Resp.json(req, res, { message: 'success' })
       }
     }
 
     await Promise.all([DB.setUserGeometry(user, long, lat), Redis.removeUserByID(user)])
-    return res.json('success')
+    return Resp.json(req, res, { message: 'success' })
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

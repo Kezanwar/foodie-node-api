@@ -6,10 +6,11 @@ import dotenv from 'dotenv'
 import Memory from '#app/services/cache/memory.js'
 import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
+import Resp from '#app/services/response/index.js'
 
 dotenv.config()
 
-router.get('/', async (_, res) => {
+router.get('/', async (req, res) => {
   try {
     let cuisines = Memory.getCuisineOptions()
     let dietary = Memory.getDietaryOptions()
@@ -24,9 +25,9 @@ router.get('/', async (_, res) => {
       Memory.setDietaryOptions(dietary)
     }
 
-    res.status(200).json({ cuisines: cuisines, dietary_requirements: dietary })
+    Resp.json(req, res, { cuisines: cuisines, dietary_requirements: dietary })
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

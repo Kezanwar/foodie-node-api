@@ -10,6 +10,7 @@ import restRoleGuard from '#app/middleware/rest-role-guard.js'
 import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
 import Permissions from '#app/services/permissions/index.js'
+import Resp from '#app/services/response/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -56,9 +57,9 @@ router.get('/overview', authWithCache, restRoleGuard(Permissions.EDIT, { accepte
       },
     }
 
-    return res.status(200).json(overview)
+    return Resp.json(req, res, overview)
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

@@ -11,6 +11,7 @@ import { searchFeedSchema } from '#app/validation/customer/deal.js'
 import Err from '#app/services/error/index.js'
 import Task from '#app/services/worker/index.js'
 import DB from '#app/services/db/index.js'
+import Resp from '#app/services/response/index.js'
 
 router.get('/', authWithCache, validate(searchFeedSchema), async (req, res) => {
   const {
@@ -26,9 +27,9 @@ router.get('/', authWithCache, validate(searchFeedSchema), async (req, res) => {
 
     const sorted = await Task.orderSearchDealsByTextMatchRelevance(results, text)
 
-    return res.json({ nextCursor: undefined, deals: sorted })
+    return Resp.json(req, res, { nextCursor: undefined, deals: sorted })
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

@@ -7,11 +7,11 @@ export async function authWithCache(req, res, next) {
   // Get token from header
   const token = req.header('x-auth-token')
   // check if no token
-  if (!token) {
-    return res.status(401).json({ msg: 'No token, authorization denied' })
-  }
 
   try {
+    if (!token) {
+      Err.throw('No token, authorization denied', 401)
+    }
     // verify token
     const decoded = Auth.jwtVerify(token)
 
@@ -34,18 +34,18 @@ export async function authWithCache(req, res, next) {
     next()
   } catch (err) {
     // if token is invalid or expired
-    Err.send(res, err)
+    Err.send(req, res, err)
   }
 }
 export async function authNoCache(req, res, next) {
   // Get token from header
   const token = req.header('x-auth-token')
   // check if no token
-  if (!token) {
-    return res.status(401).json({ msg: 'No token, authorization denied' })
-  }
 
   try {
+    if (!token) {
+      Err.throw('No token, authorization denied', 401)
+    }
     // verify token
     const decoded = Auth.jwtVerify(token)
 
@@ -62,6 +62,6 @@ export async function authNoCache(req, res, next) {
     next()
   } catch (err) {
     // if token is invalid or expired
-    Err.send(res, err)
+    Err.send(req, res, err)
   }
 }

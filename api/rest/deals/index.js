@@ -26,6 +26,7 @@ import Loc from '#app/services/location/index.js'
 import Str from '#app/services/string/index.js'
 import Notifications from '#app/services/notifications/index.js'
 import Permissions from '#app/services/permissions/index.js'
+import Resp from '#app/services/response/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -41,9 +42,9 @@ router.get('/active', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedO
 
     const active_deals = await DB.RGetActiveDeals(restaurant._id, currentDate)
 
-    res.json(active_deals)
+    Resp.json(req, res, active_deals)
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -57,9 +58,9 @@ router.get('/expired', authWithCache, restRoleGuard(Permissions.EDIT, { accepted
 
     const expired_deals = await DB.RGetExpiredDeals(restaurant._id, currentDate)
 
-    res.json(expired_deals)
+    Resp.json(req, res, expired_deals)
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -79,9 +80,9 @@ router.get('/single/:id', authWithCache, restRoleGuard(Permissions.EDIT, { accep
       Err.throw('Deal not found', 402)
     }
 
-    res.json(deal)
+    Resp.json(req, res, deal)
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -102,9 +103,9 @@ router.get(
         Err.throw('Deal not found', 402)
       }
 
-      res.json(deal)
+      Resp.json(req, res, deal)
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )
@@ -158,11 +159,11 @@ router.post(
 
       await DB.RCreateNewDeal(restaurant._id, newDeal, locations)
 
-      res.status(200).json('Success')
+      Resp.json(req, res, 'Success')
 
       Notifications.emitNewDealNotification(newDeal)
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )
@@ -213,9 +214,9 @@ router.patch(
 
       await DB.REditOneDeal(restaurant._id, deal, newData, locations)
 
-      return res.status(200).json('Success')
+      return Resp.json(req, res, 'Success')
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )
@@ -238,9 +239,9 @@ router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { acce
 
     await DB.RDeleteOneDeal(restaurant._id, deal)
 
-    return res.status(200).json('Success')
+    return Resp.json(req, res, 'Success')
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -284,9 +285,9 @@ router.patch(
 
       await DB.RExpireOneDeal(restaurant._id, deal, end_date)
 
-      return res.status(200).json('Success')
+      return Resp.json(req, res, 'Success')
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )

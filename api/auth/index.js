@@ -17,6 +17,7 @@ import { loginUserSchema, registerUserSchema } from '#app/validation/auth/auth.j
 
 import { dashboardUrl } from '#app/config/config.js'
 import Notifications from '#app/services/notifications/index.js'
+import Resp from '#app/services/response/index.js'
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -30,9 +31,9 @@ router.get('/initialize', authWithCache, async (req, res) => {
       Err.throw('User doesnt exist')
     }
 
-    res.json({ user: user.toClient() })
+    Resp.json(req, res, { user: user.toClient() })
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -82,12 +83,12 @@ router.post('/login', validate(loginUserSchema), async (req, res) => {
 
     const userResponse = user.toClient()
 
-    res.json({
+    Resp.json(req, res, {
       accessToken: token,
       user: userResponse,
     })
   } catch (err) {
-    Err.send(res, err)
+    Err.send(req, res, err)
   }
 })
 
@@ -137,12 +138,12 @@ router.post('/login-google', async (req, res) => {
 
     const userResponse = user.toClient()
 
-    res.json({
+    Resp.json(req, res, {
       accessToken: access_token,
       user: userResponse,
     })
   } catch (err) {
-    Err.send(res, err)
+    Err.send(req, res, err)
   }
 })
 
@@ -204,12 +205,12 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 
     await Email.sendOTPEmail(sendEmail)
 
-    res.json({
+    Resp.json(req, res, {
       accessToken: access_token,
       user: userResponse,
     })
   } catch (err) {
-    Err.send(res, err)
+    Err.send(req, res, err)
   }
 })
 
@@ -266,12 +267,12 @@ router.post('/register-google', async (req, res) => {
 
     const userResponse = user.toClient()
 
-    res.json({
+    Resp.json(req, res, {
       accessToken: access_token,
       user: userResponse,
     })
   } catch (err) {
-    Err.send(res, err)
+    Err.send(req, res, err)
   }
 })
 
@@ -292,9 +293,9 @@ router.post('/confirm-email/:otp', authNoCache, async (req, res) => {
       Err.throw('Incorrect OTP please try again', 401)
     }
 
-    return res.json('success')
+    return Resp.json(req, res, 'success')
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -307,9 +308,9 @@ router.patch('/confirm-email/resend-otp', authNoCache, async (req, res) => {
   try {
     user.auth_otp = Auth.createOTP()
     await Promise.all([user.save(), Redis.setUserByID(user), Email.sendOTPEmail(user)])
-    res.status(200).send({ message: 'success' })
+    Resp.json(req, res, { message: 'success' })
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -341,9 +342,9 @@ router.post('/forgot-password', async (req, res) => {
 
     await Email.sendChangePasswordEmail(user, token)
 
-    res.send('success')
+    Resp.json(req, res, 'success')
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -403,9 +404,9 @@ router.patch('/change-password/:token', async (req, res) => {
 
     await Promise.all([user.save(), Redis.setUserByID(user)])
 
-    res.json('success')
+    Resp.json(req, res, 'success')
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

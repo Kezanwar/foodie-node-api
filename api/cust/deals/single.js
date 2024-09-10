@@ -11,6 +11,7 @@ import Err from '#app/services/error/index.js'
 import Task from '#app/services/worker/index.js'
 import DB from '#app/services/db/index.js'
 import Permissions from '#app/services/permissions/index.js'
+import Resp from '#app/services/response/index.js'
 
 dotenv.config()
 
@@ -27,22 +28,20 @@ router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
 
     const [deal, followFav] = await Promise.all([dealProm, followFavProm])
 
-    if (!Permissions.isSubscribed(deal.restaurant?.is_subscribed)) {
-      Err.throw('Restaurant not subscribed', 404)
-    }
-
     if (!deal.length) {
       Err.throw('Deal not found', 404)
+    }
+
+    if (!Permissions.isSubscribed(deal[0].restaurant?.is_subscribed)) {
+      Err.throw(`${deal[0].restaurant.name} isn't subscribed anymore`, 404)
     }
 
     deal[0].is_favourited = followFav.is_favourited
     deal[0].is_following = followFav.is_following
 
-    res.json(deal[0])
-
-    // TODO: Add a view to deal here after response has been sent using prom.then
+    Resp.json(req, res, deal[0])
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

@@ -12,6 +12,7 @@ import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
 
 import { FEED_LIMIT } from '#app/constants/deals.js'
+import Resp from '#app/services/response/index.js'
 
 router.get('/', validate(regularFeedSchema), authWithCache, async (req, res) => {
   const {
@@ -26,9 +27,9 @@ router.get('/', validate(regularFeedSchema), authWithCache, async (req, res) => 
 
     const results = await DB.CGetFeed(user, PAGE, LONG, LAT, cuisines, dietary_requirements)
 
-    return res.json({ nextCursor: results.length < FEED_LIMIT ? null : PAGE + 1, deals: results })
+    return Resp.json(req, res, { nextCursor: results.length < FEED_LIMIT ? null : PAGE + 1, deals: results })
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

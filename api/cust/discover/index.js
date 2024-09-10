@@ -13,6 +13,7 @@ import DB from '#app/services/db/index.js'
 
 import { discoverSchema } from '#app/validation/customer/deal.js'
 import { fetchBlogs } from '#app/utilities/blogs.js'
+import Resp from '#app/services/response/index.js'
 
 router.get('/', authWithCache, validate(discoverSchema), async (req, res) => {
   const {
@@ -42,9 +43,9 @@ router.get('/', authWithCache, validate(discoverSchema), async (req, res) => {
       Memory.setRecentBlogs(fetchedBlogs)
     }
 
-    return res.json(resp)
+    return Resp.json(req, res, resp)
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

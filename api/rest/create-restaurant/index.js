@@ -26,6 +26,7 @@ import {
   restaurantSubmitApplicationSchema,
 } from '#app/validation/restaurant/create-restaurant.js'
 import Permissions from '#app/services/permissions/index.js'
+import Resp from '#app/services/response/index.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -56,7 +57,7 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
 
       await Redis.setUserByID(created.user)
 
-      return res.status(200).json(created.restaurant.toClient())
+      return Resp.json(req, res, created.restaurant.toClient())
     } else {
       // user has a restaurant
       if (!uRole) {
@@ -82,10 +83,10 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
 
       await DB.RUpdateApplicationRestaurant(currentRest, { company_info })
 
-      return res.status(200).json(currentRest.toClient())
+      return Resp.json(req, res, currentRest.toClient())
     }
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 
@@ -187,10 +188,10 @@ router.post(
         Err.throw('Must provide an Avatar and Cover Photo')
       }
 
-      return res.status(200).json(restaurant.toClient())
+      return Resp.json(req, res, restaurant.toClient())
     } catch (error) {
       console.log(error)
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )
@@ -230,10 +231,10 @@ router.post(
         await DB.RUpdateApplicationRestaurant(restaurant, { registration_step: Permissions.REG_STEP_3_COMPLETE })
       }
 
-      return res.status(200).json(restaurant.toClient())
+      return Resp.json(req, res, restaurant.toClient())
     } catch (error) {
       console.log(error)
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )
@@ -285,9 +286,9 @@ router.post(
         Email.sendAdminReviewApplicationEmail({ restaurant, locations }),
       ])
 
-      return res.status(200).json(restaurant.toClient())
+      return Resp.json(req, res, restaurant.toClient())
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )
@@ -315,9 +316,12 @@ if (isDev || isStaging) {
 
       await Email.sendSuccessfulApplicationEmail(user, restaurant)
 
-      res.json(`Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`)
+      Resp.json(
+        res,
+        `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
+      )
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   })
 }
@@ -345,9 +349,12 @@ if (isDev || isStaging) {
 
       await Email.sendRejectedApplicationEmail(user, restaurant)
 
-      res.json(`Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`)
+      Resp.json(
+        res,
+        `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
+      )
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   })
 }

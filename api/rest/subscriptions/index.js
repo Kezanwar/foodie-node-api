@@ -12,6 +12,7 @@ import Stripe from '#app/services/stripe/index.js'
 import Email from '#app/services/email/index.js'
 import Redis from '#app/services/cache/redis.js'
 import { dashboardUrl } from '#app/config/config.js'
+import Resp from '#app/services/response/index.js'
 
 router.post(
   '/choose-plan',
@@ -29,7 +30,7 @@ router.post(
 
       if (Permissions.isEnterprise(tier)) {
         await Email.sendEnterpriseContactSalesEnquiry(restaurant, req.user)
-        return res.status(200).json('success')
+        return Resp.json(req, res, 'success')
       }
 
       if (tier === restaurant.subscription_tier) {
@@ -38,9 +39,9 @@ router.post(
 
       const session_url = await Stripe.createSubscriptionCheckoutLink(tier, req.user)
 
-      return res.status(200).json({ checkout_url: session_url.url })
+      return Resp.json(req, res, { checkout_url: session_url.url })
     } catch (error) {
-      Err.send(res, error)
+      Err.send(req, res, error)
     }
   }
 )
@@ -88,7 +89,7 @@ router.get('/checkout-success', async (req, res) => {
 
     return res.redirect(`${dashboardUrl}/dashboard/subscription`)
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

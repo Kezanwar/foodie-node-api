@@ -24,6 +24,7 @@ import Email from './services/email/index.js'
 import rateLimiter from './middleware/rate-limiter.js'
 import bodyParser from './middleware/body-parser.js'
 import mongoSanitize from './middleware/mongo-sanitize.js'
+import logRequest from './middleware/log-request.js'
 
 //api
 import api from './api/index.js'
@@ -43,6 +44,7 @@ const app = express()
 app.set('view engine', 'ejs')
 
 //initialize middlewares
+app.use(logRequest)
 app.use(bodyParser)
 app.use(express.static(process.cwd() + '/public'))
 app.use(cors())

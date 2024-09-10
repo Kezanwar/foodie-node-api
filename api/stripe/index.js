@@ -1,19 +1,20 @@
 import express, { Router } from 'express'
 import WebhookHandler from './handler.js'
 import Stripe from '#app/services/stripe/index.js'
+import Resp from '#app/services/response/index.js'
 
 const router = Router()
 
 // Stripe Webhook
 
-router.post('/webhook', express.raw({ type: 'application/json' }), async (request, response) => {
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
-    const event = Stripe.verifyEventRequest(request)
+    const event = Stripe.verifyEventRequest(req)
     await WebhookHandler.processEvent(event)
-    response.json({ received: true })
+    Resp.json(req, res, { received: true })
   } catch (err) {
     console.error(err)
-    response.status(400).send(`Webhook Error: ${err.message}`)
+    res.status(400).send(`Webhook Error: ${err.message}`)
   }
 })
 

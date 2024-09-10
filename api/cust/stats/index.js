@@ -8,6 +8,7 @@ import Stats from '#app/services/stats/index.js'
 
 import validate from '#app/middleware/validate.js'
 import { syncStatSchema } from '#app/validation/customer/stats.js'
+import Resp from '#app/services/response/index.js'
 
 router.post('/', validate(syncStatSchema), authWithCache, async (req, res) => {
   const {
@@ -17,9 +18,9 @@ router.post('/', validate(syncStatSchema), authWithCache, async (req, res) => {
 
   try {
     Stats.emitSyncAppUserStatsEvent(stats, user)
-    res.json('success')
+    Resp.json(req, res, 'success')
   } catch (error) {
-    Err.send(res, error)
+    Err.send(req, res, error)
   }
 })
 

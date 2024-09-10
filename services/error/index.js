@@ -1,3 +1,5 @@
+import Logger from '../log/index.js'
+
 class Err {
   static throw(msg, code) {
     const exception = new Error(msg)
@@ -5,10 +7,13 @@ class Err {
     exception.from_admin = true
     throw exception
   }
-  static send(res, err) {
-    console.error(err)
+  static send(req, res, err) {
+    const code = err?.code ?? 500
+    Logger.red(err)
+    Logger.red(`${code} --- ${req.originalUrl}`)
+
     res
-      .status(err?.code ?? 500)
+      .status(code)
       .json({ message: err?.from_admin ? err?.message || 'Internal server error' : 'Internal server error' })
   }
   static log(err) {

@@ -68,7 +68,7 @@ const restRoleGuard =
 
       return next()
     } catch (err) {
-      Err.send(res, err)
+      Err.send(req, res, err)
       return
     }
   }
