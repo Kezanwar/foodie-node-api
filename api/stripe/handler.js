@@ -38,11 +38,12 @@ class WebhookHandler {
         and the subscription status is active. */
         await this.handleInvoicePaid(event.data.object)
         break
-      case 'invoice.payment_action_required':
-        /* Sent when the invoice requires customer authentication. 
-        Learn how to handle the subscription when the invoice requires action. */
-        await this.handleInvoicePaymentActionRequired(event.data.object)
-        break
+
+      // case 'invoice.payment_action_required':
+      //   /* Sent when the invoice requires customer authentication.
+      //   Learn how to handle the subscription when the invoice requires action. */
+      //   await this.handleInvoicePaymentActionRequired(event.data.object)
+      //   break
       case 'customer.subscription.updated':
         /* Sent when a subscription starts or changes. For example, renewing a subscription, 
         adding a coupon, applying a discount, adding an invoice item, 
@@ -121,6 +122,12 @@ class WebhookHandler {
   }
 
   static async handleSubscriptionUpdated(event) {
+    // *@event type
+    // customer --> customer id (string)
+    // current_period_start -->  timestamp for period start (int)
+    // current_period_end -->  timestamp for period end (int)
+    // items --> object, has .url that looks like an API endpoint (string)
+    // plan --> object with new plan details --> product (product ID), amount (int), created (timestamp) id (price_id)
     console.log(event)
   }
 }

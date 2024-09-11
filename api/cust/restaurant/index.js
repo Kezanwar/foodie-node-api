@@ -23,7 +23,7 @@ router.get('/:id', authWithCache, async (req, res) => {
 
     const location = await DB.CGetSingleRestaurantLocation(id)
 
-    if (!Permissions.isSubscribed(location?.restaurant.is_subscribed || 0)) {
+    if (!Permissions.isSubscribed(location?.restaurant.is_subscribed)) {
       Err.throw(`${location.restaurant.name} isn't subscribed anymore`, 404)
     }
 

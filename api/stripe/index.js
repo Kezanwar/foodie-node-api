@@ -2,6 +2,7 @@ import express, { Router } from 'express'
 import WebhookHandler from './handler.js'
 import Stripe from '#app/services/stripe/index.js'
 import Resp from '#app/services/response/index.js'
+import Logger from '#app/services/log/index.js'
 
 const router = Router()
 
@@ -13,7 +14,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     await WebhookHandler.processEvent(event)
     Resp.json(req, res, { received: true })
   } catch (err) {
-    console.error(err)
+    Logger.red(err?.message)
     res.status(400).send(`Webhook Error: ${err.message}`)
   }
 })

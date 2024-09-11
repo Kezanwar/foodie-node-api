@@ -30,7 +30,7 @@ class Email {
     try {
       const info = await transporter.sendMail(mailOptions)
       // await Email.createTestEmailHTMLFile(mailOptions.html)
-      console.log('OTP email sent: ' + info.response)
+      console.log('Email sent: ' + info.response)
     } catch (error) {
       console.log('email error')
       console.error(error)

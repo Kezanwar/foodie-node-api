@@ -292,6 +292,7 @@ class DB {
               $project: {
                 bio: 1,
                 booking_link: 1,
+                is_subscribed: 1,
               },
             },
           ],
