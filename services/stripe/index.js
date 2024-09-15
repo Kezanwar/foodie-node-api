@@ -46,7 +46,7 @@ class Stripe {
       // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
       // the actual Session ID is returned in the query parameter when your customer
       // is redirected to the success page.
-      success_url: `${baseUrl}/rest/subscriptions/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${baseUrl}/rest/subscriptions/new/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${dashboardUrl}/dashboard/subscription`,
     })
 
@@ -70,7 +70,29 @@ class Stripe {
     return this.#TIER_PRICE_TEXT_MAP[tier]
   }
 
-  static getCustomer
+  static getCustomer(cust_id) {
+    return stripe.customers.retrieve(cust_id)
+  }
+
+  static getSubscription(sub_id) {
+    return stripe.subscriptions.retrieve(sub_id)
+  }
+
+  static cancelSubscription(sub_id) {
+    return stripe.subscriptions.cancel(sub_id)
+  }
+
+  static getPaymentMethod(method_id) {
+    return stripe.paymentMethods.retrieve(method_id)
+  }
+
+  static getCustomersInvoicesForSubsciption(cust_id, sub_id, limit = 10) {
+    return stripe.invoices.list({
+      customer: cust_id,
+      limit,
+      subscription: sub_id,
+    })
+  }
 }
 
 export default Stripe

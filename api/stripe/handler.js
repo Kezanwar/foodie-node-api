@@ -4,7 +4,7 @@ import Email from '#app/services/email/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import WebhookError from './error.js'
 
-const TEST_CUST_ID = 'cus_QlkGNJAbrroB60'
+export const TEST_CUST_ID = 'cus_QlkGNJAbrroB60'
 
 // https://docs.stripe.com/billing/subscriptions/webhooks?locale=en-GB#events
 
