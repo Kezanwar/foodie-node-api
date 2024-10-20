@@ -37,7 +37,7 @@ class Stripe {
           quantity: 1,
         },
       ],
-      subscription_data: !user?.subscription.had_free_trial
+      subscription_data: !user?.subscription?.had_free_trial
         ? {
             trial_settings: {
               end_behavior: {

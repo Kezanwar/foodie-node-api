@@ -86,4 +86,29 @@ router.get('/invoices', authWithCache, async (req, res) => {
   }
 })
 
+router.get('/billing', authWithCache, async (req, res) => {
+  const { user } = req
+  try {
+    if (
+      !user?.subscription?.subscription_tier ||
+      !user.subscription.stripe_customer_id ||
+      !user.subscription.stripe_subscription_id
+    ) {
+      return Resp.json(req, res, {})
+    }
+
+    const sub = await Stripe.getSubscription(user.subscription.stripe_subscription_id)
+
+    if (!sub.default_payment_method) {
+      return Resp.json(req, res, {})
+    }
+
+    const payment_method = await Stripe.getPaymentMethod(sub.default_payment_method)
+
+    return Resp.json(req, res, payment_method)
+  } catch (error) {
+    Err.send(req, res, error)
+  }
+})
+
 export default router
