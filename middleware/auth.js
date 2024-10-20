@@ -10,7 +10,7 @@ export async function authWithCache(req, res, next) {
 
   try {
     if (!token) {
-      Err.throw('No token, authorization denied', 401)
+      Err.throw('No token, authorization denied')
     }
     // verify token
     const decoded = Auth.jwtVerify(token)
@@ -33,7 +33,7 @@ export async function authWithCache(req, res, next) {
     //  call next to continue to the next middleware with the new validated user in req object
     next()
   } catch (err) {
-    // if token is invalid or expired
+    err.code = 511
     Err.send(req, res, err)
   }
 }
@@ -44,7 +44,7 @@ export async function authNoCache(req, res, next) {
 
   try {
     if (!token) {
-      Err.throw('No token, authorization denied', 401)
+      Err.throw('No token, authorization denied')
     }
     // verify token
     const decoded = Auth.jwtVerify(token)
@@ -62,6 +62,7 @@ export async function authNoCache(req, res, next) {
     next()
   } catch (err) {
     // if token is invalid or expired
+    err.code = 511
     Err.send(req, res, err)
   }
 }
