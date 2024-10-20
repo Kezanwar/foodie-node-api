@@ -1,8 +1,8 @@
 import { Router } from 'express'
 const router = Router()
-import dotenv from 'dotenv'
+
 import multer from 'multer'
-dotenv.config()
+
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
 

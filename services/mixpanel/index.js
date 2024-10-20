@@ -1,3 +1,4 @@
+import { MIXPANEL_TOKEN } from '#app/config/config.js'
 import mixpanel from 'mixpanel'
 
 class Mixpanel {
@@ -5,7 +6,7 @@ class Mixpanel {
 
   static async connect() {
     try {
-      this.#client = mixpanel.init(process.env.MIXPANEL_TOKEN, { host: 'api-eu.mixpanel.com' })
+      this.#client = mixpanel.init(MIXPANEL_TOKEN, { host: 'api-eu.mixpanel.com' })
       console.log('mixpanel connected 🚀')
     } catch (error) {
       console.log('mixpanel failed to connect.')

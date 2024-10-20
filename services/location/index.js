@@ -1,9 +1,9 @@
 import pkg from 'lodash'
 import axios from 'axios'
-import dotenv from 'dotenv'
-import { getDistanceInMiles } from './util.js'
 
-dotenv.config()
+import { getDistanceInMiles } from './util.js'
+import { RAPID_API_KEY } from '#app/config/config.js'
+
 const { upperCase, omit, capitalize } = pkg
 
 class Loc {
@@ -55,7 +55,7 @@ class Loc {
           s: '0',
         },
         headers: {
-          'X-RapidAPI-Key': process.env.RAPID_KEY,
+          'X-RapidAPI-Key': RAPID_API_KEY,
           'X-RapidAPI-Host': 'timezone-by-location.p.rapidapi.com',
         },
       })
@@ -77,7 +77,7 @@ class Loc {
       const response = await axios.get('https://address-from-to-latitude-longitude.p.rapidapi.com/geolocationapi', {
         params: { address: `${sAddresLine1}${sAddresLine2 ? ' ' + sAddresLine2 + ' ' : ' '}${sPostcode}` },
         headers: {
-          'X-RapidAPI-Key': process.env.RAPID_KEY,
+          'X-RapidAPI-Key': RAPID_API_KEY,
           'X-RapidAPI-Host': 'address-from-to-latitude-longitude.p.rapidapi.com',
         },
       })
@@ -102,7 +102,7 @@ class Loc {
           {
             params: { address: sPostcode },
             headers: {
-              'X-RapidAPI-Key': process.env.RAPID_KEY,
+              'X-RapidAPI-Key': RAPID_API_KEY,
               'X-RapidAPI-Host': 'address-from-to-latitude-longitude.p.rapidapi.com',
             },
           }

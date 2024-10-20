@@ -19,6 +19,10 @@ class Stripe {
     return doc._id.toHexString()
   }
 
+  static unixToDate(unix) {
+    return unix * 1000
+  }
+
   static async createSubscriptionCheckoutLink(tier, user) {
     const session_url = await stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -75,7 +79,7 @@ class Stripe {
   }
 
   static getSubscription(sub_id) {
-    return stripe.subscriptions.retrieve(sub_id)
+    return stripe.subscriptions.retrieve(sub_id, { expand: ['latest_invoice'] })
   }
 
   static cancelSubscription(sub_id) {
@@ -84,6 +88,10 @@ class Stripe {
 
   static getPaymentMethod(method_id) {
     return stripe.paymentMethods.retrieve(method_id)
+  }
+
+  static getInvoice(invoice_id) {
+    return stripe.invoices.retrieve(invoice_id)
   }
 
   static getCustomersInvoicesForSubsciption(cust_id, sub_id, limit = 10) {

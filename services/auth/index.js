@@ -1,11 +1,8 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
-import dotenv from 'dotenv'
 import axios from 'axios'
 import { addMinutes } from 'date-fns'
-dotenv.config()
-
-const JWT_SECRET = process.env.JWT_SECRET
+import { GOOGLE_REGISTER_EMAIL_PW_SECRET, JWT_SECRET } from '#app/config/config.js'
 
 class Auth {
   //jwt sign
@@ -69,13 +66,17 @@ class Auth {
 
   static async hashServerGeneratedPW(password) {
     const salt = await bcrypt.genSalt(10)
-    const hash = await bcrypt.hash(password + process.env.GOOGLE_REGISTER_EMAIL_PW_SECRET, salt)
+    const hash = await bcrypt.hash(password + GOOGLE_REGISTER_EMAIL_PW_SECRET, salt)
     return hash
   }
 
   static async comparePasswordToHash(password, hash) {
     const match = bcrypt.compare(password, hash)
     return match
+  }
+
+  static pr() {
+    console.log(JWT_SECRET)
   }
 }
 

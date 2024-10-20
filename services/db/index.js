@@ -1,10 +1,8 @@
 import dotenv from 'dotenv'
 dotenv.config()
 import { connect, isValidObjectId, Types } from 'mongoose'
-
 import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.js'
 import { FEED_LIMIT, METER_TO_MILE_CONVERSION, RADIUS_METRES } from '#app/constants/deals.js'
-
 import User from '#app/models/User.js'
 import Restaurant from '#app/models/Restaurant.js'
 import Location from '#app/models/Location.js'
@@ -13,12 +11,10 @@ import Task from '#app/services/worker/index.js'
 import IMG from '#app/services/image/index.js'
 import Cuisine from '#app/models/Cuisine.js'
 import DietaryRequirement from '#app/models/DietaryRequirement.js'
-
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
-export const MONGO_URI = process.env.MONGO_URI
-import { S3BaseUrl } from '#app/services/aws/index.js'
 import Permissions from '../permissions/index.js'
+import { MONGO_URI, S3BaseUrl } from '#app/config/config.js'
 
 class DB {
   //admin
@@ -125,15 +121,32 @@ class DB {
     return res[0]
   }
 
-  static setUserSubscriptionHasFailed(id, has_failed) {
-    return User.updateOne(
-      { _id: id },
+  static async RUnsubscribeRestaurant(user_id, rest_id) {
+    const user = User.updateOne(
+      { _id: user_id },
       {
         $set: {
-          'subscription.has_failed': has_failed,
+          'subscription.subscription_tier': Permissions.NOT_SUBSCRIBED,
+          'subscription.has_unsubscribed': true,
         },
       }
     )
+
+    const rest = Restaurant.updateOne({ _id: rest_id }, { is_subscribed: Permissions.NOT_SUBSCRIBED })
+
+    const locations = Location.updateMany(
+      { 'restaurant.id': rest_id },
+      {
+        $set: {
+          'restaurant.is_subscribed': Permissions.NOT_SUBSCRIBED,
+          active_deals: [],
+        },
+      }
+    )
+
+    const deals = Deal.updateMany({ 'restaurant.id': rest_id, end_date: new Date() }, { is_expired: true })
+
+    await Promise.all([user, rest, locations, deals])
   }
 
   //usertype:common options
@@ -514,7 +527,8 @@ class DB {
       {
         $match: {
           'restaurant.id': id,
-          $or: [{ is_expired: false }, { end_date: { $gt: current_date } }],
+          is_expired: false,
+          // $or: [{ is_expired: false }, { end_date: { $gt: current_date } }],
         },
       },
       {
@@ -571,7 +585,8 @@ class DB {
       {
         $match: {
           'restaurant.id': id,
-          $or: [{ is_expired: true }, { end_date: { $lte: current_date } }],
+          is_expired: true,
+          // $or: [{ is_expired: true }, { end_date: { $lte: current_date } }],
         },
       },
       {

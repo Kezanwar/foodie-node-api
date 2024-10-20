@@ -3,13 +3,8 @@
 //  |   _|  _  |  _  |  _  |  |  -__|
 //  |__| |_____|_____|_____|__|_____|
 
-//defaults
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
-dotenv.config()
-
-const PORT = process.env.PORT
 
 //services
 import DB from './services/db/index.js'
@@ -28,6 +23,7 @@ import logRequest from './middleware/log-request.js'
 
 //api
 import api from './api/index.js'
+import { PORT } from './config/config.js'
 
 await DB.connect()
 await Redis.connect()

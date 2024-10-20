@@ -1,10 +1,8 @@
-import dotenv from 'dotenv'
-dotenv.config()
 import nodemailer from 'nodemailer'
 import { renderFile } from 'ejs'
 import fs from 'node:fs/promises'
 
-import { baseUrl } from '#app/config/config.js'
+import { baseUrl, dashboardUrl, SENDGRID_API_KEY } from '#app/config/config.js'
 import Permissions from '../permissions/index.js'
 import EventEmitter from 'node:events'
 import Stripe from '../stripe/index.js'
@@ -15,7 +13,7 @@ const transporter = nodemailer.createTransport({
   port: 587,
   auth: {
     user: 'apikey',
-    pass: process.env.SENDGRID_API_KEY,
+    pass: SENDGRID_API_KEY,
   },
 })
 
@@ -304,10 +302,10 @@ class Email {
       title: `Payment Failed`,
       content: [
         `Unfortunately we failed to take a subscription payment for ${restaurant.name}, for the period of <span class="primary">${period_start} - ${period_end}</span>`,
-        'All your deals and locations have been temporarily removed from the platform.',
-        'To rectify this, use the button below below and make your payment.',
+        'All your deals have been expired, and locations have been temporarily hidden from the platform.',
+        'To rectify this, resubscribe through your dashboard.',
       ],
-      action_primary: { text: 'Pay Invoice', url: event.hosted_invoice_url },
+      action_primary: { text: 'Go To Dashboard', url: `${dashboardUrl}/dashboard/subscription` },
     })
 
     const mailOptions = {

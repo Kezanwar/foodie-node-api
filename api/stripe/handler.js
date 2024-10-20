@@ -1,10 +1,9 @@
 import Redis from '#app/services/cache/redis.js'
 import DB from '#app/services/db/index.js'
 import Email from '#app/services/email/index.js'
-import Permissions from '#app/services/permissions/index.js'
 import WebhookError from './error.js'
 
-export const TEST_CUST_ID = 'cus_QlkGNJAbrroB60'
+export const TEST_CUST_ID = 'cus_QxoeV3ueAWMCDf'
 
 // https://docs.stripe.com/billing/subscriptions/webhooks?locale=en-GB#events
 
@@ -76,9 +75,8 @@ class WebhookHandler {
 
     const proms = [
       Email.sendFailedInvoicePaymentEmail(user, restaurant, event), //email user with invoice
-      DB.setUserSubscriptionHasFailed(user._id, true), //set has_failed true on user
-      DB.RSetLocationsIsSubscribed(restaurant._id, Permissions.NOT_SUBSCRIBED), //set locations to is_subscribed false
-      DB.RSetRestaurantIsSubscribed(restaurant._id, Permissions.NOT_SUBSCRIBED),
+      DB.RUnsubscribeRestaurant(user._id, restaurant),
+      Redis.removeUserByID(user._id),
     ]
 
     await Promise.all(proms)
@@ -103,16 +101,6 @@ class WebhookHandler {
 
     //email user with invoice
     const proms = [Email.sendSuccessfulInvoicePaidEmail(user, restaurant, event)]
-
-    if (!Permissions.isSubscribed(restaurant.is_subscribed) && user.subscription.has_failed) {
-      //make subscribed true again if previously payment failed
-      proms.push(
-        DB.setUserSubscriptionHasFailed(user._id, false),
-        DB.RSetLocationsIsSubscribed(restaurant._id, Permissions.SUBSCRIBED),
-        DB.RSetRestaurantIsSubscribed(restaurant._id, Permissions.SUBSCRIBED),
-        Redis.removeUserByID(user._id)
-      )
-    }
 
     await Promise.all(proms)
   }

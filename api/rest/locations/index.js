@@ -1,8 +1,6 @@
 import { Router } from 'express'
 
 const router = Router()
-import dotenv from 'dotenv'
-dotenv.config()
 
 import { authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validate.js'

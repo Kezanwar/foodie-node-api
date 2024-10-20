@@ -1,14 +1,11 @@
 import { Router } from 'express'
 const router = Router()
-import dotenv from 'dotenv'
 
 import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 import Err from '#app/services/error/index.js'
 import Redis from '#app/services/cache/redis.js'
 import DB from '#app/services/db/index.js'
 import Resp from '#app/services/response/index.js'
-
-dotenv.config()
 
 router.get('/', authWithCache, async (req, res) => {
   try {

@@ -1,6 +1,7 @@
 import sharp from 'sharp'
-import { S3BaseUrl } from '../aws/index.js'
+
 import { mongo } from 'mongoose'
+import { S3BaseUrl } from '#app/config/config.js'
 
 export const RESTAURANT_IMAGES = {
   avatar: 'avatar',

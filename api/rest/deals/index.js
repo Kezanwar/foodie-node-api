@@ -1,8 +1,7 @@
 import { Router } from 'express'
 
 const router = Router()
-import dotenv from 'dotenv'
-dotenv.config()
+
 import { isBefore } from 'date-fns'
 
 // models
@@ -27,6 +26,7 @@ import Str from '#app/services/string/index.js'
 import Notifications from '#app/services/notifications/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
+import Redis from '#app/services/cache/redis.js'
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -238,6 +238,8 @@ router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { acce
     }
 
     await DB.RDeleteOneDeal(restaurant._id, deal)
+
+    await Redis.removeAllUsers()
 
     return Resp.json(req, res, 'Success')
   } catch (error) {
