@@ -287,6 +287,8 @@ router.patch(
 
       await DB.RExpireOneDeal(restaurant._id, deal, end_date)
 
+      await Redis.removeAllUsers()
+
       return Resp.json(req, res, 'Success')
     } catch (error) {
       Err.send(req, res, error)

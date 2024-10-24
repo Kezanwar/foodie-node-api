@@ -8,10 +8,10 @@ class Redis {
   static #client = null
 
   static #prefix = {
-    user: 'user-',
-    r_sub: 'r-sub-',
-    c_location: 'c-location-',
-    c_deal: 'c-deal-',
+    user: 'user:',
+    r_sub: 'r-sub:',
+    c_location: 'c-location:',
+    c_deal: 'c-deal:',
   }
   s
   static #expiry = {
@@ -22,7 +22,6 @@ class Redis {
     try {
       const connection = await createClient({ url: REDIS_URL }).connect()
       console.log('redis connected 🚀')
-
       this.#client = connection
       await this.#client.flushAll()
     } catch (error) {
@@ -56,6 +55,30 @@ class Redis {
 
   static async removeUserByID(user) {
     await this.#client.del(this.getUserKey(user))
+  }
+
+  static async removeAllUsers() {
+    const pattern = `${this.#prefix.user}*`
+    let cursor = 0
+    let finished = false
+    const keysToDelete = []
+
+    while (!finished) {
+      const result = await this.#client.scan(cursor, 'MATCH', pattern, 'COUNT', 100)
+      cursor = result.cursor // Next cursor position
+      if (result.keys?.length) {
+        keysToDelete.push(...result.keys)
+      }
+      if (cursor === 0) {
+        finished = true
+      }
+    }
+
+    if (keysToDelete.length) {
+      // Delete the matching keys
+      await Promise.all(keysToDelete.map((key) => this.#client.del(key)))
+      console.log(`Deleted ${keysToDelete.length} keys`)
+    }
   }
 }
 
