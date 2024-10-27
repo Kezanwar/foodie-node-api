@@ -45,3 +45,6 @@ export const landingUrl = isDev || isStaging ? 'https://thefoodiestaging.app' : 
 
 export const inidividualPriceID = process.env.INDIVIDUAL_PLAN_PRICE_ID
 export const premiumPriceID = process.env.PREMIUM_PLAN_PRICE_ID
+
+export const maintenanceMode = process.env.MAINTENANCE_MODE === 'true'
+export const appVersion = process.env.APP_VERSION

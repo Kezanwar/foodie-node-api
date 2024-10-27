@@ -1,6 +1,11 @@
 import Logger from '../log/index.js'
 
 class Err {
+  static CODES = {
+    TOKEN_EXPIRED: 499,
+    APP_UPDATE_REQUIRED: 489,
+    MAINTENANCE_MODE: 599,
+  }
   static throw(msg, code) {
     const exception = new Error(msg)
     exception.code = code ?? 500

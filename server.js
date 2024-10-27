@@ -20,6 +20,7 @@ import rateLimiter from './middleware/rate-limiter.js'
 import bodyParser from './middleware/body-parser.js'
 import mongoSanitize from './middleware/mongo-sanitize.js'
 import logRequest from './middleware/log-request.js'
+import verifyRequest from './middleware/verify-request.js'
 
 //api
 import api from './api/index.js'
@@ -46,6 +47,7 @@ app.use(express.static(process.cwd() + '/public'))
 app.use(cors())
 app.use(rateLimiter)
 app.use(mongoSanitize)
+app.use(verifyRequest)
 
 //initialize api
 app.get('/', (req, res) => res.send('Foodie API Running'))

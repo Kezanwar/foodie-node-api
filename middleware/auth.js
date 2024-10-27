@@ -33,7 +33,7 @@ export async function authWithCache(req, res, next) {
     //  call next to continue to the next middleware with the new validated user in req object
     next()
   } catch (err) {
-    err.code = 511
+    err.code = Err.CODES.TOKEN_EXPIRED
     Err.send(req, res, err)
   }
 }
@@ -62,7 +62,7 @@ export async function authNoCache(req, res, next) {
     next()
   } catch (err) {
     // if token is invalid or expired
-    err.code = 511
+    err.code = Err.CODES.TOKEN_EXPIRED
     Err.send(req, res, err)
   }
 }
