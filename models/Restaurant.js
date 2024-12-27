@@ -84,6 +84,9 @@ const RestaurantSchema = new mongoose.Schema(
     },
     cuisines: [CategorySchemaWithIndex],
     dietary_requirements: [CategorySchemaWithIndex],
+    alcohol_license: {
+      type: Boolean,
+    },
     reviews: [
       {
         type: mongoose.Schema.Types.ObjectId,

@@ -106,7 +106,7 @@ router.post(
 
   async (req, res) => {
     const {
-      body: { name, bio, social_media, dietary_requirements, cuisines, booking_link },
+      body: { name, bio, social_media, dietary_requirements, cuisines, booking_link, alcohol_license },
       restaurant,
       files,
     } = req
@@ -173,6 +173,7 @@ router.post(
         name,
         bio,
         booking_link,
+        alcohol_license: alcohol_license === 'true',
         ...(dietary_requirements && { dietary_requirements: JSON.parse(dietary_requirements) }),
         ...(cuisines && { cuisines: JSON.parse(cuisines) }),
         ...(social_media && { social_media: JSON.parse(social_media) }),
@@ -317,6 +318,7 @@ if (isDev || isStaging) {
       await Email.sendSuccessfulApplicationEmail(user, restaurant)
 
       Resp.json(
+        req,
         res,
         `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
       )
@@ -350,6 +352,7 @@ if (isDev || isStaging) {
       await Email.sendRejectedApplicationEmail(user, restaurant)
 
       Resp.json(
+        req,
         res,
         `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
       )
