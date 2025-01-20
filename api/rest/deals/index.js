@@ -7,9 +7,6 @@ import { isBefore } from 'date-fns'
 // models
 import Deal from '#app/models/Deal.js'
 
-// constants
-import { DEALS_PER_LOCATION } from '#app/constants/deals.js'
-
 // middlewares
 import { authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
@@ -130,7 +127,9 @@ router.post(
 
       const locationsCount = restLocations.length || 0
 
-      if (activeDealsCount >= locationsCount * DEALS_PER_LOCATION) {
+      const limit = Permissions.getDealLimit(locationsCount)
+
+      if (activeDealsCount >= limit) {
         Err.throw('Maxmimum active deals limit reached', 402)
       }
 

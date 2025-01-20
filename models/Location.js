@@ -142,6 +142,10 @@ const LocationSchema = new mongoose.Schema(
         },
       },
     ],
+    archived: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 )
