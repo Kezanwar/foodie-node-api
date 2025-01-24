@@ -46,7 +46,7 @@ class DB {
   //connection
   static async connect() {
     try {
-      await connect(MONGO_URI)
+      await connect(MONGO_URI, { autoIndex: true })
       console.log('mongo-db connected 🚀')
     } catch (error) {
       console.error('mongo-db failed to connect... 😡')

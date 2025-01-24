@@ -1,0 +1,22 @@
+services:
+  mongodb:
+    image: mongodb/mongodb-atlas-local
+    environment:
+      - MONGODB_INITDB_ROOT_USERNAME=developer
+      - MONGODB_INITDB_ROOT_PASSWORD=foodie
+      - RUNNER_LOG_FILE=/dev/stderr
+    ports:
+      - 27017:27017
+    # volumes:
+    #   - ./init:/docker-entrypoint-initdb.d
+    #   - ${PWD}/upload/restaurants.json:/tmp/restaurants.json
+  redis:
+    image: redis:latest
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli ping | grep PONG']
+      interval: 1s
+      timeout: 3s
+      retries: 5
+    command: ['redis-server']
+    ports:
+      - 6379:6379

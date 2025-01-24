@@ -1,5 +1,4 @@
 import mongoose from 'mongoose'
-import { isMainThread } from 'node:worker_threads'
 
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 
@@ -164,9 +163,5 @@ RestaurantSchema.set('toJSON', {
 })
 
 const Restaurant = mongoose.model('restaurant', RestaurantSchema)
-
-if (isMainThread) {
-  Restaurant.createIndexes()
-}
 
 export default Restaurant

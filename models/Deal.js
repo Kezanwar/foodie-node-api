@@ -1,7 +1,6 @@
 import mongoose from 'mongoose'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import GeoSchema from './schemas/GeoSchema.js'
-import { isMainThread } from 'node:worker_threads'
 
 const DealStatSchema = new mongoose.Schema(
   {
@@ -95,9 +94,5 @@ DealSchema.set('toJSON', {
 })
 
 const Deal = mongoose.model('deal', DealSchema)
-
-if (isMainThread) {
-  Deal.createIndexes()
-}
 
 export default Deal

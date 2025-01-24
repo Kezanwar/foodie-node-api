@@ -1,5 +1,4 @@
 import mongoose, { Schema, model } from 'mongoose'
-import { isMainThread } from 'node:worker_threads'
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import { FavouriteSchemaUser } from './schemas/FavouriteSchema.js'
 import GeoSchema from './schemas/GeoSchema.js'
@@ -108,9 +107,5 @@ UserSchema.methods.toClient = function () {
   return returnToClient
 }
 const User = model('user', UserSchema)
-
-if (isMainThread) {
-  User.createIndexes()
-}
 
 export default User

@@ -1,7 +1,5 @@
 import mongoose from 'mongoose'
 
-import { isMainThread } from 'node:worker_threads'
-
 import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
 import GeoSchema from './schemas/GeoSchema.js'
 
@@ -156,9 +154,5 @@ LocationSchema.set('toJSON', {
 })
 
 const Location = mongoose.model('location', LocationSchema)
-
-if (isMainThread) {
-  Location.createIndexes()
-}
 
 export default Location
