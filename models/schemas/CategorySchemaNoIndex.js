@@ -1,20 +1,22 @@
 import mongoose from 'mongoose'
 
-const CategorySchemaNoIndex = new mongoose.Schema({
-  name: {
-    type: String,
+const CategorySchemaNoIndex = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+    },
+    slug: {
+      type: String,
+    },
   },
-  slug: {
-    type: String,
-  },
-})
+  {
+    timestamps: false,
+  }
+)
 
 CategorySchemaNoIndex.methods.toClient = function () {
   let returnToClient = this.toJSON()
-  delete returnToClient._id
   delete returnToClient.__v
-  delete returnToClient.createdAt
-  delete returnToClient.updatedAt
   return returnToClient
 }
 

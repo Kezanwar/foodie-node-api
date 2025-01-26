@@ -13,7 +13,7 @@ const LocationStatSchema = new mongoose.Schema(
     //? not using 2dSphere data type here as we will never query the DB using this geometry.
     //? will be used purely for restaurant stat insights.
   },
-  { timestamps: true }
+  { timestamps: true, _id: false }
 )
 
 const LocationSchema = new mongoose.Schema(
@@ -138,6 +138,7 @@ const LocationSchema = new mongoose.Schema(
         description: {
           type: String,
         },
+        _id: false,
       },
     ],
     archived: {

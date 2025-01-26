@@ -15,7 +15,7 @@ const DealStatSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
     },
   },
-  { timestamps: true }
+  { timestamps: true, _id: false }
 )
 
 const DealSchema = new mongoose.Schema(
@@ -48,6 +48,7 @@ const DealSchema = new mongoose.Schema(
         },
         nickname: String,
         geometry: GeoSchema,
+        _id: false,
       },
     ],
     restaurant: {

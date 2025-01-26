@@ -26,7 +26,7 @@ const SubscriptionSchema = new mongoose.Schema(
       type: Boolean,
     },
   },
-  { timestamps: true }
+  { timestamps: true, _id: false }
 )
 
 const UserSchema = new Schema(
