@@ -114,6 +114,7 @@ router.post(
   validate(addDealSchema),
   async (req, res) => {
     const {
+      user,
       restaurant,
       locations: restLocations,
       body: { start_date, end_date, name, description, locations },
@@ -127,7 +128,9 @@ router.post(
 
       const locationsCount = restLocations.length || 0
 
-      const limit = Permissions.getDealLimit(locationsCount)
+      const limit = !restaurant.is_subscribed
+        ? 0
+        : Permissions.getDealLimit(user.subscription.subscription_tier, locationsCount)
 
       if (activeDealsCount >= limit) {
         Err.throw('Maxmimum active deals limit reached', 402)
