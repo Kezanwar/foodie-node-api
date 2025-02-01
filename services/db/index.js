@@ -710,6 +710,7 @@ class DB {
           'is_expired',
           'start_date',
           'end_date',
+          'no_end_date',
           'locations',
         ],
       },

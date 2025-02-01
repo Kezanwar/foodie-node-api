@@ -16,7 +16,12 @@ export const addDealSchema = object({
       'end_date',
       'End Date: Must be in yyyy-mm-dd format, must not be in the past and must be after the start date',
       function (val) {
-        if (!Str.matchesDateString(val)) return false
+        if (!val) {
+          return true
+        }
+        if (!Str.matchesDateString(val)) {
+          return false
+        }
         const endDate = new Date(val)
         const startDate = new Date(this.parent.start_date)
         if (!endDate || !startDate) return false
