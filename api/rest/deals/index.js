@@ -203,7 +203,7 @@ router.patch(
         Err.throw('Unauthorized to edit this deal', 400)
       }
 
-      if (isBefore(new Date(end_date), new Date(deal.start_date))) {
+      if (end_date && isBefore(new Date(end_date), new Date(deal.start_date))) {
         Err.throw('Deal end date cannot be before the start date', 400)
       }
 

@@ -44,10 +44,18 @@ export const editDealSchema = object({
       'end_date',
       'End Date: Must be in yyyy-mm-dd format, must not be in the past',
       function (val) {
-        if (!Str.matchesDateString(val)) return false
+        if (!val) {
+          return true
+        }
+        if (!Str.matchesDateString(val)) {
+          return false
+        }
         const endDate = new Date(val)
-        if (!endDate) return false
-        else return !isPast(endDate)
+        if (!endDate) {
+          return false
+        } else {
+          return !isPast(endDate)
+        }
         // have to run more validation on the end date within the route, when we have access to the deal
       }
     ),
