@@ -440,16 +440,16 @@ class DB {
   }
 
   //usertype:restaurant dashboard
-  static RGetActiveDealsCount(id, current_date) {
+  static RGetActiveDealsCount(id) {
     return Deal.countDocuments({
       'restaurant.id': id,
-      $or: [{ is_expired: false }, { end_date: { $gt: current_date } }],
+      is_expired: false,
     })
   }
-  static RGetExpiredDealsCount(id, current_date) {
+  static RGetExpiredDealsCount(id) {
     return Deal.countDocuments({
       'restaurant.id': id,
-      $or: [{ is_expired: true }, { end_date: { $lte: current_date } }],
+      $or: [{ is_expired: true }],
     })
   }
   static async RGetDealStats(id) {
@@ -522,13 +522,13 @@ class DB {
   static RGetDealByID(id) {
     return Deal.findById(id)
   }
-  static RGetActiveDeals(id, current_date) {
+  static RGetActiveDeals(id) {
+    const today = new Date()
     return Deal.aggregate([
       {
         $match: {
           'restaurant.id': id,
           is_expired: false,
-          // $or: [{ is_expired: false }, { end_date: { $gt: current_date } }],
         },
       },
       {
@@ -541,32 +541,57 @@ class DB {
           views: { $size: '$views' },
           favourites: { $size: '$favourites' },
           id: '$_id',
+          // days_left: {
+          //   $cond: {
+          //     if: { $lt: ['$start_date', today] },
+          //     then: {
+          //       $dateDiff: {
+          //         startDate: today,
+          //         endDate: '$end_date',
+          //         unit: 'day',
+          //       },
+          //     },
+          //     else: {
+          //       $dateDiff: {
+          //         startDate: '$start_date',
+          //         endDate: '$end_date',
+          //         unit: 'day',
+          //       },
+          //     },
+          //   },
+          // },
           days_left: {
             $cond: {
-              if: { $lt: ['$start_date', current_date] },
-              then: {
-                $dateDiff: {
-                  startDate: current_date,
-                  endDate: '$end_date',
-                  unit: 'day',
-                },
-              },
+              if: { $eq: ['$end_date', null] }, // If end_date is null, return Infinity or a string
+              then: null, // Or you can use `null` or `-1` to indicate no expiration
               else: {
-                $dateDiff: {
-                  startDate: '$start_date',
-                  endDate: '$end_date',
-                  unit: 'day',
+                $cond: {
+                  if: { $lt: ['$start_date', today] },
+                  then: {
+                    $dateDiff: {
+                      startDate: today,
+                      endDate: '$end_date',
+                      unit: 'day',
+                    },
+                  },
+                  else: {
+                    $dateDiff: {
+                      startDate: '$start_date',
+                      endDate: '$end_date',
+                      unit: 'day',
+                    },
+                  },
                 },
               },
             },
           },
           days_active: {
             $cond: {
-              if: { $lt: ['$start_date', current_date] },
+              if: { $lt: ['$start_date', today] },
               then: {
                 $dateDiff: {
                   startDate: '$start_date',
-                  endDate: current_date,
+                  endDate: today,
                   unit: 'day',
                 },
               },
@@ -580,13 +605,12 @@ class DB {
       },
     ]).sort({ updatedAt: -1 })
   }
-  static RGetExpiredDeals(id, current_date) {
+  static RGetExpiredDeals(id) {
     return Deal.aggregate([
       {
         $match: {
           'restaurant.id': id,
           is_expired: true,
-          // $or: [{ is_expired: true }, { end_date: { $lte: current_date } }],
         },
       },
       {
@@ -601,7 +625,7 @@ class DB {
           id: '$_id',
           days_active: {
             $cond: {
-              if: { $lt: ['$start_date', current_date] },
+              if: { $lt: ['$start_date', new Date()] },
               then: {
                 $dateDiff: {
                   startDate: '$start_date',
@@ -619,7 +643,7 @@ class DB {
       },
     ]).sort({ updatedAt: -1 })
   }
-  static async RGetSingleDealWithStatsByID(rest_id, deal_id, current_date) {
+  static async RGetSingleDealWithStatsByID(rest_id, deal_id) {
     const deal = await Deal.aggregate([
       {
         $match: {
@@ -632,7 +656,7 @@ class DB {
           days_active: {
             $dateDiff: {
               startDate: '$start_date',
-              endDate: current_date,
+              endDate: new Date(),
               unit: 'day',
             },
           },
@@ -807,7 +831,7 @@ class DB {
     await Promise.all([locationsProm, deal.save()])
   }
   static async RBulkExpireDealsFromDate(date) {
-    const filter = { end_date: { $lte: date }, is_expired: false }
+    const filter = { end_date: { $ne: null, $lte: date }, is_expired: false }
     const toExpire = await Deal.find(filter)
     const proms = toExpire.map((deal) =>
       Location.updateMany(

@@ -1,17 +1,10 @@
-import { formatInTimeZone } from 'date-fns-tz'
-
 import Err from '#app/services/error/index.js'
 import Mixpanel from '#app/services/mixpanel/index.js'
 import DB from '#app/services/db/index.js'
 
-const createExpiryDate = () => {
-  return formatInTimeZone(new Date(), 'Etc/GMT+12', 'yyyy-MM-dd')
-}
-
 const expireDealsHandler = async () => {
   try {
-    const expireFrom = createExpiryDate()
-    const expiredResults = await DB.RBulkExpireDealsFromDate(expireFrom)
+    const expiredResults = await DB.RBulkExpireDealsFromDate(new Date())
     Mixpanel.trackExpiredDeals(expiredResults)
   } catch (error) {
     Err.log(error)

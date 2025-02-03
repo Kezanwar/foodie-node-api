@@ -13,6 +13,7 @@ class Crons {
   static #expireDeals() {
     cron.schedule(SCHEDULES.DAILY_EVERY_HOUR, expireDealsHandler)
   }
+
   static #checkoutFeedNotification() {
     cron.schedule(SCHEDULES.DAILY_2PM, checkoutFeedNotificationHandler)
   }

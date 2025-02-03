@@ -131,7 +131,6 @@ router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { getL
     }
 
     if (locations.length === 1) {
-      console.log(Permissions.REG_STEP_2_COMPLETE)
       if (Permissions.isStep3Complete(restaurant.registration_step)) {
         await DB.RUpdateApplicationRestaurant(restaurant, { registration_step: Permissions.REG_STEP_2_COMPLETE })
       }
