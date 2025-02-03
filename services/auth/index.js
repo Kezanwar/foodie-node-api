@@ -74,10 +74,6 @@ class Auth {
     const match = bcrypt.compare(password, hash)
     return match
   }
-
-  static pr() {
-    console.log(JWT_SECRET)
-  }
 }
 
 export default Auth

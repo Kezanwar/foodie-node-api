@@ -107,8 +107,6 @@ router.post(
       body: { start_date, end_date, name, description, locations },
     } = req
 
-    console.log('add', { end_date })
-
     try {
       const activeDealsCount = await DB.RGetActiveDealsCount(restaurant._id)
 
@@ -168,8 +166,6 @@ router.patch(
       params: { id },
       body: { name, description, end_date, locations },
     } = req
-
-    console.log('edit', { end_date })
 
     try {
       const trimmedName = name.trim()
