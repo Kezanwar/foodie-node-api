@@ -19,7 +19,6 @@
     "chalk": "^5.3.0",
     "cors": "^2.8.5",
     "date-fns": "^2.30.0",
-    "date-fns-tz": "^2.0.0",
     "dotenv": "^16.0.3",
     "ejs": "^3.1.9",
     "expo-server-sdk": "^3.10.0",
