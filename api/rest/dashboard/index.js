@@ -15,17 +15,12 @@ import Resp from '#app/services/response/index.js'
 //! @access authenticated & no restauant || restaurant
 
 router.get('/overview', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedOnly: true }), async (req, res) => {
-  const {
-    restaurant,
-    query: { current_date },
-  } = req
-
-  let currentDate = current_date ? new Date(current_date) : new Date()
+  const { restaurant } = req
 
   try {
-    const active_deals_count_prom = DB.RGetActiveDealsCount(restaurant._id, currentDate)
+    const active_deals_count_prom = DB.RGetActiveDealsCount(restaurant._id)
 
-    const expired_deals_count_prom = DB.RGetExpiredDealsCount(restaurant._id, currentDate)
+    const expired_deals_count_prom = DB.RGetExpiredDealsCount(restaurant._id)
 
     const deal_stats_prom = DB.RGetDealStats(restaurant._id)
 

@@ -30,14 +30,9 @@ import Redis from '#app/services/cache/redis.js'
 //! @access authenticated & no restauant || restaurant
 
 router.get('/active', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedOnly: true }), async (req, res) => {
-  const {
-    restaurant,
-    query: { current_date },
-  } = req
+  const { restaurant } = req
   try {
-    let currentDate = current_date ? new Date(current_date) : new Date()
-
-    const active_deals = await DB.RGetActiveDeals(restaurant._id, currentDate)
+    const active_deals = await DB.RGetActiveDeals(restaurant._id)
 
     Resp.json(req, res, active_deals)
   } catch (error) {
@@ -46,14 +41,9 @@ router.get('/active', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedO
 })
 
 router.get('/expired', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedOnly: true }), async (req, res) => {
-  const {
-    restaurant,
-    query: { current_date },
-  } = req
+  const { restaurant } = req
   try {
-    let currentDate = current_date ? new Date(current_date) : new Date()
-
-    const expired_deals = await DB.RGetExpiredDeals(restaurant._id, currentDate)
+    const expired_deals = await DB.RGetExpiredDeals(restaurant._id)
 
     Resp.json(req, res, expired_deals)
   } catch (error) {
@@ -65,13 +55,10 @@ router.get('/single/:id', authWithCache, restRoleGuard(Permissions.EDIT, { accep
   const {
     params: { id },
     restaurant,
-    query: { current_date },
   } = req
 
-  let currentDate = current_date ? new Date(current_date) : new Date()
-
   try {
-    const deal = await DB.RGetSingleDealWithStatsByID(restaurant._id, id, currentDate)
+    const deal = await DB.RGetSingleDealWithStatsByID(restaurant._id, id)
 
     if (!deal) {
       Err.throw('Deal not found', 402)
@@ -118,13 +105,12 @@ router.post(
       restaurant,
       locations: restLocations,
       body: { start_date, end_date, name, description, locations },
-      query: { current_date },
     } = req
 
-    let currentDate = current_date ? new Date(current_date) : new Date()
+    console.log('add', { end_date })
 
     try {
-      const activeDealsCount = await DB.RGetActiveDealsCount(restaurant._id, currentDate)
+      const activeDealsCount = await DB.RGetActiveDealsCount(restaurant._id)
 
       const locationsCount = restLocations.length || 0
 
@@ -182,6 +168,8 @@ router.patch(
       params: { id },
       body: { name, description, end_date, locations },
     } = req
+
+    console.log('edit', { end_date })
 
     try {
       const trimmedName = name.trim()
