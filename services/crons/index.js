@@ -11,7 +11,7 @@ const SCHEDULES = {
 
 class Crons {
   static #expireDeals() {
-    cron.schedule('*/1 * * * *', expireDealsHandler)
+    cron.schedule(SCHEDULES.DAILY_EVERY_HOUR, expireDealsHandler)
   }
 
   static #checkoutFeedNotification() {
