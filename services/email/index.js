@@ -161,6 +161,10 @@ class Email {
         `Remember, each subscription tier comes with a <strong class="primary">free month</strong>, allowing you to test and see the results first hand!`,
         `We're thrilled to have you on board.`,
       ],
+      action_primary: {
+        text: 'Go To Dashboard',
+        url: `${dashboardUrl}/dashboard`,
+      },
     })
 
     const mailOptions = {
@@ -245,6 +249,10 @@ class Email {
         'You can manage your subscription through your dashboard.',
         "We're thrilled to have you on board!",
       ],
+      action_primary: {
+        text: 'Go To Dashboard',
+        url: `${dashboardUrl}/dashboard`,
+      },
     })
 
     const userMailOptions = {
