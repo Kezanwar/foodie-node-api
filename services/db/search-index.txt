@@ -1,13 +1,13 @@
 location search index:
-    //     {
-    //   "mappings": {
-    //     "dynamic": true,
-    //     "fields": {
-    //       "geometry": {
-    //         "type": "geo",
-    //         "indexShapes": true
-    //       }
-    //     }
-    //   },
-    //   "storedSource": true
-    // }
+ {
+ "mappings": {
+ "dynamic": true,
+ "fields": {
+   "geometry": {
+     "type": "geo",
+     "indexShapes": true
+   }
+ }
+},
+"storedSource": true
+ }
