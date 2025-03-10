@@ -994,6 +994,59 @@ class DB {
       },
     ]).sort({ 'location.distance_miles': 1 })
   }
+  static CGetHomeFeed(user, page, long, lat, cuisines, dietary_requirements) {
+    const query = { 'restaurant.is_subscribed': Permissions.SUBSCRIBED, active_deals: { $ne: [], $exists: true } }
+
+    if (cuisines) {
+      query.cuisines = {
+        $elemMatch: {
+          slug: { $in: typeof cuisines === 'string' ? [cuisines] : cuisines },
+        },
+      }
+    }
+    if (dietary_requirements) {
+      query.dietary_requirements = {
+        $elemMatch: {
+          slug: { $in: typeof dietary_requirements === 'string' ? [dietary_requirements] : dietary_requirements },
+        },
+      }
+    }
+
+    return Location.aggregate([
+      {
+        $geoNear: {
+          near: { type: 'Point', coordinates: [long, lat] },
+          distanceField: 'distance_miles',
+          spherical: true,
+          maxDistance: RADIUS_METRES,
+          distanceMultiplier: METER_TO_MILE_CONVERSION,
+          query: query,
+        },
+      },
+      {
+        $skip: page * FEED_LIMIT,
+      },
+      {
+        $limit: FEED_LIMIT,
+      },
+      {
+        $project: {
+          restaurant: {
+            _id: '$restaurant.id',
+            name: '$restaurant.name',
+            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
+            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+          },
+          location: {
+            _id: '$_id',
+            nickname: '$nickname',
+            distance_miles: '$distance_miles',
+            active_deals: '$active_deals',
+          },
+        },
+      },
+    ]).sort({ 'location.distance_miles': 1 })
+  }
   static CGetSearchFeed(user, long, lat, text) {
     return Location.aggregate([
       {
