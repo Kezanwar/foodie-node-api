@@ -119,6 +119,12 @@ export const buildCustomerFavouritesListFromResults = (slice, locations, deals) 
 
   let d = JSON.parse(deals)
   d = d.filter(Boolean)
+
+  for (let item of d) {
+    item.restaurant.cover_photo = `${S3BaseUrl}${item.restaurant.cover_photo}`
+    item.restaurant.avatar = `${S3BaseUrl}${item.restaurant.avatar}`
+  }
+
   d = buildMapFromDocArray(d)
 
   const s = JSON.parse(slice)
@@ -142,8 +148,6 @@ export const buildCustomerFavouritesListFromResults = (slice, locations, deals) 
       location: l[location_id].location,
     }
     r.restaurant._id = r.restaurant.id
-    r.restaurant.cover_photo = `${S3BaseUrl}${r.restaurant.cover_photo}`
-    r.restaurant.avatar = `${S3BaseUrl}${r.restaurant.avatar}`
     delete r.restaurant.id
     return r
   })
