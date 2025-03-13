@@ -1041,7 +1041,16 @@ class DB {
             _id: '$_id',
             nickname: '$nickname',
             distance_miles: '$distance_miles',
-            active_deals: '$active_deals',
+            active_deals: {
+              $map: {
+                input: '$active_deals',
+                as: 'deal',
+                in: {
+                  deal_id: '$$deal.deal_id',
+                  name: '$$deal.name',
+                },
+              },
+            },
           },
         },
       },
