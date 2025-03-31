@@ -20,12 +20,12 @@ router.get('/:id', authWithCache, async (req, res) => {
 
     const location = await DB.CGetSingleRestaurantLocation(id)
 
-    if (!Permissions.isSubscribed(location?.restaurant.is_subscribed)) {
-      Err.throw(`${location.restaurant.name} isn't subscribed anymore`, 404)
-    }
-
     if (!location) {
       Err.throw('Restaurant not found', 404)
+    }
+
+    if (!Permissions.isSubscribed(location?.restaurant.is_subscribed)) {
+      Err.throw(`${location.restaurant.name} isn't subscribed anymore`, 404)
     }
 
     const resp = await Task.checkSingleRestaurantFollowAndFav(user, location)

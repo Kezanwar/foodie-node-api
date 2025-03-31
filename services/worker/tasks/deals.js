@@ -13,12 +13,11 @@ const getOptionMatch = (search, arr) => {
 }
 
 const expAsPerc = (...args) => {
-  const arg = [...args]
   let sum = 0
-  for (let a of arg) {
+  for (let a of args) {
     sum = sum + a
   }
-  return sum / arg.length
+  return sum / args.length
 }
 
 const buildMapFromDocArray = (arr) =>

@@ -955,7 +955,6 @@ class DB {
                   },
                 },
                 name: 1,
-                description: 1,
                 start_date: 1,
                 end_date: 1,
               },
@@ -969,7 +968,6 @@ class DB {
         $project: {
           deal: {
             name: '$deals.name',
-            description: '$deals.description',
             _id: '$deals._id',
             is_favourited: {
               $cond: {
