@@ -1,7 +1,7 @@
 import sharp from 'sharp'
 
 import { mongo } from 'mongoose'
-import { S3BaseUrl } from '#app/config/config.js'
+import AWS from '../aws/index.js'
 
 export const RESTAURANT_IMAGES = {
   avatar: 'avatar',
@@ -44,7 +44,7 @@ class IMG {
   }
 
   static prefixImageWithBaseUrlRest(imageName) {
-    return `${S3BaseUrl}${imageName}`
+    return `${AWS.USER_IMAGE_PREFIX}${imageName}`
   }
 }
 

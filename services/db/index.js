@@ -14,7 +14,8 @@ import DietaryRequirement from '#app/models/DietaryRequirement.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 import Permissions from '../permissions/index.js'
-import { MONGO_URI, S3BaseUrl } from '#app/config/config.js'
+import { MONGO_URI } from '#app/config/config.js'
+import AWS from '../aws/index.js'
 
 class DB {
   //admin
@@ -318,8 +319,8 @@ class DB {
           restaurant: {
             booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
             bio: { $arrayElemAt: ['$rest.bio', 0] },
-            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
-            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.avatar'] },
+            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.cover_photo'] },
             name: '$restaurant.name',
             _id: '$restaurant.id',
             is_subscribed: { $arrayElemAt: ['$rest.is_subscribed', 0] },
@@ -980,8 +981,8 @@ class DB {
           restaurant: {
             _id: '$restaurant.id',
             name: '$restaurant.name',
-            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
-            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.avatar'] },
+            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.cover_photo'] },
           },
           location: {
             _id: '$_id',
@@ -1032,8 +1033,8 @@ class DB {
           restaurant: {
             _id: '$restaurant.id',
             name: '$restaurant.name',
-            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
-            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.avatar'] },
+            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.cover_photo'] },
           },
           location: {
             _id: '$_id',
@@ -1142,8 +1143,8 @@ class DB {
             _id: '$restaurant.id',
             name: '$restaurant.name',
             bio: '$restaurant.bio',
-            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
-            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.avatar'] },
+            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.cover_photo'] },
             cuisines: '$cuisines',
             dietary: '$dietary_requirements',
           },
@@ -1223,8 +1224,8 @@ class DB {
           restaurant: {
             id: '$restaurant.id',
             name: '$restaurant.name',
-            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
-            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.avatar'] },
+            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.cover_photo'] },
             bio: '$restaurant.bio',
             booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
             is_subscribed: { $arrayElemAt: ['$rest.is_subscribed', 0] },
@@ -1274,8 +1275,8 @@ class DB {
           restaurant: {
             id: '$restaurant.id',
             name: '$restaurant.name',
-            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
-            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.avatar'] },
+            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.cover_photo'] },
             cuisines: '$cuisines',
             dietary: '$dietary_requirements',
           },
@@ -1408,8 +1409,8 @@ class DB {
           restaurant: {
             id: '$restaurant.id',
             name: '$restaurant.name',
-            avatar: { $concat: [S3BaseUrl, '$restaurant.avatar'] },
-            cover_photo: { $concat: [S3BaseUrl, '$restaurant.cover_photo'] },
+            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.avatar'] },
+            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.cover_photo'] },
           },
         },
       },
