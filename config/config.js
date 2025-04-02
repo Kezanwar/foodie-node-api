@@ -19,7 +19,7 @@ export const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY
 
 export const MIXPANEL_TOKEN = process.env.MIXPANEL_TOKEN
 
-const appEnv = process.env.APP_ENV
+export const APP_ENV = process.env.APP_ENV
 
 export const stripeSecretApiKey = process.env.STRIPE_SECRET_KEY
 export const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -31,9 +31,9 @@ export const S3SecretKey = process.env.S3_SECRET_KEY
 
 export const S3BaseUrl = process.env.S3_BUCKET_BASE_URL
 
-export const isDev = appEnv === 'development'
-export const isStaging = appEnv === 'staging'
-export const isProd = appEnv === 'production'
+export const isDev = APP_ENV === 'development'
+export const isStaging = APP_ENV === 'staging'
+export const isProd = APP_ENV === 'production'
 
 export const dashboardUrl = isStaging
   ? 'https://dashboard.thefoodiestaging.app'

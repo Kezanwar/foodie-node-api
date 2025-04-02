@@ -1,5 +1,5 @@
-import { S3BaseUrl } from '#app/config/config.js'
 import levenshtein from '#app/utilities/levenshtein.js'
+import AWS from '../../aws/index.js'
 
 //UTILS
 const getOptionMatch = (search, arr) => {
@@ -120,8 +120,8 @@ export const buildCustomerFavouritesListFromResults = (slice, locations, deals) 
   d = d.filter(Boolean)
 
   for (let item of d) {
-    item.restaurant.cover_photo = `${S3BaseUrl}${item.restaurant.cover_photo}`
-    item.restaurant.avatar = `${S3BaseUrl}${item.restaurant.avatar}`
+    item.restaurant.cover_photo = `${AWS.USER_IMAGE_PREFIX}${item.restaurant.cover_photo}`
+    item.restaurant.avatar = `${AWS.USER_IMAGE_PREFIX}${item.restaurant.avatar}`
   }
 
   d = buildMapFromDocArray(d)
