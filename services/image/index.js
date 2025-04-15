@@ -1,7 +1,6 @@
 import sharp from 'sharp'
-
-import { mongo } from 'mongoose'
 import AWS from '../aws/index.js'
+import { v4 } from 'uuid'
 
 export const RESTAURANT_IMAGES = {
   avatar: 'avatar',
@@ -40,7 +39,7 @@ class IMG {
   }
 
   static createImgUUID() {
-    return new mongo.ObjectId().toHexString()
+    return v4()
   }
 
   static prefixImageWithBaseUrlRest(imageName) {

@@ -13,7 +13,7 @@ class AWS {
   static saveImage(name, buffer) {
     const pc = new PutObjectCommand({
       Bucket: bucketName,
-      Key: name,
+      Key: `${APP_ENV}/${name}`,
       Body: buffer,
       ContentType: 'image/jpeg',
     })
