@@ -83,6 +83,16 @@ class DevMigrations {
       console.error(error)
     }
   }
+
+  async addArchivedAndDeletedKeys() {
+    try {
+      await Deal.updateMany({}, { deleted: false })
+      await Location.updateMany({}, { deleted: false, archived: false })
+      await Location.updateMany({ active_deals: { $size: 0 } }, { archived: true })
+    } catch (error) {
+      console.error(error)
+    }
+  }
 }
 
 const devMigrations = isDev ? new DevMigrations() : null

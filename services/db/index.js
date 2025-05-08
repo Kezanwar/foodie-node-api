@@ -351,6 +351,30 @@ class DB {
     await location.save()
     return location
   }
+
+  static async RArchiveOneLocation(rest_id, location_id) {
+    //mark location as archived
+    const locationProm = Location.updateOne({ _id: location_id }, { archived: true, active_deals: [] })
+    //remove from all deals
+    const dealProm = Deal.updateMany(
+      {
+        'restaurant.id': rest_id,
+      },
+      {
+        $pull: {
+          locations: { location_id: location_id },
+        },
+      }
+    )
+
+    await Promise.all([locationProm, dealProm])
+  }
+
+  static async RUnArchiveOneLocation(location_id) {
+    //delete the locations
+    return Location.updateOne({ _id: location_id }, { archived: false })
+  }
+
   static async RDeleteOneLocation(rest_id, location_id) {
     //delete the locations
     const locationProm = Location.deleteOne({ _id: location_id })
@@ -438,6 +462,19 @@ class DB {
         },
       }
     )
+  }
+
+  static async RDowngradeRestaurant(rest_id) {
+    await Location.updateMany(
+      { 'restaurant.id': rest_id },
+      {
+        $set: {
+          archived: true,
+          active_deals: [],
+        },
+      }
+    )
+    await Deal.updateMany({ 'restaurant.id': rest_id }, { is_expired: true })
   }
 
   //usertype:restaurant dashboard
@@ -902,7 +939,11 @@ class DB {
 
   //usertype:customer deals
   static CGetFeed(user, page, long, lat, cuisines, dietary_requirements) {
-    const query = { 'restaurant.is_subscribed': Permissions.SUBSCRIBED, active_deals: { $ne: [], $exists: true } }
+    const query = {
+      'restaurant.is_subscribed': Permissions.SUBSCRIBED,
+      active_deals: { $ne: [], $exists: true },
+      archived: false,
+    }
 
     if (cuisines) {
       query.cuisines = {
@@ -994,7 +1035,11 @@ class DB {
     ]).sort({ 'location.distance_miles': 1 })
   }
   static CGetHomeFeed(user, page, long, lat, cuisines, dietary_requirements) {
-    const query = { 'restaurant.is_subscribed': Permissions.SUBSCRIBED, active_deals: { $ne: [], $exists: true } }
+    const query = {
+      'restaurant.is_subscribed': Permissions.SUBSCRIBED,
+      active_deals: { $ne: [], $exists: true },
+      archived: false,
+    }
 
     if (cuisines) {
       query.cuisines = {
@@ -1092,6 +1137,7 @@ class DB {
       {
         $match: {
           'restaurant.is_subscribed': Permissions.SUBSCRIBED,
+          archived: false,
         },
       },
       ...calculateDistancePipeline(lat, long, '$geometry.coordinates', 'distance_miles'),
@@ -1252,7 +1298,7 @@ class DB {
           spherical: true,
           maxDistance: RADIUS_METRES,
           distanceMultiplier: METER_TO_MILE_CONVERSION,
-          query: { active_deals: { $ne: [], $exists: true } },
+          query: { active_deals: { $ne: [], $exists: true }, archived: false },
         },
       },
       {
@@ -1389,6 +1435,7 @@ class DB {
         $match: {
           _id: { $in: following },
           'restaurant.is_subscribed': Permissions.SUBSCRIBED,
+          archived: false,
         },
       },
       {

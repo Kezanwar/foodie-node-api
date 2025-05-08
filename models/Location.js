@@ -144,6 +144,12 @@ const LocationSchema = new mongoose.Schema(
     archived: {
       type: Boolean,
       default: false,
+      index: true,
+    },
+    deleted: {
+      default: false,
+      type: Boolean,
+      index: true,
     },
   },
   { timestamps: true }
