@@ -67,6 +67,11 @@ const DealSchema = new mongoose.Schema(
         type: String,
       },
     },
+    deleted: {
+      default: false,
+      type: Boolean,
+      index: true,
+    },
   },
   { timestamps: true }
 )

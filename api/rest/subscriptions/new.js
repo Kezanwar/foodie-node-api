@@ -69,6 +69,12 @@ router.get('/checkout-success', async (req, res) => {
 
     const tier = Number(session.metadata.tier)
 
+    const isDowngrading = Permissions.isDowngrading(restaurant.tier, tier)
+
+    if (isDowngrading) {
+      await DB.RDowngradeRestaurant(restaurant._id)
+    }
+
     const subscription = {
       stripe_customer_id: session.customer,
       stripe_subscription_id: session.subscription,

@@ -163,6 +163,14 @@ class Permissions {
     ENTERPRISE: 4,
   }
 
+  static isUpgrading(old_tier, new_tier) {
+    return old_tier < new_tier
+  }
+
+  static isDowngrading(old_tier, new_tier) {
+    return old_tier > new_tier
+  }
+
   static getLocationLimit(tier) {
     switch (tier) {
       case this.#SUBSCRIPTION_TIER.INDIVIDUAL:
