@@ -69,10 +69,14 @@ router.get('/checkout-success', async (req, res) => {
 
     const tier = Number(session.metadata.tier)
 
-    const isDowngrading = Permissions.isDowngrading(restaurant.tier, tier)
+    if (restaurant.is_subscribed) {
+      await DB.RAddPastSubscription(user._id, user.subscription.stripe_subscription_id)
 
-    if (isDowngrading) {
-      await DB.RDowngradeRestaurant(restaurant._id)
+      const isDowngrading = Permissions.isDowngrading(restaurant.tier, tier)
+
+      if (isDowngrading) {
+        await DB.RDowngradeRestaurant(restaurant._id)
+      }
     }
 
     const subscription = {
@@ -80,6 +84,9 @@ router.get('/checkout-success', async (req, res) => {
       stripe_subscription_id: session.subscription,
       subscription_tier: tier,
       had_free_trial: true,
+      subscribed: true,
+      has_cancelled: false,
+      cancelled_end_date: null,
     }
 
     restaurant.is_subscribed = Permissions.SUBSCRIBED
@@ -90,7 +97,7 @@ router.get('/checkout-success', async (req, res) => {
       Email.sendSuccessfulSubscriptionSetupEmail(user, restaurant, tier),
       DB.updateUser(user, { subscription }),
       restaurant.save(),
-      Redis.removeUserByID(session.metadata.user_id),
+      Redis.removeUserByID(user._id),
     ])
 
     return res.redirect(`${dashboardUrl}/dashboard/subscription`)

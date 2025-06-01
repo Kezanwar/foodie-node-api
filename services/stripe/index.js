@@ -83,7 +83,15 @@ class Stripe {
   }
 
   static cancelSubscription(sub_id) {
-    return stripe.subscriptions.cancel(sub_id)
+    return stripe.subscriptions.update(sub_id, {
+      cancel_at_period_end: true,
+    })
+  }
+
+  static reactivateCancelledSubscription(sub_id) {
+    return stripe.subscriptions.update(sub_id, {
+      cancel_at_period_end: false,
+    })
   }
 
   static getPaymentMethod(method_id) {

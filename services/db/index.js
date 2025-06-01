@@ -16,6 +16,8 @@ import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 import Permissions from '../permissions/index.js'
 import { MONGO_URI } from '#app/config/config.js'
 import AWS from '../aws/index.js'
+import { addMinutes, startOfDay } from 'date-fns'
+import Redis from '../cache/redis.js'
 
 class DB {
   //admin
@@ -36,7 +38,7 @@ class DB {
 
     const data = this.#prepareOptionsForDB(DIETARY_REQUIREMENTS)
 
-    for await (const d of data) {
+    for (const d of data) {
       const option = new DietaryRequirement(d)
       await option.save()
     }
@@ -123,12 +125,14 @@ class DB {
   }
 
   static async RUnsubscribeRestaurant(user_id, rest_id) {
+    const end_date = startOfDay(new Date())
     const user = User.updateOne(
       { _id: user_id },
       {
         $set: {
           'subscription.subscription_tier': Permissions.NOT_SUBSCRIBED,
-          'subscription.has_unsubscribed': true,
+          'subscription.subscribed': false,
+          'subscription.cancelled_period_end': end_date,
         },
       }
     )
@@ -141,13 +145,65 @@ class DB {
         $set: {
           'restaurant.is_subscribed': Permissions.NOT_SUBSCRIBED,
           active_deals: [],
+          archived: true,
         },
       }
     )
 
-    const deals = Deal.updateMany({ 'restaurant.id': rest_id, end_date: new Date() }, { is_expired: true })
+    const deals = Deal.updateMany({ 'restaurant.id': rest_id, end_date: end_date }, { is_expired: true })
 
     await Promise.all([user, rest, locations, deals])
+  }
+
+  static async RDowngradeRestaurant(rest_id) {
+    await Location.updateMany(
+      { 'restaurant.id': rest_id },
+      {
+        $set: {
+          archived: true,
+          active_deals: [],
+        },
+      }
+    )
+    await Deal.updateMany({ 'restaurant.id': rest_id }, { is_expired: true, end_date: new Date() })
+  }
+
+  static async RBulkUnsubscribeRestaurant() {
+    const date = addMinutes(startOfDay(new Date()), 5)
+
+    const users = await User.find({
+      'subscription.cancelled_period_end': { $lte: date },
+      'subscription.has_cancelled': true,
+      'subscription.subscribed': true,
+    })
+
+    for (let u of users) {
+      await this.RUnsubscribeRestaurant(u._id, u.restaurant.id)
+      await Redis.removeUserByID(u._id)
+    }
+
+    return users.map((u) => u._id)
+  }
+
+  static async RAddPastSubscription(user_id, subscriptionId) {
+    await User.updateOne(
+      { _id: user_id },
+      {
+        $push: { past_subscriptions: subscriptionId },
+      }
+    )
+  }
+
+  static async RCancelSubEndOfPeriod(user_id, cancelled_period_end) {
+    return User.updateOne(
+      { _id: user_id },
+      {
+        $set: {
+          'subscription.has_cancelled': true,
+          'subscription.cancelled_period_end': cancelled_period_end,
+        },
+      }
+    )
   }
 
   //usertype:common options
@@ -462,19 +518,6 @@ class DB {
         },
       }
     )
-  }
-
-  static async RDowngradeRestaurant(rest_id) {
-    await Location.updateMany(
-      { 'restaurant.id': rest_id },
-      {
-        $set: {
-          archived: true,
-          active_deals: [],
-        },
-      }
-    )
-    await Deal.updateMany({ 'restaurant.id': rest_id }, { is_expired: true })
   }
 
   //usertype:restaurant dashboard

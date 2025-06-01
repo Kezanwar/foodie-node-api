@@ -3,12 +3,17 @@ import Deal from '#app/models/Deal.js'
 import Location from '#app/models/Location.js'
 import Restaurant from '#app/models/Restaurant.js'
 import User from '#app/models/User.js'
+import DB from '#app/services/db/index.js'
 
 import { addMonths } from 'date-fns'
 
 //! DO NOT USE THESE IN PROD
 
 class DevMigrations {
+  async setOptions() {
+    await DB.setCuisineOptions()
+    await DB.setDietaryOptions()
+  }
   // sets all deals to live and end dates in a month
   async setAllDealsLive() {
     try {
