@@ -150,7 +150,7 @@ class DB {
       }
     )
 
-    const deals = Deal.updateMany({ 'restaurant.id': rest_id, end_date: end_date }, { is_expired: true })
+    const deals = Deal.updateMany({ 'restaurant.id': rest_id }, { is_expired: true, end_date: end_date })
 
     await Promise.all([user, rest, locations, deals])
   }
