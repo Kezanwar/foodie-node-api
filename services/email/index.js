@@ -20,6 +20,14 @@ const transporter = nodemailer.createTransport({
 class Email {
   static #emitter = new EventEmitter()
 
+  /**
+   * Sends an email by emitting a send_email event with the provided mail options
+   * @param {Object} mailOptions - The email configuration object
+   * @param {string} mailOptions.from - The sender email address
+   * @param {string|string[]} mailOptions.to - The recipient email address(es)
+   * @param {string} mailOptions.subject - The email subject line
+   * @param {string} mailOptions.html - The HTML content of the email
+   */
   static send(mailOptions) {
     this.#emitter.emit('send_email', mailOptions)
   }
@@ -49,6 +57,15 @@ class Email {
     } catch (err) {
       console.log(err)
     }
+  }
+
+  static sendTestEmail(to) {
+    this.send({
+      from: this.#email_addresses.no_reply,
+      to: to,
+      html: '<div>hello</div>',
+      subject: 'test',
+    })
   }
 
   static #email_addresses = {
