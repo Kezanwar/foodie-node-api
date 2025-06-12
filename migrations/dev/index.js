@@ -3,12 +3,17 @@ import Deal from '#app/models/Deal.js'
 import Location from '#app/models/Location.js'
 import Restaurant from '#app/models/Restaurant.js'
 import User from '#app/models/User.js'
+import DB from '#app/services/db/index.js'
 
 import { addMonths } from 'date-fns'
 
 //! DO NOT USE THESE IN PROD
 
 class DevMigrations {
+  async setOptions() {
+    await DB.setCuisineOptions()
+    await DB.setDietaryOptions()
+  }
   // sets all deals to live and end dates in a month
   async setAllDealsLive() {
     try {
@@ -79,6 +84,16 @@ class DevMigrations {
   async changePushTokensToSnakeCase() {
     try {
       await User.updateMany({}, { $unset: { pushTokens: 1 } })
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async addArchivedAndDeletedKeys() {
+    try {
+      await Deal.updateMany({}, { deleted: false })
+      await Location.updateMany({}, { deleted: false, archived: false })
+      await Location.updateMany({ active_deals: { $size: 0 } }, { archived: true })
     } catch (error) {
       console.error(error)
     }

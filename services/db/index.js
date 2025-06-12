@@ -16,6 +16,8 @@ import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 import Permissions from '../permissions/index.js'
 import { MONGO_URI } from '#app/config/config.js'
 import AWS from '../aws/index.js'
+import { addMinutes, startOfDay } from 'date-fns'
+import Redis from '../cache/redis.js'
 
 class DB {
   //admin
@@ -36,7 +38,7 @@ class DB {
 
     const data = this.#prepareOptionsForDB(DIETARY_REQUIREMENTS)
 
-    for await (const d of data) {
+    for (const d of data) {
       const option = new DietaryRequirement(d)
       await option.save()
     }
@@ -123,12 +125,14 @@ class DB {
   }
 
   static async RUnsubscribeRestaurant(user_id, rest_id) {
+    const end_date = startOfDay(new Date())
     const user = User.updateOne(
       { _id: user_id },
       {
         $set: {
           'subscription.subscription_tier': Permissions.NOT_SUBSCRIBED,
-          'subscription.has_unsubscribed': true,
+          'subscription.subscribed': false,
+          'subscription.cancelled_period_end': end_date,
         },
       }
     )
@@ -141,13 +145,65 @@ class DB {
         $set: {
           'restaurant.is_subscribed': Permissions.NOT_SUBSCRIBED,
           active_deals: [],
+          archived: true,
         },
       }
     )
 
-    const deals = Deal.updateMany({ 'restaurant.id': rest_id, end_date: new Date() }, { is_expired: true })
+    const deals = Deal.updateMany({ 'restaurant.id': rest_id }, { is_expired: true, end_date: end_date })
 
     await Promise.all([user, rest, locations, deals])
+  }
+
+  static async RDowngradeRestaurant(rest_id) {
+    await Location.updateMany(
+      { 'restaurant.id': rest_id },
+      {
+        $set: {
+          archived: true,
+          active_deals: [],
+        },
+      }
+    )
+    await Deal.updateMany({ 'restaurant.id': rest_id }, { is_expired: true, end_date: new Date() })
+  }
+
+  static async RBulkUnsubscribeRestaurant() {
+    const date = addMinutes(startOfDay(new Date()), 5)
+
+    const users = await User.find({
+      'subscription.cancelled_period_end': { $lte: date },
+      'subscription.has_cancelled': true,
+      'subscription.subscribed': true,
+    })
+
+    for (let u of users) {
+      await this.RUnsubscribeRestaurant(u._id, u.restaurant.id)
+      await Redis.removeUserByID(u._id)
+    }
+
+    return users.map((u) => u._id)
+  }
+
+  static async RAddPastSubscription(user_id, subscriptionId) {
+    await User.updateOne(
+      { _id: user_id },
+      {
+        $push: { past_subscriptions: subscriptionId },
+      }
+    )
+  }
+
+  static async RCancelSubEndOfPeriod(user_id, cancelled_period_end) {
+    return User.updateOne(
+      { _id: user_id },
+      {
+        $set: {
+          'subscription.has_cancelled': true,
+          'subscription.cancelled_period_end': cancelled_period_end,
+        },
+      }
+    )
   }
 
   //usertype:common options
@@ -351,6 +407,30 @@ class DB {
     await location.save()
     return location
   }
+
+  static async RArchiveOneLocation(rest_id, location_id) {
+    //mark location as archived
+    const locationProm = Location.updateOne({ _id: location_id }, { archived: true, active_deals: [] })
+    //remove from all deals
+    const dealProm = Deal.updateMany(
+      {
+        'restaurant.id': rest_id,
+      },
+      {
+        $pull: {
+          locations: { location_id: location_id },
+        },
+      }
+    )
+
+    await Promise.all([locationProm, dealProm])
+  }
+
+  static async RUnArchiveOneLocation(location_id) {
+    //delete the locations
+    return Location.updateOne({ _id: location_id }, { archived: false })
+  }
+
   static async RDeleteOneLocation(rest_id, location_id) {
     //delete the locations
     const locationProm = Location.deleteOne({ _id: location_id })
@@ -902,7 +982,11 @@ class DB {
 
   //usertype:customer deals
   static CGetFeed(user, page, long, lat, cuisines, dietary_requirements) {
-    const query = { 'restaurant.is_subscribed': Permissions.SUBSCRIBED, active_deals: { $ne: [], $exists: true } }
+    const query = {
+      'restaurant.is_subscribed': Permissions.SUBSCRIBED,
+      active_deals: { $ne: [], $exists: true },
+      archived: false,
+    }
 
     if (cuisines) {
       query.cuisines = {
@@ -994,7 +1078,11 @@ class DB {
     ]).sort({ 'location.distance_miles': 1 })
   }
   static CGetHomeFeed(user, page, long, lat, cuisines, dietary_requirements) {
-    const query = { 'restaurant.is_subscribed': Permissions.SUBSCRIBED, active_deals: { $ne: [], $exists: true } }
+    const query = {
+      'restaurant.is_subscribed': Permissions.SUBSCRIBED,
+      active_deals: { $ne: [], $exists: true },
+      archived: false,
+    }
 
     if (cuisines) {
       query.cuisines = {
@@ -1092,6 +1180,7 @@ class DB {
       {
         $match: {
           'restaurant.is_subscribed': Permissions.SUBSCRIBED,
+          archived: false,
         },
       },
       ...calculateDistancePipeline(lat, long, '$geometry.coordinates', 'distance_miles'),
@@ -1252,7 +1341,7 @@ class DB {
           spherical: true,
           maxDistance: RADIUS_METRES,
           distanceMultiplier: METER_TO_MILE_CONVERSION,
-          query: { active_deals: { $ne: [], $exists: true } },
+          query: { active_deals: { $ne: [], $exists: true }, archived: false },
         },
       },
       {
@@ -1389,6 +1478,7 @@ class DB {
         $match: {
           _id: { $in: following },
           'restaurant.is_subscribed': Permissions.SUBSCRIBED,
+          archived: false,
         },
       },
       {

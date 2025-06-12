@@ -74,8 +74,9 @@ class WebhookHandler {
     const { user, restaurant } = res
 
     const proms = [
-      Email.sendFailedInvoicePaymentEmail(user, restaurant, event), //email user with invoice
-      DB.RUnsubscribeRestaurant(user._id, restaurant),
+      Email.sendFailedInvoicePaymentEmail(user, restaurant._id, event), //email user with invoice
+      DB.RUnsubscribeRestaurant(user._id, restaurant._id),
+      DB.RDowngradeRestaurant(restaurant._id),
       Redis.removeUserByID(user._id),
     ]
 

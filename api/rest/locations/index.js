@@ -104,6 +104,7 @@ router.post(
         },
         cuisines: restaurant.cuisines,
         dietary_requirements: restaurant.dietary_requirements,
+        active_deals: [],
       })
 
       Resp.json(req, res, [...locations, Loc.pruneLocationForNewLocationResponse(newLocation)])
@@ -145,6 +146,69 @@ router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { getL
     Err.send(req, res, error)
   }
 })
+
+router.post(
+  '/archive/:id',
+  authWithCache,
+  restRoleGuard(Permissions.EDIT, { getLocations: true }),
+  async (req, res) => {
+    const {
+      restaurant,
+      locations,
+      params: { id },
+    } = req
+    try {
+      if (!id) {
+        Err.throw('Location ID is required', 401)
+      }
+
+      const rLocToArchive = Loc.findLocationToEdit(locations, id)
+
+      if (!rLocToArchive) {
+        Err.throw('Location not found', 401)
+      }
+
+      await DB.RArchiveOneLocation(restaurant._id, rLocToArchive._id)
+
+      const response = Loc.pruneLocationsListForArchiveLocationResponse(locations, id)
+
+      Resp.json(req, res, response)
+    } catch (error) {
+      Err.send(req, res, error)
+    }
+  }
+)
+
+router.post(
+  '/unarchive/:id',
+  authWithCache,
+  restRoleGuard(Permissions.EDIT, { getLocations: true }),
+  async (req, res) => {
+    const {
+      locations,
+      params: { id },
+    } = req
+    try {
+      if (!id) {
+        Err.throw('Location ID is required', 401)
+      }
+
+      const rLocToUnArchive = Loc.findLocationToEdit(locations, id)
+
+      if (!rLocToUnArchive) {
+        Err.throw('Location not found', 401)
+      }
+
+      await DB.RUnArchiveOneLocation(rLocToUnArchive._id)
+
+      const response = Loc.pruneLocationsListForArchiveLocationResponse(locations, id)
+
+      Resp.json(req, res, response)
+    } catch (error) {
+      Err.send(req, res, error)
+    }
+  }
+)
 
 router.post(
   '/edit/check/:id',

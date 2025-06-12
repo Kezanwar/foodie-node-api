@@ -142,6 +142,15 @@ class Loc {
   static pruneLocationsListForDeleteLocationResponse(locations, deletedID) {
     return [...locations.filter((rl) => this.getID(rl) !== deletedID)]
   }
+
+  static pruneLocationsListForArchiveLocationResponse(locations, archiveID) {
+    locations.forEach((l) => {
+      if (this.getID(l) === archiveID) {
+        l.archived = !l.archived
+      }
+    })
+    return locations
+  }
 }
 
 export default Loc

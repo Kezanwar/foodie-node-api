@@ -19,8 +19,14 @@ const SubscriptionSchema = new mongoose.Schema(
       type: Number,
       default: Permissions.NOT_SUBSCRIBED,
     },
-    has_unsubscribed: {
+    subscribed: {
       type: Boolean,
+    },
+    has_cancelled: {
+      type: Boolean,
+    },
+    cancelled_period_end: {
+      type: Date,
     },
     had_free_trial: {
       type: Boolean,
@@ -89,6 +95,11 @@ const UserSchema = new Schema(
       },
     },
     subscription: SubscriptionSchema,
+    past_subscriptions: [
+      {
+        type: String,
+      },
+    ],
   },
   { timestamps: true }
 )

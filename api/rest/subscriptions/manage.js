@@ -6,12 +6,15 @@ import { authWithCache } from '#app/middleware/auth.js'
 import Err from '#app/services/error/index.js'
 import Resp from '#app/services/response/index.js'
 import Stripe from '#app/services/stripe/index.js'
+import DB from '#app/services/db/index.js'
+import { startOfDay } from 'date-fns'
+import Redis from '#app/services/cache/redis.js'
 
 router.get('/', authWithCache, async (req, res) => {
   const { user } = req
   try {
     if (!user?.subscription?.subscription_tier) {
-      return Resp.json(req, res, undefined)
+      Err.throw('No current plan', 402)
     }
 
     const data = await Stripe.getSubscription(user.subscription.stripe_subscription_id)
@@ -54,7 +57,7 @@ router.get('/invoices', authWithCache, async (req, res) => {
       !user.subscription.stripe_customer_id ||
       !user.subscription.stripe_subscription_id
     ) {
-      return Resp.json(req, res, [])
+      Err.throw('No current plan', 402)
     }
 
     const data = await Stripe.getCustomersInvoicesForSubsciption(
@@ -63,7 +66,7 @@ router.get('/invoices', authWithCache, async (req, res) => {
     )
 
     if (!data?.data?.length) {
-      return Resp.json(req, res, [])
+      Err.throw('No current plan', 402)
     }
 
     const santized = data.data.map((d) => {
@@ -94,7 +97,7 @@ router.get('/billing', authWithCache, async (req, res) => {
       !user.subscription.stripe_customer_id ||
       !user.subscription.stripe_subscription_id
     ) {
-      return Resp.json(req, res, {})
+      Err.throw('No current plan', 402)
     }
 
     const sub = await Stripe.getSubscription(user.subscription.stripe_subscription_id)
@@ -106,6 +109,32 @@ router.get('/billing', authWithCache, async (req, res) => {
     const payment_method = await Stripe.getPaymentMethod(sub.default_payment_method)
 
     return Resp.json(req, res, payment_method)
+  } catch (error) {
+    Err.send(req, res, error)
+  }
+})
+
+router.post('/cancel-plan', authWithCache, async (req, res) => {
+  const { user } = req
+  try {
+    if (
+      !user?.subscription?.subscription_tier ||
+      !user.subscription.stripe_customer_id ||
+      !user.subscription.stripe_subscription_id
+    ) {
+      Err.throw('No current plan', 402)
+    }
+
+    const cancel = await Stripe.cancelSubscription(user.subscription.stripe_subscription_id)
+
+    await DB.RCancelSubEndOfPeriod(
+      user._id,
+      startOfDay(new Date(Stripe.unixToDate(cancel.current_period_end))).toISOString()
+    )
+
+    await Redis.removeUserByID(user._id)
+
+    return Resp.json(req, res, { message: 'success' })
   } catch (error) {
     Err.send(req, res, error)
   }
