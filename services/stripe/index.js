@@ -24,6 +24,8 @@ class Stripe {
   }
 
   static async createSubscriptionCheckoutLink(tier, user) {
+    const had_free_trial = user?.subscription?.had_free_trial
+
     const session_url = await stripe.checkout.sessions.create({
       mode: 'subscription',
       metadata: {
@@ -37,7 +39,8 @@ class Stripe {
           quantity: 1,
         },
       ],
-      subscription_data: !user?.subscription?.had_free_trial
+      allow_promotion_codes: !had_free_trial,
+      subscription_data: !had_free_trial
         ? {
             trial_settings: {
               end_behavior: {
