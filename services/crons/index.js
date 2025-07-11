@@ -25,7 +25,7 @@ class Crons {
 
   static start() {
     this.#expireDeals()
-    this.#checkoutFeedNotification()
+    // this.#checkoutFeedNotification()
     this.#handleEndOfPeriodCancelledSubscriptions()
   }
 }

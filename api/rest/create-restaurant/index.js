@@ -294,72 +294,72 @@ router.post(
   }
 )
 
-if (isDev || isStaging) {
-  router.get('/accept-application/:id', async (req, res) => {
-    const {
-      params: { id },
-    } = req
+// if (isDev || isStaging) {
+router.get('/accept-application/:id', async (req, res) => {
+  const {
+    params: { id },
+  } = req
 
-    try {
-      const restaurant = await DB.RGetRestaurantByIDWithSuperAdmin(id)
+  try {
+    const restaurant = await DB.RGetRestaurantByIDWithSuperAdmin(id)
 
-      if (!restaurant) {
-        Err.throw('No restaurant found', 401)
-      }
-
-      const user = await DB.getUserByID(restaurant.super_admin)
-
-      if (!user) {
-        Err.throw('No user found', 401)
-      }
-
-      await DB.RUpdateApplicationRestaurant(restaurant, { status: Permissions.STATUS_LIVE })
-
-      await Email.sendSuccessfulApplicationEmail(user, restaurant)
-
-      Resp.json(
-        req,
-        res,
-        `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
-      )
-    } catch (error) {
-      Err.send(req, res, error)
+    if (!restaurant) {
+      Err.throw('No restaurant found', 401)
     }
-  })
-}
 
-if (isDev || isStaging) {
-  router.get('/decline-application/:id', async (req, res) => {
-    const {
-      params: { id },
-    } = req
+    const user = await DB.getUserByID(restaurant.super_admin)
 
-    try {
-      const restaurant = await DB.RGetRestaurantByIDWithSuperAdmin(id)
-
-      if (!restaurant) {
-        Err.throw('No restaurant found', 401)
-      }
-
-      const user = await DB.getUserByID(restaurant.super_admin)
-
-      if (!user) {
-        Err.throw('No user found', 401)
-      }
-
-      await DB.RUpdateApplicationRestaurant(restaurant, { status: Permissions.STATUS_APPLICATION_REJECTED })
-
-      await Email.sendRejectedApplicationEmail(user, restaurant)
-
-      Resp.json(
-        req,
-        res,
-        `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
-      )
-    } catch (error) {
-      Err.send(req, res, error)
+    if (!user) {
+      Err.throw('No user found', 401)
     }
-  })
-}
+
+    await DB.RUpdateApplicationRestaurant(restaurant, { status: Permissions.STATUS_LIVE })
+
+    await Email.sendSuccessfulApplicationEmail(user, restaurant)
+
+    Resp.json(
+      req,
+      res,
+      `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
+    )
+  } catch (error) {
+    Err.send(req, res, error)
+  }
+})
+// }
+
+// if (isDev || isStaging) {
+router.get('/decline-application/:id', async (req, res) => {
+  const {
+    params: { id },
+  } = req
+
+  try {
+    const restaurant = await DB.RGetRestaurantByIDWithSuperAdmin(id)
+
+    if (!restaurant) {
+      Err.throw('No restaurant found', 401)
+    }
+
+    const user = await DB.getUserByID(restaurant.super_admin)
+
+    if (!user) {
+      Err.throw('No user found', 401)
+    }
+
+    await DB.RUpdateApplicationRestaurant(restaurant, { status: Permissions.STATUS_APPLICATION_REJECTED })
+
+    await Email.sendRejectedApplicationEmail(user, restaurant)
+
+    Resp.json(
+      req,
+      res,
+      `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
+    )
+  } catch (error) {
+    Err.send(req, res, error)
+  }
+})
+// }
 
 export default router
