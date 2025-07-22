@@ -37,8 +37,12 @@ router.get('/', authWithCache, validate(discoverSchema), async (req, res) => {
     if (blogs) {
       resp.blogs = blogs
     } else {
-      resp.blogs = fetchedBlogs
-      Memory.setRecentBlogs(fetchedBlogs)
+      if (!fetchedBlogs) {
+        resp.blogs = undefined
+      } else {
+        resp.blogs = fetchedBlogs
+        Memory.setRecentBlogs(fetchedBlogs)
+      }
     }
 
     return Resp.json(req, res, resp)
