@@ -76,6 +76,15 @@ class DB {
     await user.save()
   }
 
+  static async deleteUserByID(id) {
+    const locProm = Location.updateMany({}, { $pull: { followers: id } })
+
+    const dealProm = Deal.updateMany({}, { $pull: { favourites: { user: id } } })
+
+    await Promise.all([dealProm, locProm])
+    await User.deleteOne({ _id: id })
+  }
+
   //usertype:customer
   static async saveNewUserPushToken(user, pushToken) {
     user.push_tokens.push(pushToken)
