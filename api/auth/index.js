@@ -410,4 +410,23 @@ router.patch('/change-password/:token', async (req, res) => {
   }
 })
 
+//* route GET api/auth/delete
+//? @desc CONFIRM EMAIL ADDRESS
+//! @access auth (requires token from confirm email button)
+
+router.post('/delete', authNoCache, async (req, res) => {
+  const user = req.user
+  try {
+    if (user.restaurant?.id) {
+      Err.throw('Please contact support if you wish to delete your account')
+    }
+
+    await Redis.removeUserByID(user._id)
+    await DB.deleteUserByID(user._id)
+    return Resp.json(req, res, 'success')
+  } catch (error) {
+    Err.send(req, res, error)
+  }
+})
+
 export default router
