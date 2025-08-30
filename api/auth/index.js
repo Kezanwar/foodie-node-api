@@ -382,6 +382,10 @@ router.post('/register-apple', async (req, res) => {
     if (user) {
       //USER ALREADY EXISTS, JUST LOG THEM IN
 
+      if (!Auth.isAppleAuthMethod(user?.auth_method)) {
+        Err.throw('User didnt sign up with apple, please sign in with original Sign in method')
+      }
+
       if (pushToken) {
         if (!Notifications.isValidPushToken(pushToken)) {
           Err.throw('Invalid push token', 400)
