@@ -98,6 +98,14 @@ class DevMigrations {
       console.error(error)
     }
   }
+
+  async setEmailPrivateDefault() {
+    try {
+      await User.updateMany({}, { email_private: false })
+    } catch (error) {
+      console.error(error)
+    }
+  }
 }
 
 const devMigrations = isDev ? new DevMigrations() : null

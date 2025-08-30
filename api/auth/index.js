@@ -147,6 +147,60 @@ router.post('/login-google', async (req, res) => {
   }
 })
 
+router.post('/login-apple', async (req, res) => {
+  try {
+    // destructuring from req.body
+    const { credential, pushToken } = req.body
+
+    if (!credential.identityToken) Err.throw('No credential error', 500)
+
+    const userRequested = await Auth.verifyAppleIdToken(credential.identityToken)
+
+    const { email } = userRequested
+
+    const user = await DB.getUserByEmail(email)
+
+    if (!user) {
+      Err.throw('Invalid credentials', 400)
+    }
+
+    if (!Auth.isAppleAuthMethod(user?.auth_method)) {
+      Err.throw('User didnt sign up with apple, please sign in with original sign in method')
+    }
+
+    if (pushToken) {
+      if (!Notifications.isValidPushToken(pushToken)) {
+        Err.throw('Invalid push token', 400)
+      }
+
+      await DB.clearPushTokenFromOtherUsers(pushToken, user._id)
+
+      if (!user.push_tokens.includes(pushToken)) {
+        await DB.saveNewUserPushToken(user, pushToken)
+      }
+    }
+
+    await Redis.setUserByID(user)
+
+    const payload = {
+      user: {
+        id: user.id,
+      },
+    }
+
+    const access_token = Auth.jwtSign30Days(payload)
+
+    const userResponse = user.toClient()
+
+    Resp.json(req, res, {
+      accessToken: access_token,
+      user: userResponse,
+    })
+  } catch (err) {
+    Err.send(req, res, err)
+  }
+})
+
 //* route POST api/auth/register
 //? @desc register user - uses express validator middleware to check the userinfo posted to see if there are any errors and handle them, else create new user in the db, returns a token and user
 //! @access public
@@ -318,10 +372,8 @@ router.post('/register-apple', async (req, res) => {
     const { credential, pushToken } = req.body
 
     if (!credential.identityToken) Err.throw('No credential error', 500)
-    console.log(credential)
-    const userRequested = await Auth.verifyAppleIdToken(credential.identityToken)
 
-    console.log(userRequested)
+    const userRequested = await Auth.verifyAppleIdToken(credential.identityToken)
 
     const { email, is_private_email } = userRequested
 
