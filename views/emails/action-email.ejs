@@ -154,7 +154,7 @@
                 <table role="presentation" border="0" cellspacing="0" width="100%">
                   <tr>
                     <td valign="top">
-                      <h2>Hi <%= locals?.receiver %>,</h2>
+                      <h2><% if (locals?.receiver) { %> Hi <%= locals.receiver %>, <% } else { %> Hi, <% } %></h2>
                       <h3><%= locals?.title %></h3>
                       <% if(locals?.content) { %> <% for (paragraph of content) { %>
                       <p style="margin-bottom: 8px"><%- paragraph %></p>

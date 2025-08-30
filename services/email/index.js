@@ -235,7 +235,7 @@ class Email {
       list: [
         `<strong>Restaurant:</strong> ${restaurant.name}`,
         `<strong>Current Subscription:</strong> ${currentTier}`,
-        `<strong>Contact Name:</strong> ${contact.first_name}`,
+        `<strong>Contact Name:</strong> ${contact.first_name || 'none'}`,
         `<strong>Contact Email:</strong> ${contact.email}`,
       ],
     })
