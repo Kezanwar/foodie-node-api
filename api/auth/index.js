@@ -51,8 +51,8 @@ router.post('/login', validate(loginUserSchema), async (req, res) => {
       Err.throw('Invalid credentials', 400)
     }
 
-    if (Auth.isGoogleAuthMethod(user?.auth_method)) {
-      Err.throw('User signed up using Google')
+    if (!Auth.isJWTAuthMethod(user?.auth_method)) {
+      Err.throw('User signed up using a different sign in method.')
     }
 
     const isMatch = await Auth.comparePasswordToHash(password, user.password)
@@ -110,8 +110,8 @@ router.post('/login-google', async (req, res) => {
       Err.throw('Invalid credentials', 400)
     }
 
-    if (Auth.isJWTAuthMethod(user?.auth_method)) {
-      Err.throw('User didnt sign up with google, please sign in with email & password')
+    if (!Auth.isGoogleAuthMethod(user?.auth_method)) {
+      Err.throw('User didnt sign up with google, please sign in with original sign in method')
     }
 
     if (pushToken) {
@@ -179,6 +179,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       first_name: Str.capitalizeFirstLetter(first_name),
       last_name: Str.capitalizeFirstLetter(last_name),
       email: email.toLowerCase(),
+      email_private: false,
       password,
       auth_method: Auth.jwtAuthMethod,
       auth_otp: Auth.createOTP(),
@@ -231,46 +232,172 @@ router.post('/register-google', async (req, res) => {
     let user = await DB.getUserByEmail(email)
 
     if (user) {
-      Err.throw('User already exists', 400)
-    }
+      //USER ALREADY EXISTS, JUST LOG THEM IN
 
-    if (pushToken) {
-      if (!Notifications.isValidPushToken(pushToken)) {
-        Err.throw('Invalid push token', 400)
+      if (!Auth.isGoogleAuthMethod(user?.auth_method)) {
+        Err.throw('User didnt sign up with google, please sign in with original Sign in method')
       }
-      await DB.clearPushTokenFromOtherUsers(pushToken)
+
+      if (pushToken) {
+        if (!Notifications.isValidPushToken(pushToken)) {
+          Err.throw('Invalid push token', 400)
+        }
+
+        await DB.clearPushTokenFromOtherUsers(pushToken, user._id)
+
+        if (!user.push_tokens.includes(pushToken)) {
+          await DB.saveNewUserPushToken(user, pushToken)
+        }
+      }
+
+      await Redis.setUserByID(user)
+
+      const payload = {
+        user: {
+          id: user.id,
+        },
+      }
+
+      const access_token = Auth.jwtSign30Days(payload)
+
+      const userResponse = user.toClient()
+
+      Resp.json(req, res, {
+        accessToken: access_token,
+        user: userResponse,
+      })
+    } else {
+      //NEW USER - REGISTER A NEW USER
+      if (pushToken) {
+        if (!Notifications.isValidPushToken(pushToken)) {
+          Err.throw('Invalid push token', 400)
+        }
+        await DB.clearPushTokenFromOtherUsers(pushToken)
+      }
+
+      // create a new user with our schema and users details from req
+      user = new User({
+        first_name: Str.capitalizeFirstLetter(given_name),
+        last_name: family_name ? Str.capitalizeFirstLetter(family_name) : '',
+        email: email.toLowerCase(),
+        email_confirmed: true,
+        email_private: false,
+        avatar: picture,
+        auth_method: Auth.googleAuthMethod,
+        push_tokens: pushToken ? [pushToken] : [],
+      })
+
+      user.password = await Auth.hashServerGeneratedPW(email)
+
+      // save the new user to DB using mongoose
+      await Promise.all([user.save(), Redis.setUserByID(user)])
+
+      const payload = {
+        user: {
+          id: user.id,
+        },
+      }
+
+      const access_token = Auth.jwtSign365Days(payload)
+
+      const userResponse = user.toClient()
+
+      Resp.json(req, res, {
+        accessToken: access_token,
+        user: userResponse,
+      })
     }
+  } catch (err) {
+    Err.send(req, res, err)
+  }
+})
 
-    // create a new user with our schema and users details from req
-    user = new User({
-      first_name: Str.capitalizeFirstLetter(given_name),
-      last_name: family_name ? Str.capitalizeFirstLetter(family_name) : '',
-      email: email.toLowerCase(),
-      email_confirmed: true,
-      avatar: picture,
-      auth_method: Auth.googleAuthMethod,
-      push_tokens: pushToken ? [pushToken] : [],
-    })
+router.post('/register-apple', async (req, res) => {
+  try {
+    // destructuring from req.body
+    const { credential, pushToken } = req.body
 
-    user.password = await Auth.hashServerGeneratedPW(email)
+    if (!credential.identityToken) Err.throw('No credential error', 500)
+    console.log(credential)
+    const userRequested = await Auth.verifyAppleIdToken(credential.identityToken)
 
-    // save the new user to DB using mongoose
-    await Promise.all([user.save(), Redis.setUserByID(user)])
+    console.log(userRequested)
 
-    const payload = {
-      user: {
-        id: user.id,
-      },
+    const { email, is_private_email } = userRequested
+
+    let user = await DB.getUserByEmail(email)
+
+    if (user) {
+      //USER ALREADY EXISTS, JUST LOG THEM IN
+
+      if (pushToken) {
+        if (!Notifications.isValidPushToken(pushToken)) {
+          Err.throw('Invalid push token', 400)
+        }
+
+        await DB.clearPushTokenFromOtherUsers(pushToken, user._id)
+
+        if (!user.push_tokens.includes(pushToken)) {
+          await DB.saveNewUserPushToken(user, pushToken)
+        }
+      }
+
+      await Redis.setUserByID(user)
+
+      const payload = {
+        user: {
+          id: user.id,
+        },
+      }
+
+      const access_token = Auth.jwtSign30Days(payload)
+
+      const userResponse = user.toClient()
+
+      Resp.json(req, res, {
+        accessToken: access_token,
+        user: userResponse,
+      })
+    } else {
+      //NEW USER - REGISTER A NEW USER
+      if (pushToken) {
+        if (!Notifications.isValidPushToken(pushToken)) {
+          Err.throw('Invalid push token', 400)
+        }
+        await DB.clearPushTokenFromOtherUsers(pushToken)
+      }
+
+      // create a new user with our schema and users details from req
+      user = new User({
+        first_name: credential.givenName ? Str.capitalizeFirstLetter(credential.givenName) : '',
+        last_name: credential.familyName ? Str.capitalizeFirstLetter(credential.familyName) : '',
+        email: email.toLowerCase(),
+        email_confirmed: true,
+        email_private: is_private_email,
+        auth_method: Auth.appleAuthMethod,
+        push_tokens: pushToken ? [pushToken] : [],
+      })
+
+      user.password = await Auth.hashServerGeneratedPW(email)
+
+      // save the new user to DB using mongoose
+      await Promise.all([user.save(), Redis.setUserByID(user)])
+
+      const payload = {
+        user: {
+          id: user.id,
+        },
+      }
+
+      const access_token = Auth.jwtSign365Days(payload)
+
+      const userResponse = user.toClient()
+
+      Resp.json(req, res, {
+        accessToken: access_token,
+        user: userResponse,
+      })
     }
-
-    const access_token = Auth.jwtSign365Days(payload)
-
-    const userResponse = user.toClient()
-
-    Resp.json(req, res, {
-      accessToken: access_token,
-      user: userResponse,
-    })
   } catch (err) {
     Err.send(req, res, err)
   }
