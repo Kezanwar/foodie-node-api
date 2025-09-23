@@ -1086,7 +1086,8 @@ class DB {
       },
     ]).sort({ 'location.distance_miles': 1 })
   }
-  static CGetHomeFeed(user, page, long, lat, cuisines, dietary_requirements) {
+
+  static CGetHomeFeed(page, long, lat, cuisines, dietary_requirements) {
     const query = {
       'restaurant.is_subscribed': Permissions.SUBSCRIBED,
       active_deals: { $ne: [], $exists: true },

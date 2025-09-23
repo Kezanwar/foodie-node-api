@@ -31,10 +31,9 @@ router.get('/', validate(regularFeedSchema), authWithCache, async (req, res) => 
   }
 })
 
-router.get('/home', validate(regularFeedSchema), authWithCache, async (req, res) => {
+router.get('/guest', validate(regularFeedSchema), async (req, res) => {
   const {
     query: { page, long, lat, cuisines, dietary_requirements },
-    user,
   } = req
 
   try {
@@ -42,7 +41,25 @@ router.get('/home', validate(regularFeedSchema), authWithCache, async (req, res)
     const LAT = Number(lat)
     const PAGE = page ? Number(page) : 0
 
-    const results = await DB.CGetHomeFeed(user, PAGE, LONG, LAT, cuisines, dietary_requirements)
+    const results = await DB.CGetHomeFeed(PAGE, LONG, LAT, cuisines, dietary_requirements)
+
+    return Resp.json(req, res, { nextCursor: results.length < FEED_LIMIT ? null : PAGE + 1, locations: results })
+  } catch (error) {
+    Err.send(req, res, error)
+  }
+})
+
+router.get('/home', validate(regularFeedSchema), authWithCache, async (req, res) => {
+  const {
+    query: { page, long, lat, cuisines, dietary_requirements },
+  } = req
+
+  try {
+    const LONG = Number(long)
+    const LAT = Number(lat)
+    const PAGE = page ? Number(page) : 0
+
+    const results = await DB.CGetHomeFeed(PAGE, LONG, LAT, cuisines, dietary_requirements)
 
     return Resp.json(req, res, { nextCursor: results.length < FEED_LIMIT ? null : PAGE + 1, locations: results })
   } catch (error) {
