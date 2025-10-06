@@ -2,103 +2,83 @@ import { landingUrl } from '#app/config/config.js'
 import axios from 'axios'
 import Str from '#app/services/string/index.js'
 
-const TEMP = {
+const processFetchedBlogs = (data) => {
+  return data.edges.map((d) => ({
+    ...d.node,
+    excerpt: Str.removeTags(d.node.excerpt),
+    featuredImage: d.node.featuredImage.node.sourceUrl,
+  }))
+}
+
+const TEMP = processFetchedBlogs({
   edges: [
     {
       node: {
-        title: 'Your Favourite Restaurant Probably Has a Deal You Don’t Know About',
-        excerpt: `<p>Here’s How to Find It Without the Fuss Let’s be real: you&#8217;re probably spending more than you need to when eating out.Your go-to spots? They’ve likely got deals running — lunchtime offers, weeknight specials, happy hour menus — but unless you’re trawling social media 24/7 or randomly checking in-store signs, you’re missing out. Foodie Finds [&hellip;]</p>\n`,
-        slug: 'your-favourite-restaurant-probably-has-a-deal-you-dont-know-about',
+        title: 'Hidden Gems: The Places Locals Keep to Themselves',
+        excerpt:
+          '<p>In every city, there are two kinds of places to eat and drink. The ones that get all the hype — boosted by big budgets, influencers, and slick marketing. And then there are the hidden gems. These are the small, independent spots you probably wouldn’t notice unless someone tipped you off. The backstreet ramen joint [&hellip;]</p>',
+        slug: 'hidden-gems-the-place-locals-keep-to-themselves',
         date: '2025-05-09T16:18:02',
         restaurant_review_fields: {
           readTime: '2',
         },
         featuredImage: {
           node: {
-            sourceUrl:
-              'https://cms.thefoodie.app/wp-content/uploads/2023/10/4077888657779979686_IMG_2382-1024x776-1.jpg',
+            sourceUrl: 'https://cms.thefoodie.app/wp-content/uploads/2025/09/hidden-Gem-27046360_1280.jpg',
           },
         },
       },
     },
     {
       node: {
-        title: 'Say Goodbye to Quiet Nights',
-        excerpt: `<p>Build Local Buzz with Foodie Running a bar or coffee shop? You know the drill — great service, quality drinks, amazing vibes. But then come the quiet nights, the mid-week dips in footfall, and the constant battle to stay top of mind. And sure, you’ve probably tried social media ads. But between the cost, the [&hellip;]</p>\n`,
-        slug: 'goodbye-to-quiet-nights',
+        title: 'Why Eating Local Tastes Better (And Supports Your Community)',
+        excerpt:
+          '<p>Let’s cut to it: local food just hits different. It’s not because of some marketing buzzword — it’s because when you eat local, you’re not just buying a meal. You’re backing the people, stories, and flavours that make your area what it is. Here’s why eating local is better — for your plate, your pocket, [&hellip;]</p>',
+        slug: 'why-eating-local-tastes-better',
         date: '2023-10-04T18:23:24',
         restaurant_review_fields: {
           readTime: '2',
         },
         featuredImage: {
           node: {
-            sourceUrl:
-              'https://cms.thefoodie.app/wp-content/uploads/2023/10/4077888657779979686_IMG_2382-1024x776-1.jpg',
+            sourceUrl: 'https://cms.thefoodie.app/wp-content/uploads/2025/06/Hidden-gems-3.webp',
           },
         },
       },
     },
     {
       node: {
-        title: 'West Village: West Didbsury',
-        excerpt: `<p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Inside The Didsbury Restaurant Where Small Plates Take You From Japan To Ethiopia Lorem ipsum, dolor sit amet consectetur adipisicing elit. Autem at aperiam deleniti culpa consequuntur ad fuga, consectetur quis sequi. Facilis, labore? Numquam cupiditate incidunt omnis esse eos necessitatibus facilis tempora. Lorem ipsum, dolor sit [&hellip;]</p>\n`,
-        slug: 'west-village-west-didbsury',
+        title: 'How to Eat Out Smarter (And Still Enjoy Every Bite)',
+        excerpt:
+          '<p>Let’s be honest: eating out can add up fast.But there are simple ways to keep enjoying great food, new places, and proper nights out — without draining your wallet. Here’s how to make it work. Go where the locals go Forget glossy menus designed for tourists. The best deals are usually found in the spots [&hellip;]</p>',
+        slug: 'how-to-eat-out-smarter',
         date: '2023-10-04T17:16:33',
         restaurant_review_fields: {
           readTime: '5',
         },
         featuredImage: {
           node: {
-            sourceUrl: 'https://cms.thefoodie.app/wp-content/uploads/2023/10/151119-120223_west-village.jpg',
-          },
-        },
-      },
-    },
-    {
-      node: {
-        title: 'Sud Pasta: Sale',
-        excerpt: `<p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Inside The Didsbury Restaurant Where Small Plates Take You From Japan To Ethiopia Lorem ipsum, dolor sit amet consectetur adipisicing elit. Autem at aperiam deleniti culpa consequuntur ad fuga, consectetur quis sequi. Facilis, labore? Numquam cupiditate incidunt omnis esse eos necessitatibus facilis tempora. Lorem ipsum, dolor sit [&hellip;]</p>\n`,
-        slug: 'sud-pasta-sale',
-        date: '2023-10-03T16:47:24',
-        restaurant_review_fields: {
-          readTime: '5',
-        },
-        featuredImage: {
-          node: {
-            sourceUrl: 'https://cms.thefoodie.app/wp-content/uploads/2023/10/7e42b92d1dba6077b880adeb8f8161b2.jpeg',
-          },
-        },
-      },
-    },
-    {
-      node: {
-        title: 'Volta: West Didsbury',
-        excerpt: `<p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Inside The Didsbury Restaurant Where Small Plates Take You From Japan To Ethiopia Lorem ipsum, dolor sit amet consectetur adipisicing elit. Autem at aperiam deleniti culpa consequuntur ad fuga, consectetur quis sequi. Facilis, labore? Numquam cupiditate incidunt omnis esse eos necessitatibus facilis tempora. Lorem ipsum, dolor sit [&hellip;]</p>\n`,
-        slug: 'volta-west-didsbury',
-        date: '2023-08-15T16:34:53',
-        restaurant_review_fields: {
-          readTime: '8',
-        },
-        featuredImage: {
-          node: {
-            sourceUrl: 'https://cms.thefoodie.app/wp-content/uploads/2023/08/volta.jpeg',
+            sourceUrl: 'https://cms.thefoodie.app/wp-content/uploads/2025/09/hidden-gem-8024234_1280.jpg',
           },
         },
       },
     },
   ],
-}
+})
 
 export const fetchBlogs = async () => {
   try {
-    // const res = await axios.get(`${landingUrl}/api/recent`)
-    return TEMP.edges.map((d) => ({
-      ...d.node,
-      excerpt: Str.removeTags(d.node.excerpt),
-      featuredImage: d.node.featuredImage.node.sourceUrl,
-    }))
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+    const res = await axios.get(`${landingUrl}/api/recent`, {
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    return processFetchedBlogs(res.data)
   } catch (error) {
-    console.log(error)
-    return undefined
+    return TEMP
   }
 }
