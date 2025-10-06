@@ -37,17 +37,15 @@ class WebhookHandler {
         and the subscription status is active. */
         await this.handleInvoicePaid(event.data.object)
         break
-
-      // case 'invoice.payment_action_required':
-      //   /* Sent when the invoice requires customer authentication.
-      //   Learn how to handle the subscription when the invoice requires action. */
-      //   await this.handleInvoicePaymentActionRequired(event.data.object)
-      //   break
       case 'customer.subscription.updated':
         /* Sent when a subscription starts or changes. For example, renewing a subscription, 
         adding a coupon, applying a discount, adding an invoice item, 
         and changing plans all trigger this event. */
         await this.handleSubscriptionUpdated(event.data.object)
+        break
+      case 'customer.subscription.deleted':
+        /* Occurs whenever a customer's subscription ends. Event is then sent to your application, confirming the subscription's final deletion. */
+        await this.handleSubscriptionDeleted(event.data.object)
         break
       default:
         this.printUnhandledEvent(event)
@@ -63,8 +61,8 @@ class WebhookHandler {
     // period_start -->  timestamp for period start (int)
     // hosted_invoice_url --> this is a url link to the invoice (string)
 
-    const customer_id = TEST_CUST_ID // TODO: remove hardcoded test value
-    // const customer_id = event.customer
+    // const customer_id = TEST_CUST_ID // TODO: remove hardcoded test value
+    const customer_id = event.customer
     const res = await DB.getUserAndRestaurantByStripeCustomerID(customer_id)
 
     if (!res) {
@@ -90,8 +88,8 @@ class WebhookHandler {
     // period_start -->  timestamp for period start (int)
     // hosted_invoice_url --> this is a url link to the invoice (string)
 
-    const customer_id = TEST_CUST_ID // TODO: remove hardcoded test value
-    // const customer_id = event.customer
+    // const customer_id = TEST_CUST_ID // TODO: remove hardcoded test value
+    const customer_id = event.customer
     const res = await DB.getUserAndRestaurantByStripeCustomerID(customer_id)
 
     if (!res) {
@@ -118,6 +116,20 @@ class WebhookHandler {
     // items --> object, has .url that looks like an API endpoint (string)
     // plan --> object with new plan details --> product (product ID), amount (int), created (timestamp) id (price_id)
     console.log(event)
+  }
+
+  static async handleSubscriptionDeleted(event) {
+    const customer_id = event.customer
+    const res = await DB.getUserAndRestaurantByStripeCustomerID(customer_id)
+
+    if (!res) {
+      this.throw('cant find user with that customer ID', 'customer.subscription.deleted', 404)
+    }
+
+    const { user } = res
+
+    await DB.RUnsubscribeRestaurant(user._id, user.restaurant.id)
+    await Redis.removeUserByID(user._id)
   }
 }
 

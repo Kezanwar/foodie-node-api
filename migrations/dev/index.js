@@ -106,6 +106,15 @@ class DevMigrations {
       console.error(error)
     }
   }
+
+  async unsubscribeAllRestaurants() {
+    const users = await User.find({
+      'subscription.subscribed': true,
+    })
+    for (let u of users) {
+      await DB.RUnsubscribeRestaurant(u._id, u.restaurant.id)
+    }
+  }
 }
 
 const devMigrations = isDev ? new DevMigrations() : null
