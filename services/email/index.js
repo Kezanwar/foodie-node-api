@@ -296,8 +296,8 @@ class Email {
   }
 
   static async sendSuccessfulInvoicePaidEmail(user, restaurant, event) {
-    const period_start = Str.formatTimestampToUKDateString(event.period_start)
-    const period_end = Str.formatTimestampToUKDateString(event.period_end)
+    const period_start = Str.formatTimestampToUKDateString(Stripe.unixToDate(event.period_start))
+    const period_end = Str.formatTimestampToUKDateString(Stripe.unixToDate(event.period_end))
 
     const html = await this.#createActionEmailHTML({
       receiver: user.first_name,
@@ -319,8 +319,8 @@ class Email {
   }
 
   static async sendFailedInvoicePaymentEmail(user, restaurant, event) {
-    const period_start = Str.formatTimestampToUKDateString(event.period_start)
-    const period_end = Str.formatTimestampToUKDateString(event.period_end)
+    const period_start = Str.formatTimestampToUKDateString(Stripe.unixToDate(event.period_start))
+    const period_end = Str.formatTimestampToUKDateString(Stripe.unixToDate(event.period_end))
 
     const html = await this.#createActionEmailHTML({
       receiver: user.first_name,
