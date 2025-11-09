@@ -9,11 +9,13 @@ import restRoleGuard from '#app/middleware/rest-role-guard.js'
 import { addLocationSchema, checkLocationSchema } from '#app/validation/restaurant/locations.js'
 
 import Err from '#app/services/error/index.js'
-import Loc from '#app/services/location/index.js'
+
 import DB from '#app/services/db/index.js'
 import Task from '#app/services/worker/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
+import LocationUtil from '#app/repositories/location/util.js'
+import LocationRepo from '#app/repositories/location/index.js'
 
 //* route POST api/locations/check
 //? @desc send a location to this endpoint and receive lat / long back for user to check
@@ -31,11 +33,11 @@ router.post(
     } = req
 
     try {
-      const alreadyExists = Loc.checkIfAddLocationAlreadyExists(locations, address)
+      const alreadyExists = LocationUtil.checkIfAddLocationAlreadyExists(locations, address)
 
       if (alreadyExists) Err.throw(`Error: A Location already exists for ${address.postcode} `, 401)
 
-      const long_lat = await Loc.getLongLat(address)
+      const long_lat = await LocationUtil.getLongLat(address)
 
       if (!long_lat) {
         Err.throw(
@@ -63,13 +65,13 @@ router.post(
       body: { nickname, address, phone_number, email, opening_times, long_lat },
     } = req
     try {
-      const alreadyExists = Loc.checkIfAddLocationAlreadyExists(locations, address)
+      const alreadyExists = LocationUtil.checkIfAddLocationAlreadyExists(locations, address)
 
       if (alreadyExists) {
         Err.throw(`Error: A Location already exists for ${address.postcode} `, 401)
       }
 
-      const timezone = await Loc.getTimezone(long_lat)
+      const timezone = await LocationUtil.getTimezone(long_lat)
 
       let phoneWithCode = phone_number
 
@@ -86,7 +88,7 @@ router.post(
         phoneWithCode = `${code}${restOfNumber}`
       }
 
-      const newLocation = await DB.RCreateNewLocation({
+      const newLocation = await LocationRepo.CreateNew({
         nickname,
         address,
         phone_number: phoneWithCode,
@@ -107,7 +109,7 @@ router.post(
         active_deals: [],
       })
 
-      Resp.json(req, res, [...locations, Loc.pruneLocationForNewLocationResponse(newLocation)])
+      Resp.json(req, res, [...locations, LocationUtil.pruneLocationForNewLocationResponse(newLocation)])
     } catch (error) {
       Err.send(req, res, error)
     }
@@ -125,7 +127,7 @@ router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { getL
       Err.throw('Location ID is required', 401)
     }
 
-    const rLocToDelete = Loc.findLocationToEdit(locations, id)
+    const rLocToDelete = LocationUtil.findLocationToEdit(locations, id)
 
     if (!rLocToDelete) {
       Err.throw('Location not found', 401)
@@ -137,9 +139,9 @@ router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { getL
       }
     }
 
-    await DB.RDeleteOneLocation(restaurant._id, rLocToDelete._id)
+    await LocationRepo.HardDeleteOne(restaurant._id, rLocToDelete._id)
 
-    const response = Loc.pruneLocationsListForDeleteLocationResponse(locations, id)
+    const response = LocationUtil.pruneLocationsListForDeleteLocationResponse(locations, id)
 
     Resp.json(req, res, response)
   } catch (error) {
@@ -162,15 +164,15 @@ router.post(
         Err.throw('Location ID is required', 401)
       }
 
-      const rLocToArchive = Loc.findLocationToEdit(locations, id)
+      const rLocToArchive = LocationUtil.findLocationToEdit(locations, id)
 
       if (!rLocToArchive) {
         Err.throw('Location not found', 401)
       }
 
-      await DB.RArchiveOneLocation(restaurant._id, rLocToArchive._id)
+      await LocationRepo.ArchiveOne(restaurant._id, rLocToArchive._id)
 
-      const response = Loc.pruneLocationsListForArchiveLocationResponse(locations, id)
+      const response = LocationUtil.pruneLocationsListForArchiveLocationResponse(locations, id)
 
       Resp.json(req, res, response)
     } catch (error) {
@@ -193,15 +195,15 @@ router.post(
         Err.throw('Location ID is required', 401)
       }
 
-      const rLocToUnArchive = Loc.findLocationToEdit(locations, id)
+      const rLocToUnArchive = LocationUtil.findLocationToEdit(locations, id)
 
       if (!rLocToUnArchive) {
         Err.throw('Location not found', 401)
       }
 
-      await DB.RUnArchiveOneLocation(rLocToUnArchive._id)
+      await LocationRepo.UnarchiveOne(rLocToUnArchive._id)
 
-      const response = Loc.pruneLocationsListForArchiveLocationResponse(locations, id)
+      const response = LocationUtil.pruneLocationsListForArchiveLocationResponse(locations, id)
 
       Resp.json(req, res, response)
     } catch (error) {
@@ -222,20 +224,20 @@ router.post(
       params: { id },
     } = req
     try {
-      const alreadyExists = Loc.checkIfEditLocationAlreadyExists(locations, id, address)
+      const alreadyExists = LocationUtil.checkIfEditLocationAlreadyExists(locations, id, address)
 
       if (alreadyExists) {
         Err.throw(`Error: A Location already exists for ${address.postcode}`, 401)
       }
 
-      const editLocation = Loc.findLocationToEdit(locations, id)
+      const editLocation = LocationUtil.findLocationToEdit(locations, id)
 
       if (!editLocation) {
         Err.throw('Error: No location found')
         return
       }
 
-      const long_lat = await Loc.getLongLat(address)
+      const long_lat = await LocationUtil.getLongLat(address)
 
       if (!long_lat) {
         Err.throw(
@@ -269,13 +271,13 @@ router.patch(
         return
       }
 
-      const alreadyExists = Loc.checkIfEditLocationAlreadyExists(locations, id, address)
+      const alreadyExists = LocationUtil.checkIfEditLocationAlreadyExists(locations, id, address)
 
       if (alreadyExists) {
         Err.throw(`Error: A Location already exists for ${address.postcode}`, 401)
       }
 
-      const editLocation = Loc.findLocationToEdit(locations, id)
+      const editLocation = LocationUtil.findLocationToEdit(locations, id)
 
       if (!editLocation) {
         Err.throw('Error: No location found')
@@ -299,7 +301,7 @@ router.patch(
         phoneWithCode = `${code}${restOfNumber}`
       }
 
-      await DB.RUpdateOneLocation(restaurant._id, id, {
+      await LocationRepo.UpdateOne(restaurant._id, id, {
         nickname,
         address,
         phone_number: phoneWithCode,
@@ -308,7 +310,7 @@ router.patch(
         long_lat,
       })
 
-      const newLocs = await DB.RGetRestaurantLocations(restaurant._id)
+      const newLocs = await LocationRepo.GetAllLocations(restaurant._id)
 
       Resp.json(req, res, newLocs)
     } catch (error) {

@@ -1,0 +1,7 @@
+1. Split DB into relative Repositories
+2. Handler util should just be defined in Handler unless needed elsewhere
+3. Statically type every Response
+4. Make every Response an object, update frontends to handle this
+
+---------
+

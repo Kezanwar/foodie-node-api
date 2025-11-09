@@ -1,6 +1,7 @@
 import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
 import Permissions from '#app/services/permissions/index.js'
+import LocationRepo from '#app/repositories/location/index.js'
 
 const restRoleGuard =
   (permissionLevel, options = {}) =>
@@ -32,7 +33,7 @@ const restRoleGuard =
 
       const proms = [restaurantProm]
 
-      const locationProm = getLocations ? DB.RGetRestaurantLocations(uRestID) : null
+      const locationProm = getLocations ? LocationRepo.GetAllLocations(uRestID) : null
 
       if (locationProm) {
         proms.push(locationProm)
