@@ -1,6 +1,6 @@
 import { createClient } from 'redis'
 
-import User from '#app/models/User.js'
+import User from '#app/models/user.js'
 import { REDIS_URL } from '#app/config/config.js'
 
 class Redis {

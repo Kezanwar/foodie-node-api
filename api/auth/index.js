@@ -9,7 +9,7 @@ import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
 import Str from '#app/services/string/index.js'
 
-import User from '#app/models/User.js'
+import User from '#app/models/user.js'
 
 import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validate.js'

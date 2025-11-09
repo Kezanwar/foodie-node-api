@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
-import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
-import GeoSchema from './schemas/GeoSchema.js'
+import CategorySchemaWithIndex from './schemas/category-with-index.js'
+import GeoSchema from './schemas/geo.js'
 
 const DealStatSchema = new mongoose.Schema(
   {

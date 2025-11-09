@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
-import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
-import GeoSchema from './schemas/GeoSchema.js'
+import CategorySchemaWithIndex from './schemas/category-with-index.js'
+import GeoSchema from './schemas/geo.js'
 
 const LocationStatSchema = new mongoose.Schema(
   {
@@ -15,6 +15,33 @@ const LocationStatSchema = new mongoose.Schema(
   },
   { timestamps: true, _id: false }
 )
+
+const LocationStatTrackSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user',
+    },
+    restaurant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'restaurant',
+    },
+    location: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'location',
+    },
+    user_geo: [{ type: Number }], //! [long, lat]
+    //? not using 2dSphere data type here as we will never query the DB using this geometry.
+    //? will be used purely for restaurant stat insights.
+  },
+  { timestamps: true, _id: false }
+)
+
+export const LocationViews = mongoose.model('location_views', LocationStatTrackSchema)
+
+export const LocationBookingClicks = mongoose.model('location_booking_clicks', LocationStatTrackSchema)
+
+export const LocationFollowers = mongoose.model('location_followers', LocationStatTrackSchema)
 
 const LocationSchema = new mongoose.Schema(
   {

@@ -1,7 +1,7 @@
 import mongoose, { Schema, model } from 'mongoose'
-import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
-import { FavouriteSchemaUser } from './schemas/FavouriteSchema.js'
-import GeoSchema from './schemas/GeoSchema.js'
+import CategorySchemaWithIndex from './schemas/category-with-index.js'
+import { FavouriteSchemaUser } from './schemas/favourite.js'
+import GeoSchema from './schemas/geo.js'
 import Permissions from '#app/services/permissions/index.js'
 
 const SubscriptionSchema = new mongoose.Schema(

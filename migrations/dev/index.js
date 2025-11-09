@@ -1,8 +1,8 @@
 import { isDev } from '#app/config/config.js'
-import Deal from '#app/models/Deal.js'
-import Location from '#app/models/Location.js'
-import Restaurant from '#app/models/Restaurant.js'
-import User from '#app/models/User.js'
+import Deal from '#app/models/deal.js'
+import Location from '#app/models/location.js'
+import Restaurant from '#app/models/restaurant.js'
+import User from '#app/models/user.js'
 import DB from '#app/services/db/index.js'
 
 import { addMonths } from 'date-fns'

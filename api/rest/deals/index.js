@@ -5,7 +5,7 @@ const router = Router()
 import { isBefore } from 'date-fns'
 
 // models
-import Deal from '#app/models/Deal.js'
+import Deal from '#app/models/deal.js'
 
 // middlewares
 import { authWithCache } from '#app/middleware/auth.js'

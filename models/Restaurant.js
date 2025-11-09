@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
+import CategorySchemaWithIndex from './schemas/category-with-index.js'
 
 import IMG from '#app/services/image/index.js'
 import Permissions from '#app/services/permissions/index.js'
