@@ -1,6 +1,6 @@
 import pkg from 'lodash'
 import axios from 'axios'
-const { upperCase, omit, capitalize } = pkg
+const { upperCase, capitalize } = pkg
 import { RAPID_API_KEY } from '#app/config/config.js'
 
 export function getDistanceInMiles(coord1, coord2) {
@@ -33,30 +33,6 @@ class LocationUtil {
 
   static shortPostocde(postcode) {
     return upperCase(postcode).split(' ').join('')
-  }
-
-  static createAddDealLocations(restaurantLocations, newDealLocationsIds) {
-    return newDealLocationsIds.reduce((acc, curr) => {
-      const location = restaurantLocations.find((rL) => this.getID(rL) === curr)
-      if (location) {
-        acc.push({ location_id: curr, geometry: location.geometry, nickname: location.nickname })
-      }
-      return acc
-    }, [])
-  }
-
-  static checkIfAddLocationAlreadyExists(locations, address) {
-    return locations.some((l) => this.shortPostocde(l.address.postcode) === this.shortPostocde(address.postcode))
-  }
-
-  static checkIfEditLocationAlreadyExists(locations, id, address) {
-    return locations.some(
-      (l) => this.getID(l) !== id && this.shortPostocde(l.address.postcode) === this.shortPostocde(address.postcode)
-    )
-  }
-
-  static findLocationToEdit(locations, id) {
-    return locations.find((l) => this.getID(l) === id)
   }
 
   static async getTimezone({ lat, long }) {
@@ -139,32 +115,6 @@ class LocationUtil {
     } catch (error) {
       return undefined
     }
-  }
-
-  static pruneLocationForNewLocationResponse(location) {
-    const obj = location.toObject()
-    return omit(obj, [
-      'cuisines',
-      'dietary_requirements',
-      'restaurant',
-      'active_deals',
-      'followers',
-      'booking_clicks',
-      'views',
-    ])
-  }
-
-  static pruneLocationsListForDeleteLocationResponse(locations, deletedID) {
-    return [...locations.filter((rl) => this.getID(rl) !== deletedID)]
-  }
-
-  static pruneLocationsListForArchiveLocationResponse(locations, archiveID) {
-    locations.forEach((l) => {
-      if (this.getID(l) === archiveID) {
-        l.archived = !l.archived
-      }
-    })
-    return locations
   }
 }
 

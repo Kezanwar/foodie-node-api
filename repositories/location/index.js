@@ -5,9 +5,9 @@ import RepoUtil from '../util.js'
 
 class LocationRepo {
   static GetAllLocations(rest_id) {
-    return Location.find({ 'restaurant.id': rest_id }).select(
-      '-cuisines -dietary_requirements -restaurant -active_deals -views -followers -booking_clicks'
-    )
+    return Location.find({ 'restaurant.id': rest_id })
+      .select('-cuisines -dietary_requirements -restaurant -active_deals -views -followers -booking_clicks')
+      .lean()
   }
 
   static async CreateNew(data) {
