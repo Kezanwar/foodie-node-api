@@ -9,15 +9,56 @@ import restRoleGuard from '#app/middleware/rest-role-guard.js'
 import { addLocationSchema, checkLocationSchema } from '#app/validation/restaurant/locations.js'
 
 import Err from '#app/services/error/index.js'
-import Loc from '#app/services/location/index.js'
 import DB from '#app/services/db/index.js'
 import Task from '#app/services/worker/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
+import HttpResponse from '#app/services/response/http-response.js'
+import LocationUtil from '#app/repositories/location/util.js'
+import LocationRepo from '#app/repositories/location/index.js'
+import RepoUtil from '#app/repositories/util.js'
 
-//* route POST api/locations/check
-//? @desc send a location to this endpoint and receive lat / long back for user to check
-//! @access authenticated & restaurant role super admin
+function checkIfAddLocationAlreadyExists(locations, address) {
+  return locations.some(
+    (l) => LocationUtil.shortPostocde(l.address.postcode) === LocationUtil.shortPostocde(address.postcode)
+  )
+}
+
+function findLocationToEdit(locations, id) {
+  return locations.find((l) => RepoUtil.getID(l) === id)
+}
+
+function checkIfEditLocationAlreadyExists(locations, id, address) {
+  return locations.some(
+    (l) =>
+      RepoUtil.getID(l) !== id &&
+      LocationUtil.shortPostocde(l.address.postcode) === LocationUtil.shortPostocde(address.postcode)
+  )
+}
+
+class LocationCheckResponse extends HttpResponse {
+  constructor(long_lat) {
+    super()
+    this.long_lat = long_lat
+  }
+
+  buildResponse() {
+    return { long_lat: this.long_lat }
+  }
+}
+
+class GetLocationResponse extends HttpResponse {
+  constructor(locations) {
+    super()
+    this.locations = locations
+  }
+
+  buildResponse() {
+    return {
+      locations: this.locations,
+    }
+  }
+}
 
 router.post(
   '/check',
@@ -31,11 +72,11 @@ router.post(
     } = req
 
     try {
-      const alreadyExists = Loc.checkIfAddLocationAlreadyExists(locations, address)
+      const alreadyExists = checkIfAddLocationAlreadyExists(locations, address)
 
       if (alreadyExists) Err.throw(`Error: A Location already exists for ${address.postcode} `, 401)
 
-      const long_lat = await Loc.getLongLat(address)
+      const long_lat = await LocationUtil.getLongLat(address)
 
       if (!long_lat) {
         Err.throw(
@@ -44,7 +85,7 @@ router.post(
         )
       }
 
-      Resp.json(req, res, { long_lat })
+      Resp.json(req, res, new LocationCheckResponse(long_lat))
     } catch (error) {
       Err.send(req, res, error)
     }
@@ -63,13 +104,13 @@ router.post(
       body: { nickname, address, phone_number, email, opening_times, long_lat },
     } = req
     try {
-      const alreadyExists = Loc.checkIfAddLocationAlreadyExists(locations, address)
+      const alreadyExists = checkIfAddLocationAlreadyExists(locations, address)
 
       if (alreadyExists) {
         Err.throw(`Error: A Location already exists for ${address.postcode} `, 401)
       }
 
-      const timezone = await Loc.getTimezone(long_lat)
+      const timezone = await LocationUtil.getTimezone(long_lat)
 
       let phoneWithCode = phone_number
 
@@ -86,7 +127,7 @@ router.post(
         phoneWithCode = `${code}${restOfNumber}`
       }
 
-      const newLocation = await DB.RCreateNewLocation({
+      const newLocation = await LocationRepo.CreateNew({
         nickname,
         address,
         phone_number: phoneWithCode,
@@ -107,7 +148,19 @@ router.post(
         active_deals: [],
       })
 
-      Resp.json(req, res, [...locations, Loc.pruneLocationForNewLocationResponse(newLocation)])
+      const pruned = {
+        _id: newLocation._id,
+        nickname: newLocation.nickname,
+        address: newLocation.address,
+        phone_number: newLocation.phone_number,
+        email: newLocation.email,
+        opening_times: newLocation.opening_times,
+        geometry: newLocation.geometry,
+        timezone: newLocation.timezone,
+        archived: newLocation.archived,
+      }
+
+      Resp.json(req, res, new GetLocationResponse([...locations, pruned]))
     } catch (error) {
       Err.send(req, res, error)
     }
@@ -125,7 +178,7 @@ router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { getL
       Err.throw('Location ID is required', 401)
     }
 
-    const rLocToDelete = Loc.findLocationToEdit(locations, id)
+    const rLocToDelete = findLocationToEdit(locations, id)
 
     if (!rLocToDelete) {
       Err.throw('Location not found', 401)
@@ -137,11 +190,11 @@ router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { getL
       }
     }
 
-    await DB.RDeleteOneLocation(restaurant._id, rLocToDelete._id)
+    await LocationRepo.HardDeleteOne(restaurant._id, rLocToDelete._id)
 
-    const response = Loc.pruneLocationsListForDeleteLocationResponse(locations, id)
+    const updatedLocations = locations.filter((rl) => RepoUtil.getID(rl) !== id)
 
-    Resp.json(req, res, response)
+    Resp.json(req, res, new GetLocationResponse(updatedLocations))
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -162,17 +215,26 @@ router.post(
         Err.throw('Location ID is required', 401)
       }
 
-      const rLocToArchive = Loc.findLocationToEdit(locations, id)
+      const rLocToArchive = findLocationToEdit(locations, id)
 
       if (!rLocToArchive) {
         Err.throw('Location not found', 401)
       }
 
-      await DB.RArchiveOneLocation(restaurant._id, rLocToArchive._id)
+      console.log(id)
 
-      const response = Loc.pruneLocationsListForArchiveLocationResponse(locations, id)
+      await LocationRepo.ArchiveOne(restaurant._id, rLocToArchive._id)
 
-      Resp.json(req, res, response)
+      const updatedLocations = locations.map((l) => {
+        if (RepoUtil.getID(l) === id) {
+          return { ...l, archived: !l.archived }
+        }
+        return l
+      })
+
+      console.log(updatedLocations)
+
+      Resp.json(req, res, new GetLocationResponse(updatedLocations))
     } catch (error) {
       Err.send(req, res, error)
     }
@@ -193,17 +255,22 @@ router.post(
         Err.throw('Location ID is required', 401)
       }
 
-      const rLocToUnArchive = Loc.findLocationToEdit(locations, id)
+      const rLocToUnArchive = findLocationToEdit(locations, id)
 
       if (!rLocToUnArchive) {
         Err.throw('Location not found', 401)
       }
 
-      await DB.RUnArchiveOneLocation(rLocToUnArchive._id)
+      await LocationRepo.UnarchiveOne(rLocToUnArchive._id)
 
-      const response = Loc.pruneLocationsListForArchiveLocationResponse(locations, id)
+      const updatedLocations = locations.map((l) => {
+        if (RepoUtil.getID(l) === id) {
+          return { ...l, archived: !l.archived }
+        }
+        return l
+      })
 
-      Resp.json(req, res, response)
+      Resp.json(req, res, new GetLocationResponse(updatedLocations))
     } catch (error) {
       Err.send(req, res, error)
     }
@@ -222,20 +289,20 @@ router.post(
       params: { id },
     } = req
     try {
-      const alreadyExists = Loc.checkIfEditLocationAlreadyExists(locations, id, address)
+      const alreadyExists = checkIfEditLocationAlreadyExists(locations, id, address)
 
       if (alreadyExists) {
         Err.throw(`Error: A Location already exists for ${address.postcode}`, 401)
       }
 
-      const editLocation = Loc.findLocationToEdit(locations, id)
+      const editLocation = findLocationToEdit(locations, id)
 
       if (!editLocation) {
         Err.throw('Error: No location found')
         return
       }
 
-      const long_lat = await Loc.getLongLat(address)
+      const long_lat = await LocationUtil.getLongLat(address)
 
       if (!long_lat) {
         Err.throw(
@@ -244,7 +311,7 @@ router.post(
         )
       }
 
-      Resp.json(req, res, { long_lat })
+      Resp.json(req, res, new LocationCheckResponse(long_lat))
     } catch (error) {
       Err.send(req, res, error)
     }
@@ -269,13 +336,13 @@ router.patch(
         return
       }
 
-      const alreadyExists = Loc.checkIfEditLocationAlreadyExists(locations, id, address)
+      const alreadyExists = checkIfEditLocationAlreadyExists(locations, id, address)
 
       if (alreadyExists) {
         Err.throw(`Error: A Location already exists for ${address.postcode}`, 401)
       }
 
-      const editLocation = Loc.findLocationToEdit(locations, id)
+      const editLocation = findLocationToEdit(locations, id)
 
       if (!editLocation) {
         Err.throw('Error: No location found')
@@ -299,7 +366,7 @@ router.patch(
         phoneWithCode = `${code}${restOfNumber}`
       }
 
-      await DB.RUpdateOneLocation(restaurant._id, id, {
+      await LocationRepo.UpdateOne(restaurant._id, id, {
         nickname,
         address,
         phone_number: phoneWithCode,
@@ -308,9 +375,9 @@ router.patch(
         long_lat,
       })
 
-      const newLocs = await DB.RGetRestaurantLocations(restaurant._id)
+      const newLocs = await LocationRepo.GetAllLocations(restaurant._id)
 
-      Resp.json(req, res, newLocs)
+      Resp.json(req, res, new GetLocationResponse(newLocs))
     } catch (error) {
       Err.send(req, res, error)
     }
@@ -320,7 +387,7 @@ router.patch(
 router.get('/', authWithCache, restRoleGuard(Permissions.EDIT, { getLocations: true }), async (req, res) => {
   const { locations } = req
   try {
-    Resp.json(req, res, locations)
+    Resp.json(req, res, new GetLocationResponse(locations))
   } catch (error) {
     Err.send(req, res, error)
   }

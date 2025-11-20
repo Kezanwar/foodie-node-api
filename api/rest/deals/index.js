@@ -18,16 +18,23 @@ import { addDealSchema, editDealSchema } from '#app/validation/restaurant/deals.
 // services
 import Err from '#app/services/error/index.js'
 import DB from '#app/services/db/index.js'
-import Loc from '#app/services/location/index.js'
+
 import Str from '#app/services/string/index.js'
 import Notifications from '#app/services/notifications/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
 import Redis from '#app/services/cache/redis.js'
+import RepoUtil from '#app/repositories/util.js'
 
-//* route POST api/create-restaurant/company-info (STEP 1)
-//? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
-//! @access authenticated & no restauant || restaurant
+function createAddDealLocations(restaurantLocations, newDealLocationsIds) {
+  return newDealLocationsIds.reduce((acc, curr) => {
+    const location = restaurantLocations.find((rL) => RepoUtil.getID(rL) === curr)
+    if (location) {
+      acc.push({ location_id: curr, geometry: location.geometry, nickname: location.nickname })
+    }
+    return acc
+  }, [])
+}
 
 router.get('/active', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedOnly: true }), async (req, res) => {
   const { restaurant } = req
@@ -120,7 +127,7 @@ router.post(
         Err.throw('Maxmimum active deals limit reached', 402)
       }
 
-      const newDealLocations = Loc.createAddDealLocations(restLocations, locations)
+      const newDealLocations = createAddDealLocations(restLocations, locations)
 
       if (!newDealLocations.length || locations.length !== newDealLocations.length) {
         Err.throw('Error: No matching locations found', 400)
@@ -171,7 +178,7 @@ router.patch(
       const trimmedName = name.trim()
       const trimmedDescription = description.trim()
 
-      const newDealLocations = Loc.createAddDealLocations(restLocations, locations)
+      const newDealLocations = createAddDealLocations(restLocations, locations)
 
       if (!newDealLocations?.length || newDealLocations.length !== locations.length) {
         Err.throw('Error: No matching locations found', 400)
