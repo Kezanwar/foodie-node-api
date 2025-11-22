@@ -612,12 +612,12 @@ class DB {
   static RGetDealByID(id) {
     return Deal.findById(id)
   }
-  static RGetActiveDeals(id) {
+  static RGetActiveDeals(rest_id) {
     const today = new Date()
     return Deal.aggregate([
       {
         $match: {
-          'restaurant.id': id,
+          'restaurant.id': rest_id,
           is_expired: false,
         },
       },

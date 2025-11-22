@@ -375,7 +375,7 @@ router.patch(
         long_lat,
       })
 
-      const newLocs = await LocationRepo.GetAllLocations(restaurant._id)
+      const newLocs = await LocationRepo.GetAll(restaurant._id)
 
       Resp.json(req, res, new GetLocationResponse(newLocs))
     } catch (error) {
