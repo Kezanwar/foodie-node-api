@@ -33,7 +33,7 @@ const restRoleGuard =
 
       const proms = [restaurantProm]
 
-      const locationProm = getLocations ? LocationRepo.GetAllLocations(uRestID) : null
+      const locationProm = getLocations ? LocationRepo.GetAll(uRestID) : null
 
       if (locationProm) {
         proms.push(locationProm)

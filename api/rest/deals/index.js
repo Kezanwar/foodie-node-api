@@ -17,7 +17,6 @@ import { addDealSchema, editDealSchema } from '#app/validation/restaurant/deals.
 
 // services
 import Err from '#app/services/error/index.js'
-import DB from '#app/services/db/index.js'
 
 import Str from '#app/services/string/index.js'
 import Notifications from '#app/services/notifications/index.js'
@@ -25,6 +24,8 @@ import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
 import Redis from '#app/services/cache/redis.js'
 import RepoUtil from '#app/repositories/util.js'
+import DealRepo from '#app/repositories/deal/index.js'
+import HttpResponse, { SuccessResponse } from '#app/services/response/http-response.js'
 
 function createAddDealLocations(restaurantLocations, newDealLocationsIds) {
   return newDealLocationsIds.reduce((acc, curr) => {
@@ -36,12 +37,38 @@ function createAddDealLocations(restaurantLocations, newDealLocationsIds) {
   }, [])
 }
 
+class ListDealResponse extends HttpResponse {
+  constructor(deals) {
+    super()
+    this.deals = deals
+  }
+
+  buildResponse() {
+    return {
+      deals: this.deals,
+    }
+  }
+}
+
+class SingleDealResponse extends HttpResponse {
+  constructor(deal) {
+    super()
+    this.deal = deal
+  }
+
+  buildResponse() {
+    return {
+      deal: this.deal,
+    }
+  }
+}
+
 router.get('/active', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedOnly: true }), async (req, res) => {
   const { restaurant } = req
   try {
-    const active_deals = await DB.RGetActiveDeals(restaurant._id)
+    const active_deals = await DealRepo.GetActiveDeals(restaurant._id)
 
-    Resp.json(req, res, active_deals)
+    Resp.json(req, res, new ListDealResponse(active_deals))
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -50,9 +77,9 @@ router.get('/active', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedO
 router.get('/expired', authWithCache, restRoleGuard(Permissions.EDIT, { acceptedOnly: true }), async (req, res) => {
   const { restaurant } = req
   try {
-    const expired_deals = await DB.RGetExpiredDeals(restaurant._id)
+    const expired_deals = await DealRepo.GetExpiredDeals(restaurant._id)
 
-    Resp.json(req, res, expired_deals)
+    Resp.json(req, res, new ListDealResponse(expired_deals))
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -65,13 +92,13 @@ router.get('/single/:id', authWithCache, restRoleGuard(Permissions.EDIT, { accep
   } = req
 
   try {
-    const deal = await DB.RGetSingleDealWithStatsByID(restaurant._id, id)
+    const deal = await DealRepo.GetSingleDealWithStatsByID(restaurant._id, id)
 
     if (!deal) {
       Err.throw('Deal not found', 402)
     }
 
-    Resp.json(req, res, deal)
+    Resp.json(req, res, new SingleDealResponse(deal))
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -88,13 +115,13 @@ router.get(
     } = req
 
     try {
-      const deal = await DB.RGetDealAsTemplateByID(restaurant._id, id)
+      const deal = await DealRepo.GetDealAsTemplateByID(restaurant._id, id)
 
       if (!deal) {
         Err.throw('Deal not found', 402)
       }
 
-      Resp.json(req, res, deal)
+      Resp.json(req, res, new SingleDealResponse(deal))
     } catch (error) {
       Err.send(req, res, error)
     }
@@ -115,7 +142,7 @@ router.post(
     } = req
 
     try {
-      const activeDealsCount = await DB.RGetActiveDealsCount(restaurant._id)
+      const activeDealsCount = await DealRepo.GetActiveDealsCount(restaurant._id)
 
       const locationsCount = restLocations.length || 0
 
@@ -150,9 +177,9 @@ router.post(
         is_expired: false,
       })
 
-      await DB.RCreateNewDeal(restaurant._id, newDeal, locations)
+      await DealRepo.CreateNewDeal(restaurant._id, newDeal, locations)
 
-      Resp.json(req, res, 'Success')
+      Resp.json(req, res, SuccessResponse)
 
       Notifications.emitNewDealNotification(newDeal)
     } catch (error) {
@@ -184,13 +211,13 @@ router.patch(
         Err.throw('Error: No matching locations found', 400)
       }
 
-      const deal = await DB.RGetDealByID(id)
+      const deal = await DealRepo.GetDealByID(id)
 
       if (!deal) {
         Err.throw('Deal not found', 400)
       }
 
-      if (DB.getID(deal.restaurant) !== DB.getID(restaurant)) {
+      if (RepoUtil.getID(deal.restaurant) !== RepoUtil.getID(restaurant)) {
         Err.throw('Unauthorized to edit this deal', 400)
       }
 
@@ -205,9 +232,9 @@ router.patch(
         locations: newDealLocations,
       }
 
-      await DB.REditOneDeal(restaurant._id, deal, newData, locations)
+      await DealRepo.EditDeal(restaurant._id, deal, newData, locations)
 
-      return Resp.json(req, res, 'Success')
+      return Resp.json(req, res, SuccessResponse)
     } catch (error) {
       Err.send(req, res, error)
     }
@@ -221,20 +248,20 @@ router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { acce
   } = req
 
   try {
-    const deal = await DB.RGetDealByID(id)
+    const deal = await DealRepo.GetDealByID(id)
     if (!deal) {
       Err.throw('Deal not found', 400)
     }
 
-    if (DB.getID(deal.restaurant) !== DB.getID(restaurant)) {
+    if (RepoUtil.getID(deal.restaurant) !== RepoUtil.getID(restaurant)) {
       Err.throw('Unauthorized to delete this deal', 400)
     }
 
-    await DB.RDeleteOneDeal(restaurant._id, deal)
+    await DealRepo.HardDeleteDeal(restaurant._id, deal)
 
     await Redis.removeAllUsers()
 
-    return Resp.json(req, res, 'Success')
+    return Resp.json(req, res, SuccessResponse)
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -252,13 +279,13 @@ router.patch(
     } = req
 
     try {
-      const deal = await DB.RGetDealByID(id)
+      const deal = await DealRepo.GetDealByID(id)
 
       if (!deal) {
         Err.throw('Deal not found', 400)
       }
 
-      if (DB.getID(deal.restaurant) !== DB.getID(restaurant)) {
+      if (RepoUtil.getID(deal.restaurant) !== RepoUtil.getID(restaurant)) {
         Err.throw('Unauthorized to expire this deal', 400)
       }
 
@@ -278,11 +305,11 @@ router.patch(
         Err.throw('You cant expire a deal that hasnt start yet... Deal end date cannot be before the start date', 400)
       }
 
-      await DB.RExpireOneDeal(restaurant._id, deal, end_date)
+      await DealRepo.ExpireDeal(restaurant._id, deal, end_date)
 
       await Redis.removeAllUsers()
 
-      return Resp.json(req, res, 'Success')
+      return Resp.json(req, res, SuccessResponse)
     } catch (error) {
       Err.send(req, res, error)
     }

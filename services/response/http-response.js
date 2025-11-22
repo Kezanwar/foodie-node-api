@@ -5,3 +5,18 @@ class HttpResponse {
 }
 
 export default HttpResponse
+
+class SuccessResp extends HttpResponse {
+  constructor() {
+    super()
+    this.message = 'Success'
+  }
+
+  buildResponse() {
+    return {
+      message: this.message,
+    }
+  }
+}
+
+export const SuccessResponse = new SuccessResp()
