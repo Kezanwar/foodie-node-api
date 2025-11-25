@@ -9,7 +9,6 @@ const upload = multer({ storage: storage })
 import Err from '#app/services/error/index.js'
 import AWS from '#app/services/aws/index.js'
 import IMG from '#app/services/image/index.js'
-import DB from '#app/services/db/index.js'
 
 import { authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
@@ -19,18 +18,31 @@ import { restaurantDetailsSchema } from '#app/validation/restaurant/create-resta
 
 import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
+import HttpResponse from '#app/services/response/http-response.js'
+import RestaurantRepo from '#app/repositories/restaurant/index.js'
+
+class RestaurantResponse extends HttpResponse {
+  constructor(restaurant) {
+    super()
+    this.restaurant = restaurant
+  }
+
+  buildResponse() {
+    return { restaurant: this.restaurant ? this.restaurant.toClient() : null }
+  }
+}
 
 router.get('/', authWithCache, async (req, res) => {
   const { user } = req
 
   try {
-    if (!user?.restaurant) return Resp.json(req, res, {})
+    if (!user?.restaurant) return Resp.json(req, res, new RestaurantResponse(null))
 
-    const uRest = await DB.RGetRestaurantByID(user.restaurant.id)
+    const uRest = await RestaurantRepo.GetByID(user.restaurant.id)
 
-    if (!uRest) return Resp.json(req, res, {})
+    if (!uRest) return Resp.json(req, res, new RestaurantResponse(null))
 
-    return Resp.json(req, res, uRest.toClient())
+    return Resp.json(req, res, new RestaurantResponse(uRest))
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -108,11 +120,11 @@ router.patch(
         ...(social_media && { social_media: JSON.parse(social_media) }),
       }
 
-      await DB.RUpdateAcceptedRestaurant(restaurant, newData)
+      await RestaurantRepo.UpdateAccepted(restaurant, newData)
 
       if (!restaurant.cover_photo || !restaurant.avatar) return Err.throw('Must provide an Avatar and Cover Photo')
 
-      return Resp.json(req, res, restaurant.toClient())
+      return Resp.json(req, res, new RestaurantResponse(restaurant))
     } catch (error) {
       Err.send(req, res, error)
     }
