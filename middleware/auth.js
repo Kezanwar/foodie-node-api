@@ -1,7 +1,7 @@
 import Redis from '#app/services/cache/redis.js'
 import Err from '#app/services/error/index.js'
-import Auth from '#app/services/auth/index.js'
-import DB from '#app/services/db/index.js'
+import AuthUtil from '#app/repositories/auth/util.js'
+import AuthRepo from '#app/repositories/auth/index.js'
 
 export async function authWithCache(req, res, next) {
   // Get token from header
@@ -13,7 +13,7 @@ export async function authWithCache(req, res, next) {
       Err.throw('No token, authorization denied')
     }
     // verify token
-    const decoded = Auth.jwtVerify(token)
+    const decoded = AuthUtil.jwtVerify(token)
 
     if (!decoded) {
       Err.throw('token not valid')
@@ -25,7 +25,7 @@ export async function authWithCache(req, res, next) {
       req.user = userFromCache
     } else {
       //  attach dedcoded user in token to req.user in req object
-      const userFromDB = await DB.getUserByID(decoded.user.id)
+      const userFromDB = await AuthRepo.GetUserByID(decoded.user.id)
       await Redis.setUserByID(userFromDB)
       req.user = userFromDB
     }
@@ -47,14 +47,14 @@ export async function authNoCache(req, res, next) {
       Err.throw('No token, authorization denied')
     }
     // verify token
-    const decoded = Auth.jwtVerify(token)
+    const decoded = AuthUtil.jwtVerify(token)
 
     if (!decoded) {
       Err.throw('token not valid')
     }
 
     //  attach dedcoded user in token to req.user in req object
-    const userFromDB = await DB.getUserByID(decoded.user.id)
+    const userFromDB = await AuthRepo.GetUserByID(decoded.user.id)
 
     req.user = userFromDB
 

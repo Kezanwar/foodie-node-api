@@ -4,8 +4,8 @@ const router = Router()
 
 import Memory from '#app/services/cache/memory.js'
 import Err from '#app/services/error/index.js'
-import DB from '#app/services/db/index.js'
 import Resp from '#app/services/response/index.js'
+import OptionsRepo from '#app/repositories/options/index.js'
 
 router.get('/', async (req, res) => {
   try {
@@ -13,12 +13,12 @@ router.get('/', async (req, res) => {
     let dietary = Memory.getDietaryOptions()
 
     if (!cuisines) {
-      cuisines = await DB.getCuisines()
+      cuisines = await OptionsRepo.getCuisineOptions()
       Memory.setCuisineOptions(cuisines)
     }
 
     if (!dietary) {
-      dietary = await DB.getDietaryRequirements()
+      dietary = await OptionsRepo.getDietaryOptions()
       Memory.setDietaryOptions(dietary)
     }
 

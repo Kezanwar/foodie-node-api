@@ -5,7 +5,7 @@ import { addMinutes } from 'date-fns'
 import appleSignin from 'apple-signin-auth'
 import { GOOGLE_REGISTER_EMAIL_PW_SECRET, JWT_SECRET } from '#app/config/config.js'
 
-class Auth {
+class AuthUtil {
   //jwt sign
   static jwtSign15Mins(payload) {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' })
@@ -96,4 +96,4 @@ class Auth {
   }
 }
 
-export default Auth
+export default AuthUtil

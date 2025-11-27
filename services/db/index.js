@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
 dotenv.config()
 import { connect, isValidObjectId, Types } from 'mongoose'
-import { CUISINES_DATA, DIETARY_REQUIREMENTS } from '#app/constants/categories.js'
+
 import { FEED_LIMIT, METER_TO_MILE_CONVERSION, RADIUS_METRES } from '#app/constants/deals.js'
 import User from '#app/models/user.js'
 import Restaurant from '#app/models/restaurant.js'
@@ -9,8 +9,6 @@ import Location from '#app/models/location.js'
 import Deal from '#app/models/deal.js'
 import Task from '#app/services/worker/index.js'
 import IMG from '#app/services/image/index.js'
-import Cuisine from '#app/models/cuisine.js'
-import DietaryRequirement from '#app/models/dietary-requirement.js'
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 import Permissions from '../permissions/index.js'
@@ -21,28 +19,6 @@ import Redis from '../cache/redis.js'
 
 class DB {
   //admin
-
-  static async setCuisineOptions() {
-    await Cuisine.deleteMany({})
-
-    const data = this.#prepareOptionsForDB(CUISINES_DATA)
-
-    for await (const d of data) {
-      const option = new Cuisine(d)
-      await option.save()
-    }
-  }
-
-  static async setDietaryOptions() {
-    await DietaryRequirement.deleteMany({})
-
-    const data = this.#prepareOptionsForDB(DIETARY_REQUIREMENTS)
-
-    for (const d of data) {
-      const option = new DietaryRequirement(d)
-      await option.save()
-    }
-  }
 
   static async getDBBackup() {}
 
@@ -213,28 +189,6 @@ class DB {
         },
       }
     )
-  }
-
-  //usertype:common options
-  static getCuisines() {
-    return Cuisine.aggregate([
-      {
-        $project: {
-          name: 1,
-          slug: 1,
-        },
-      },
-    ])
-  }
-  static getDietaryRequirements() {
-    return DietaryRequirement.aggregate([
-      {
-        $project: {
-          name: 1,
-          slug: 1,
-        },
-      },
-    ])
   }
 
   //usertype:restuarant restaurant
@@ -1586,15 +1540,6 @@ class DB {
       newList.length !== currentList.length ||
       !!newList.filter((nc) => !currentList.find((rc) => rc.slug === nc.slug)).length
     )
-  }
-  static #sortOptions(a, b) {
-    return a > b ? 1 : -1
-  }
-  static #prepareOptionsForDB(options) {
-    return options.sort(this.#sortOptions).map((c) => ({
-      name: c,
-      slug: c.split(' ').join('-').toLowerCase().replace(/&/g, 'and'),
-    }))
   }
 }
 
