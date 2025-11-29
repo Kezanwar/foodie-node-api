@@ -10,14 +10,6 @@ class SubscriptionRepo {
     return User.findById(id)
   }
 
-  static async UpdateUser(user, data) {
-    const dataArr = Object.entries(data)
-    dataArr.forEach(([key, value]) => {
-      user[key] = value
-    })
-    await user.save()
-  }
-
   static async GetUserAndRestaurantByStripeCustomerID(customer_id) {
     const res = await User.aggregate([
       { $match: { 'subscription.stripe_customer_id': customer_id } },

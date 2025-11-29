@@ -15,6 +15,7 @@ import Resp from '#app/services/response/index.js'
 import HttpResponse from '#app/services/response/http-response.js'
 import SubscriptionRepo from '#app/repositories/subscription/index.js'
 import RestaurantRepo from '#app/repositories/restaurant/index.js'
+import AuthRepo from '#app/repositories/auth/index.js'
 
 class ChoosePlanResponse extends HttpResponse {
   constructor(data) {
@@ -108,7 +109,7 @@ router.get('/checkout-success', async (req, res) => {
     await Promise.all([
       SubscriptionRepo.SetLocationsIsSubscribed(restaurant._id, Permissions.SUBSCRIBED),
       Email.sendSuccessfulSubscriptionSetupEmail(user, restaurant, tier),
-      SubscriptionRepo.UpdateUser(user, { subscription }),
+      AuthRepo.UpdateUser(user, { subscription }),
       restaurant.save(),
       Redis.removeUserByID(user._id),
     ])

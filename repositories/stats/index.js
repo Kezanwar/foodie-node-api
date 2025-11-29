@@ -83,6 +83,43 @@ class StatsRepo {
     ])
     return res[0] ? res[0] : { views_count: 0, booking_clicks_count: 0, followers_count: 0 }
   }
+
+  static async BulkAddAppUserStats(statsMap) {
+    const dealUpdates = Object.entries(statsMap.deals).map(([deal_id, recent_views]) => {
+      return {
+        updateOne: {
+          filter: {
+            _id: deal_id,
+          },
+          update: {
+            $push: {
+              views: { $each: recent_views },
+            },
+          },
+        },
+      }
+    })
+
+    const locationUpdates = Object.entries(statsMap.locations).map(
+      ([location_id, { views = [], booking_clicks = [] }]) => {
+        return {
+          updateOne: {
+            filter: {
+              _id: location_id,
+            },
+            update: {
+              $push: {
+                views: { $each: views },
+                booking_clicks: { $each: booking_clicks },
+              },
+            },
+          },
+        }
+      }
+    )
+
+    await Promise.all([Deal.bulkWrite(dealUpdates), Location.bulkWrite(locationUpdates)])
+  }
 }
 
 export default StatsRepo

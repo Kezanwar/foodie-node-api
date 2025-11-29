@@ -3,6 +3,7 @@ import Location from '#app/models/location.js'
 import User from '#app/models/user.js'
 import Task from '#app/services/worker/index.js'
 import RepoUtil from '../util.js'
+import { FEED_LIMIT } from '#app/constants/deals.js'
 
 class DealRepo {
   static GetDealByID(deal_id) {
@@ -338,6 +339,67 @@ class DealRepo {
     const userProm = User.updateMany({}, { $pull: { favourites: { deal: deal._id } } })
 
     await Promise.all([dealProm, locationsProm, userProm])
+  }
+
+  static async FavouriteOneDeal(user, deal_id, location_id) {
+    const newDealFavourite = { user: user._id, location_id, user_geo: user.geometry.coordinates }
+    const dealProm = Deal.updateOne(
+      {
+        _id: deal_id,
+      },
+      { $push: { favourites: { $each: [newDealFavourite], $position: 0 } } }
+    )
+
+    const newUserFavourite = { deal: deal_id, location_id }
+    const userProm = User.updateOne(
+      {
+        _id: user._id,
+      },
+      { $push: { favourites: { $each: [newUserFavourite], $position: 0 } } }
+    )
+
+    await Promise.all([dealProm, userProm])
+  }
+
+  static async UnfavouriteOneDeal(user, deal_id, location_id) {
+    const dealProm = Deal.updateOne({ _id: deal_id }, { $pull: { favourites: { user: user._id, location_id } } })
+    const userProm = User.updateOne({ _id: user._id }, { $pull: { favourites: { deal: deal_id, location_id } } })
+    await Promise.all([dealProm, userProm])
+  }
+
+  static async GetFavourites(user, page) {
+    const pageStart = page === 0 ? page : page * FEED_LIMIT
+
+    const sliced = user.favourites.slice(pageStart, pageStart + FEED_LIMIT)
+    const findLocations = sliced.map((f) => f.location_id)
+    const findDeals = sliced.map((f) => f.deal)
+
+    const loctionsProm = Location.aggregate([
+      {
+        $match: {
+          _id: { $in: findLocations },
+        },
+      },
+      {
+        $project: {
+          location: {
+            nickname: '$nickname',
+            restaurant: '$restaurant',
+            _id: '$_id',
+          },
+        },
+      },
+    ])
+
+    const dealsProm = Deal.find({
+      _id: { $in: findDeals },
+    }).select('restaurant name is_expired')
+
+    const [locations, deals] = await Promise.all([loctionsProm, dealsProm])
+
+    const results = await Task.buildCustomerFavouritesListFromResults(sliced, locations, deals)
+
+    return results
   }
 }
 

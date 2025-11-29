@@ -2,6 +2,9 @@ import Deal from '#app/models/deal.js'
 import Location from '#app/models/location.js'
 import User from '#app/models/user.js'
 import RepoUtil from '../util.js'
+import Permissions from '#app/services/permissions/index.js'
+import AWS from '#app/services/aws/index.js'
+import { FEED_LIMIT } from '#app/constants/deals.js'
 
 class LocationRepo {
   static GetAll(rest_id) {
@@ -160,6 +163,142 @@ class LocationRepo {
       },
     ])
     return res[0] ? res[0] : { views_count: 0, booking_clicks_count: 0, followers_count: 0 }
+  }
+
+  static async FollowLocation(user, location_id) {
+    const locProm = await Location.updateOne(
+      {
+        _id: location_id,
+      },
+      { $push: { followers: { $each: [user._id], $position: 0 } } }
+    )
+
+    const userProm = User.updateOne(
+      {
+        _id: user._id,
+      },
+      { $push: { following: { $each: [location_id], $position: 0 } } }
+    )
+
+    await Promise.all([locProm, userProm])
+  }
+
+  static async UnfollowLocation(user, location_id) {
+    const locProm = Location.updateOne(
+      {
+        _id: location_id,
+      },
+      { $pull: { followers: user._id } }
+    )
+    const userProm = User.updateOne({ _id: user._id }, { $pull: { following: location_id } })
+
+    await Promise.all([locProm, userProm])
+  }
+
+  static async GetFollowing(user, page) {
+    const pageStart = page === 0 ? page : page * FEED_LIMIT
+
+    const following = user.following.slice(pageStart, pageStart + FEED_LIMIT)
+
+    const results = await Location.aggregate([
+      {
+        $match: {
+          _id: { $in: following },
+          'restaurant.is_subscribed': Permissions.SUBSCRIBED,
+          archived: false,
+        },
+      },
+      {
+        $addFields: {
+          index: {
+            $indexOfArray: [following, '$_id'],
+          },
+        },
+      },
+      { $sort: { index: 1 } },
+      {
+        $project: {
+          location: {
+            nickname: '$nickname',
+            _id: '$_id',
+            coordinates: '$geometry.coordinates',
+          },
+          restaurant: {
+            id: '$restaurant.id',
+            name: '$restaurant.name',
+            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.avatar'] },
+            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.cover_photo'] },
+          },
+        },
+      },
+    ])
+    return results
+  }
+
+  static async GetCustomerViewLocation(location_id) {
+    const res = await Location.aggregate([
+      {
+        $match: {
+          _id: RepoUtil.makeMongoIDs(location_id),
+        },
+      },
+      {
+        $lookup: {
+          from: 'deals',
+          foreignField: '_id',
+          localField: 'active_deals.deal_id',
+          pipeline: [
+            {
+              $project: {
+                name: 1,
+              },
+            },
+          ],
+          as: 'deals',
+        },
+      },
+      {
+        $lookup: {
+          from: 'restaurants',
+          foreignField: '_id',
+          localField: 'restaurant.id',
+          pipeline: [
+            {
+              $project: {
+                bio: 1,
+                booking_link: 1,
+                is_subscribed: 1,
+              },
+            },
+          ],
+          as: 'rest',
+        },
+      },
+      {
+        $project: {
+          nickname: 1,
+          restaurant: {
+            booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
+            bio: { $arrayElemAt: ['$rest.bio', 0] },
+            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.avatar'] },
+            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.cover_photo'] },
+            name: '$restaurant.name',
+            _id: '$restaurant.id',
+            is_subscribed: { $arrayElemAt: ['$rest.is_subscribed', 0] },
+          },
+          address: 1,
+          phone_number: 1,
+          email: 1,
+          opening_times: 1,
+          dietary_requirements: 1,
+          cuisines: 1,
+          distance_miles: 1,
+          active_deals: '$deals',
+          coordinates: '$geometry.coordinates',
+        },
+      },
+    ])
+    return res[0]
   }
 }
 

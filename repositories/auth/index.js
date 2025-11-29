@@ -36,6 +36,18 @@ class AuthRepo {
     await Promise.all([dealProm, locProm])
     await User.deleteOne({ _id: id })
   }
+
+  static SetUserGeometry(user, long, lat) {
+    return User.updateOne({ _id: user._id }, { $set: { geometry: { coordinates: [long, lat] } } })
+  }
+
+  static async UpdateUser(user, data) {
+    const dataArr = Object.entries(data)
+    dataArr.forEach(([key, value]) => {
+      user[key] = value
+    })
+    await user.save()
+  }
 }
 
 export default AuthRepo

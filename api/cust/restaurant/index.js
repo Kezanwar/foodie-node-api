@@ -8,6 +8,19 @@ import DB from '#app/services/db/index.js'
 import Task from '#app/services/worker/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
+import HttpResponse from '#app/services/response/http-response.js'
+import LocationRepo from '#app/repositories/location/index.js'
+
+class LocationCustomerViewResponse extends HttpResponse {
+  constructor(location) {
+    super()
+    this.location = location
+  }
+
+  buildResponse() {
+    return this.location
+  }
+}
 
 router.get('/:id', authWithCache, async (req, res) => {
   const user = req.user
@@ -18,7 +31,7 @@ router.get('/:id', authWithCache, async (req, res) => {
       Err.throw('Restaurant not found', 404)
     }
 
-    const location = await DB.CGetSingleRestaurantLocation(id)
+    const location = await LocationRepo.GetCustomerViewLocation(id)
 
     if (!location) {
       Err.throw('Restaurant not found', 404)
@@ -30,7 +43,7 @@ router.get('/:id', authWithCache, async (req, res) => {
 
     const resp = await Task.checkSingleRestaurantFollowAndFav(user, location)
 
-    Resp.json(req, res, resp)
+    Resp.json(req, res, new LocationCustomerViewResponse(resp))
   } catch (error) {
     Err.send(req, res, error)
   }
