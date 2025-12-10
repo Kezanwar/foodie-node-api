@@ -14,7 +14,6 @@ import IMG from '#app/services/image/index.js'
 import AWS from '#app/services/aws/index.js'
 import Err from '#app/services/error/index.js'
 import Redis from '#app/services/cache/redis.js'
-import DB from '#app/services/db/index.js'
 
 import validate from '#app/middleware/validate.js'
 
@@ -27,6 +26,7 @@ import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
 import HttpResponse from '#app/services/response/http-response.js'
 import RestaurantRepo from '#app/repositories/restaurant/index.js'
+import AuthRepo from '#app/repositories/auth/index.js'
 
 class RestaurantResponse extends HttpResponse {
   constructor(restaurant) {
@@ -329,7 +329,7 @@ router.get('/accept-application/:id', async (req, res) => {
       Err.throw('No restaurant found', 401)
     }
 
-    const user = await DB.getUserByID(restaurant.super_admin)
+    const user = await AuthRepo.GetUserByID(restaurant.super_admin)
 
     if (!user) {
       Err.throw('No user found', 401)
@@ -365,7 +365,7 @@ router.get('/decline-application/:id', async (req, res) => {
       Err.throw('No restaurant found', 401)
     }
 
-    const user = await DB.getUserByID(restaurant.super_admin)
+    const user = await AuthRepo.GetUserByID(restaurant.super_admin)
 
     if (!user) {
       Err.throw('No user found', 401)

@@ -3,6 +3,7 @@ import Location from '#app/models/location.js'
 import User from '#app/models/user.js'
 import Task from '#app/services/worker/index.js'
 import RepoUtil from '../util.js'
+import AWS from '#app/services/aws/index.js'
 import { FEED_LIMIT } from '#app/constants/deals.js'
 
 class DealRepo {
@@ -212,7 +213,7 @@ class DealRepo {
       {
         $match: {
           'restaurant.id': rest_id,
-          _id: this.makeMongoIDs(deal_id),
+          _id: RepoUtil.makeMongoIDs(deal_id),
         },
       },
       {
@@ -400,6 +401,131 @@ class DealRepo {
     const results = await Task.buildCustomerFavouritesListFromResults(sliced, locations, deals)
 
     return results
+  }
+
+  static GetCustomerViewSingleDeal(deal_id, location_id) {
+    const [dealID, locationID] = RepoUtil.makeMongoIDs(deal_id, location_id)
+    return Deal.aggregate([
+      {
+        $match: {
+          _id: dealID,
+        },
+      },
+      {
+        $addFields: {
+          matchedLocation: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$locations',
+                  as: 'location',
+                  cond: { $eq: ['$$location.location_id', locationID] },
+                },
+              },
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'locations',
+          localField: 'matchedLocation.location_id',
+          foreignField: '_id',
+          as: 'loc',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                opening_times: 1,
+                address: 1,
+                phone_number: 1,
+                email: 1,
+                coordinates: '$geometry.coordinates',
+                nickname: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: 'restaurants',
+          localField: 'restaurant.id',
+          foreignField: '_id',
+          as: 'rest',
+          pipeline: [
+            {
+              $project: {
+                bio: 1,
+                booking_link: 1,
+                is_subscribed: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          restaurant: {
+            id: '$restaurant.id',
+            name: '$restaurant.name',
+            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.avatar'] },
+            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.cover_photo'] },
+            bio: '$restaurant.bio',
+            booking_link: { $arrayElemAt: ['$rest.booking_link', 0] },
+            is_subscribed: { $arrayElemAt: ['$rest.is_subscribed', 0] },
+          },
+          name: 1,
+          description: 1,
+          location: { $arrayElemAt: ['$loc', 0] },
+          cuisines: 1,
+          dietary_requirements: 1,
+          is_expired: 1,
+          end_date: 1,
+        },
+      },
+    ])
+  }
+
+  static async BulkExpireDealsFromDate(date) {
+    const filter = { end_date: { $ne: null, $lte: date }, is_expired: false }
+    const toExpire = await Deal.find(filter)
+    const proms = toExpire.map((deal) =>
+      Location.updateMany(
+        {
+          'restaurant.id': deal.restaurant.id,
+        },
+        { $pull: { active_deals: { deal_id: deal._id } } }
+      )
+    )
+    await Promise.all(proms)
+    const expiredReq = await Deal.updateMany(filter, { is_expired: true })
+    return expiredReq
+  }
+
+  static async GetAllDealsLocationFollowersWithPushtokens(deal) {
+    //get locations
+    const locations = await Location.aggregate([
+      { $match: { _id: { $in: deal.locations.map((l) => l.location_id) } } },
+      {
+        $project: {
+          restaurant_name: '$restaurant.name',
+          location_name: '$nickname',
+        },
+      },
+    ])
+
+    //get followers pushtokens
+    const followerProms = locations.map((loc) => User.find({ following: loc._id }).select('first_name push_tokens'))
+    const followers = await Promise.all(followerProms)
+
+    //combine
+    followers.forEach((f, i) => {
+      locations[i].followers = f
+    })
+
+    return locations
   }
 }
 

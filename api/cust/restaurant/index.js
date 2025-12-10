@@ -4,12 +4,12 @@ const router = Router()
 import { authWithCache } from '#app/middleware/auth.js'
 
 import Err from '#app/services/error/index.js'
-import DB from '#app/services/db/index.js'
 import Task from '#app/services/worker/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
 import HttpResponse from '#app/services/response/http-response.js'
 import LocationRepo from '#app/repositories/location/index.js'
+import RepoUtil from '#app/repositories/util.js'
 
 class LocationCustomerViewResponse extends HttpResponse {
   constructor(location) {
@@ -27,7 +27,7 @@ router.get('/:id', authWithCache, async (req, res) => {
   const id = req.params?.id
 
   try {
-    if (!DB.isValidID(id)) {
+    if (!RepoUtil.isValidID(id)) {
       Err.throw('Restaurant not found', 404)
     }
 

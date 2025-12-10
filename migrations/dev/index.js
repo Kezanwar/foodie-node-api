@@ -4,7 +4,7 @@ import Location from '#app/models/location.js'
 import Restaurant from '#app/models/restaurant.js'
 import User from '#app/models/user.js'
 import OptionsRepo from '#app/repositories/options/index.js'
-import DB from '#app/services/db/index.js'
+import SubscriptionRepo from '#app/repositories/subscription/index.js'
 
 import { addMonths } from 'date-fns'
 
@@ -113,7 +113,7 @@ class DevMigrations {
       'subscription.subscribed': true,
     })
     for (let u of users) {
-      await DB.RUnsubscribeRestaurant(u._id, u.restaurant.id)
+      await SubscriptionRepo.UnsubscribeRestaurant(u._id, u.restaurant.id)
     }
   }
 }

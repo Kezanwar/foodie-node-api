@@ -9,13 +9,13 @@ import restRoleGuard from '#app/middleware/rest-role-guard.js'
 import { addLocationSchema, checkLocationSchema } from '#app/validation/restaurant/locations.js'
 
 import Err from '#app/services/error/index.js'
-import DB from '#app/services/db/index.js'
 import Task from '#app/services/worker/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
 import HttpResponse from '#app/services/response/http-response.js'
 import LocationUtil from '#app/repositories/location/util.js'
 import LocationRepo from '#app/repositories/location/index.js'
+import RestaurantRepo from '#app/repositories/restaurant/index.js'
 import RepoUtil from '#app/repositories/util.js'
 
 function checkIfAddLocationAlreadyExists(locations, address) {
@@ -186,7 +186,7 @@ router.post('/delete/:id', authWithCache, restRoleGuard(Permissions.EDIT, { getL
 
     if (locations.length === 1) {
       if (Permissions.isStep3Complete(restaurant.registration_step)) {
-        await DB.RUpdateApplicationRestaurant(restaurant, { registration_step: Permissions.REG_STEP_2_COMPLETE })
+        await RestaurantRepo.UpdateApplication(restaurant, { registration_step: Permissions.REG_STEP_2_COMPLETE })
       }
     }
 

@@ -48,6 +48,10 @@ class AuthRepo {
     })
     await user.save()
   }
+
+  static GetAllUsersWithPushTokens() {
+    return User.find({ push_tokens: { $exists: true, $not: { $size: 0 } } }).select('push_tokens first_name email')
+  }
 }
 
 export default AuthRepo
