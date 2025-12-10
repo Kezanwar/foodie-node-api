@@ -1,7 +1,7 @@
 import Redis from '#app/services/cache/redis.js'
-import DB from '#app/services/db/index.js'
 import Email from '#app/services/email/index.js'
 import WebhookError from './error.js'
+import SubscriptionRepo from '#app/repositories/subscription/index.js'
 
 export const TEST_CUST_ID = 'cus_QxoeV3ueAWMCDf'
 
@@ -63,7 +63,7 @@ class WebhookHandler {
 
     // const customer_id = TEST_CUST_ID // TODO: remove hardcoded test value
     const customer_id = event.customer
-    const res = await DB.getUserAndRestaurantByStripeCustomerID(customer_id)
+    const res = await SubscriptionRepo.GetUserAndRestaurantByStripeCustomerID(customer_id)
 
     if (!res) {
       this.throw('cant find user with that customer ID', 'invoice.failed', 404)
@@ -73,8 +73,8 @@ class WebhookHandler {
 
     const proms = [
       Email.sendFailedInvoicePaymentEmail(user, restaurant._id, event), //email user with invoice
-      DB.RUnsubscribeRestaurant(user._id, restaurant._id),
-      DB.RDowngradeRestaurant(restaurant._id),
+      SubscriptionRepo.UnsubscribeRestaurant(user._id, restaurant._id),
+      SubscriptionRepo.DowngradeRestaurant(restaurant._id),
       Redis.removeUserByID(user._id),
     ]
 
@@ -90,7 +90,7 @@ class WebhookHandler {
 
     // const customer_id = TEST_CUST_ID // TODO: remove hardcoded test value
     const customer_id = event.customer
-    const res = await DB.getUserAndRestaurantByStripeCustomerID(customer_id)
+    const res = await SubscriptionRepo.GetUserAndRestaurantByStripeCustomerID(customer_id)
 
     if (!res) {
       this.throw('cant find user with that customer ID', 'invoice.paid', 404)
@@ -120,7 +120,7 @@ class WebhookHandler {
 
   static async handleSubscriptionDeleted(event) {
     const customer_id = event.customer
-    const res = await DB.getUserAndRestaurantByStripeCustomerID(customer_id)
+    const res = await SubscriptionRepo.GetUserAndRestaurantByStripeCustomerID(customer_id)
 
     if (!res) {
       this.throw('cant find user with that customer ID', 'customer.subscription.deleted', 404)
@@ -128,7 +128,7 @@ class WebhookHandler {
 
     const { user } = res
 
-    await DB.RUnsubscribeRestaurant(user._id, user.restaurant.id)
+    await SubscriptionRepo.UnsubscribeRestaurant(user._id, user.restaurant.id)
     await Redis.removeUserByID(user._id)
   }
 }

@@ -6,13 +6,27 @@ import { authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
 import Err from '#app/services/error/index.js'
-import DB from '#app/services/db/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import Stripe from '#app/services/stripe/index.js'
 import Email from '#app/services/email/index.js'
 import Redis from '#app/services/cache/redis.js'
 import { dashboardUrl } from '#app/config/config.js'
 import Resp from '#app/services/response/index.js'
+import HttpResponse from '#app/services/response/http-response.js'
+import SubscriptionRepo from '#app/repositories/subscription/index.js'
+import RestaurantRepo from '#app/repositories/restaurant/index.js'
+import AuthRepo from '#app/repositories/auth/index.js'
+
+class ChoosePlanResponse extends HttpResponse {
+  constructor(data) {
+    super()
+    this.data = data
+  }
+
+  buildResponse() {
+    return this.data
+  }
+}
 
 router.post(
   '/choose-plan',
@@ -30,7 +44,7 @@ router.post(
 
       if (Permissions.isEnterprise(tier)) {
         await Email.sendEnterpriseContactSalesEnquiry(restaurant, req.user)
-        return Resp.json(req, res, 'success')
+        return Resp.json(req, res, new ChoosePlanResponse('success'))
       }
 
       if (tier === restaurant.subscription_tier) {
@@ -39,7 +53,7 @@ router.post(
 
       const session_url = await Stripe.createSubscriptionCheckoutLink(tier, req.user)
 
-      return Resp.json(req, res, { checkout_url: session_url.url })
+      return Resp.json(req, res, new ChoosePlanResponse({ checkout_url: session_url.url }))
     } catch (error) {
       Err.send(req, res, error)
     }
@@ -58,24 +72,24 @@ router.get('/checkout-success', async (req, res) => {
     let user = await Redis.getUserByID(session.metadata.user_id)
 
     if (!user) {
-      user = await DB.getUserByID(session.metadata.user_id)
+      user = await SubscriptionRepo.GetUserByID(session.metadata.user_id)
     }
 
     if (!user) {
       Err.throw('Access denied', 402)
     }
 
-    const restaurant = await DB.RGetRestaurantByID(user.restaurant.id)
+    const restaurant = await RestaurantRepo.GetByID(user.restaurant.id)
 
     const tier = Number(session.metadata.tier)
 
     if (restaurant.is_subscribed) {
-      await DB.RAddPastSubscription(user._id, user.subscription.stripe_subscription_id)
+      await SubscriptionRepo.AddPastSubscription(user._id, user.subscription.stripe_subscription_id)
 
       const isDowngrading = Permissions.isDowngrading(restaurant.tier, tier)
 
       if (isDowngrading) {
-        await DB.RDowngradeRestaurant(restaurant._id)
+        await SubscriptionRepo.DowngradeRestaurant(restaurant._id)
       }
     }
 
@@ -93,9 +107,9 @@ router.get('/checkout-success', async (req, res) => {
     restaurant.tier = tier
 
     await Promise.all([
-      DB.RSetLocationsIsSubscribed(restaurant._id, Permissions.SUBSCRIBED),
+      SubscriptionRepo.SetLocationsIsSubscribed(restaurant._id, Permissions.SUBSCRIBED),
       Email.sendSuccessfulSubscriptionSetupEmail(user, restaurant, tier),
-      DB.updateUser(user, { subscription }),
+      AuthRepo.UpdateUser(user, { subscription }),
       restaurant.save(),
       Redis.removeUserByID(user._id),
     ])

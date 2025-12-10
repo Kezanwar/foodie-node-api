@@ -6,9 +6,43 @@ import { authWithCache } from '#app/middleware/auth.js'
 import Err from '#app/services/error/index.js'
 import Resp from '#app/services/response/index.js'
 import Stripe from '#app/services/stripe/index.js'
-import DB from '#app/services/db/index.js'
 import { startOfDay } from 'date-fns'
 import Redis from '#app/services/cache/redis.js'
+import HttpResponse, { SuccessResponse } from '#app/services/response/http-response.js'
+import SubscriptionRepo from '#app/repositories/subscription/index.js'
+
+class SubscriptionDetailsResponse extends HttpResponse {
+  constructor(subscription) {
+    super()
+    this.subscription = subscription
+  }
+
+  buildResponse() {
+    return this.subscription
+  }
+}
+
+class InvoicesResponse extends HttpResponse {
+  constructor(invoices) {
+    super()
+    this.invoices = invoices
+  }
+
+  buildResponse() {
+    return this.invoices
+  }
+}
+
+class BillingResponse extends HttpResponse {
+  constructor(paymentMethod) {
+    super()
+    this.paymentMethod = paymentMethod
+  }
+
+  buildResponse() {
+    return this.paymentMethod || {}
+  }
+}
 
 router.get('/', authWithCache, async (req, res) => {
   const { user } = req
@@ -43,7 +77,7 @@ router.get('/', authWithCache, async (req, res) => {
       },
     }
 
-    Resp.json(req, res, sub)
+    Resp.json(req, res, new SubscriptionDetailsResponse(sub))
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -83,7 +117,7 @@ router.get('/invoices', authWithCache, async (req, res) => {
       }
     })
 
-    return Resp.json(req, res, santized)
+    return Resp.json(req, res, new InvoicesResponse(santized))
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -103,12 +137,12 @@ router.get('/billing', authWithCache, async (req, res) => {
     const sub = await Stripe.getSubscription(user.subscription.stripe_subscription_id)
 
     if (!sub.default_payment_method) {
-      return Resp.json(req, res, {})
+      return Resp.json(req, res, new BillingResponse(null))
     }
 
     const payment_method = await Stripe.getPaymentMethod(sub.default_payment_method)
 
-    return Resp.json(req, res, payment_method)
+    return Resp.json(req, res, new BillingResponse(payment_method))
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -127,14 +161,14 @@ router.post('/cancel-plan', authWithCache, async (req, res) => {
 
     const cancel = await Stripe.cancelSubscription(user.subscription.stripe_subscription_id)
 
-    await DB.RCancelSubEndOfPeriod(
+    await SubscriptionRepo.CancelSubscriptionEndOfPeriod(
       user._id,
       startOfDay(new Date(Stripe.unixToDate(cancel.current_period_end))).toISOString()
     )
 
     await Redis.removeUserByID(user._id)
 
-    return Resp.json(req, res, { message: 'success' })
+    return Resp.json(req, res, SuccessResponse)
   } catch (error) {
     Err.send(req, res, error)
   }

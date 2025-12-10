@@ -8,9 +8,21 @@ import { singleDealSchema } from '#app/validation/customer/deal.js'
 
 import Err from '#app/services/error/index.js'
 import Task from '#app/services/worker/index.js'
-import DB from '#app/services/db/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
+import HttpResponse from '#app/services/response/http-response.js'
+import DealRepo from '#app/repositories/deal/index.js'
+
+class SingleDealResponse extends HttpResponse {
+  constructor(deal) {
+    super()
+    this.deal = deal
+  }
+
+  buildResponse() {
+    return this.deal
+  }
+}
 
 router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
   const {
@@ -19,7 +31,7 @@ router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
   } = req
 
   try {
-    const dealProm = DB.CGetSingleDeal(deal_id, location_id)
+    const dealProm = DealRepo.GetCustomerViewSingleDeal(deal_id, location_id)
 
     const followFavProm = Task.checkSingleDealFollowAndFav(user, deal_id, location_id)
 
@@ -36,7 +48,7 @@ router.get('/', authWithCache, validate(singleDealSchema), async (req, res) => {
     deal[0].is_favourited = followFav.is_favourited
     deal[0].is_following = followFav.is_following
 
-    Resp.json(req, res, deal[0])
+    Resp.json(req, res, new SingleDealResponse(deal[0]))
   } catch (error) {
     Err.send(req, res, error)
   }

@@ -77,7 +77,6 @@ class Redis {
     if (keysToDelete.length) {
       // Delete the matching keys
       await Promise.all(keysToDelete.map((key) => this.#client.del(key)))
-      console.log(`Deleted ${keysToDelete.length} keys`)
     }
   }
 }
