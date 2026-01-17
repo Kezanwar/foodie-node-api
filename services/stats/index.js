@@ -16,7 +16,11 @@ class Stats {
 
   static async handleSyncAppUserStatsEvent(data, user) {
     try {
+      // console.log('-----')
+      // console.log('data', data)
       const stats = await Task.parseAppUserStatsForSyncing(data, user)
+      // console.log('stats', stats)
+      // console.log('-----')
       await StatsRepo.BulkAddAppUserStats(stats)
     } catch (error) {
       console.log(error)

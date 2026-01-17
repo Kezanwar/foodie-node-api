@@ -3,30 +3,17 @@ import mongoose from 'mongoose'
 import CategorySchemaWithIndex from './schemas/category-with-index.js'
 import GeoSchema from './schemas/geo.js'
 
-const LocationStatSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'user',
-    },
-    user_geo: [{ type: Number }], //! [long, lat]
-    //? not using 2dSphere data type here as we will never query the DB using this geometry.
-    //? will be used purely for restaurant stat insights.
-  },
-  { timestamps: true, _id: false }
-)
-
 const LocationStatTrackSchema = new mongoose.Schema(
   {
-    user: {
+    user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'user',
     },
-    restaurant: {
+    restaurant_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'restaurant',
     },
-    location: {
+    location_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'location',
     },
@@ -34,7 +21,7 @@ const LocationStatTrackSchema = new mongoose.Schema(
     //? not using 2dSphere data type here as we will never query the DB using this geometry.
     //? will be used purely for restaurant stat insights.
   },
-  { timestamps: true, _id: false }
+  { timestamps: true }
 )
 
 export const LocationViews = mongoose.model('location_views', LocationStatTrackSchema)
@@ -120,14 +107,14 @@ const LocationSchema = new mongoose.Schema(
         close: { type: String },
       },
     },
-    followers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
-      },
-    ],
-    booking_clicks: [LocationStatSchema],
-    views: [LocationStatSchema],
+    // followers: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'user',
+    //   },
+    // ],
+    // booking_clicks: [LocationStatSchema],
+    // views: [LocationStatSchema],
     geometry: GeoSchema,
     restaurant: {
       id: {

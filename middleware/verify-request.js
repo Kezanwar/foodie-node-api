@@ -5,6 +5,7 @@ const verifyRequest = (req, res, next) => {
   try {
     const client_version = req.header('x-app-version')
     const is_native_app = req.header('x-native')
+    req.is_native_app = is_native_app
 
     if (is_native_app && client_version !== appVersion) {
       Err.throw(`App version is out of date, please go to the App Store an update.`, Err.CODES.APP_UPDATE_REQUIRED)

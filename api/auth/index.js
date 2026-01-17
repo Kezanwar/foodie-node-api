@@ -22,29 +22,44 @@ import AuthUtil from '#app/repositories/auth/util.js'
 import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 
 class InitializeResponse extends HttpResponse {
-  constructor(user) {
+  constructor(user, datasource) {
     super()
     this.user = user
+    this.datasource = datasource
   }
 
   buildResponse() {
-    return { user: this.user.toClient() }
+    const r = { user: this.user.toClient() }
+    if (this.datasource) {
+      r.datasource = this.datasource
+    }
+    return r
   }
 }
 
 class AuthResponse extends HttpResponse {
-  constructor(accessToken, user) {
+  constructor(accessToken, user, datasource) {
     super()
     this.accessToken = accessToken
     this.user = user
+    this.datasource = datasource
   }
 
   buildResponse() {
-    return {
+    const r = {
       accessToken: this.accessToken,
       user: this.user.toClient(),
     }
+    if (this.datasource) {
+      r.datasource = this.datasource
+    }
+    return r
   }
+}
+
+const getAppInitDatasources = async (user) => {
+  const [deal_favourites, location_follows] = await AuthRepo.GetFavouritesAndFollowsStateMapDatasource(user._id)
+  return { deal_favourites, location_follows }
 }
 
 //* route GET api/auth/initialize
@@ -59,7 +74,12 @@ router.get('/initialize', authWithCache, async (req, res) => {
       Err.throw('User doesnt exist')
     }
 
-    Resp.json(req, res, new InitializeResponse(user))
+    if (req.is_native_app) {
+      const datasources = await getAppInitDatasources(user)
+      Resp.json(req, res, new InitializeResponse(user, datasources))
+    } else {
+      Resp.json(req, res, new InitializeResponse(user))
+    }
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -109,7 +129,12 @@ router.post('/login', validate(loginUserSchema), async (req, res) => {
 
     const token = AuthUtil.jwtSign30Days(payload)
 
-    Resp.json(req, res, new AuthResponse(token, user))
+    if (req.is_native_app) {
+      const datasources = await getAppInitDatasources(user)
+      Resp.json(req, res, new AuthResponse(token, user, datasources))
+    } else {
+      Resp.json(req, res, new AuthResponse(token, user))
+    }
   } catch (err) {
     Err.send(req, res, err)
   }
@@ -159,7 +184,12 @@ router.post('/login-google', async (req, res) => {
 
     const access_token = AuthUtil.jwtSign30Days(payload)
 
-    Resp.json(req, res, new AuthResponse(access_token, user))
+    if (req.is_native_app) {
+      const datasources = await getAppInitDatasources(user)
+      Resp.json(req, res, new AuthResponse(access_token, user, datasources))
+    } else {
+      Resp.json(req, res, new AuthResponse(access_token, user))
+    }
   } catch (err) {
     Err.send(req, res, err)
   }
@@ -208,7 +238,12 @@ router.post('/login-apple', async (req, res) => {
 
     const access_token = AuthUtil.jwtSign30Days(payload)
 
-    Resp.json(req, res, new AuthResponse(access_token, user))
+    if (req.is_native_app) {
+      const datasources = await getAppInitDatasources(user)
+      Resp.json(req, res, new AuthResponse(access_token, user, datasources))
+    } else {
+      Resp.json(req, res, new AuthResponse(access_token, user))
+    }
   } catch (err) {
     Err.send(req, res, err)
   }

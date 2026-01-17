@@ -1,5 +1,5 @@
-import Deal from '#app/models/deal.js'
-import Location from '#app/models/location.js'
+import Deal, { DealViews, DealFavourites } from '#app/models/deal.js'
+import Location, { LocationViews, LocationBookingClicks, LocationFollowers } from '#app/models/location.js'
 
 class StatsRepo {
   static GetActiveDealsCount(rest_id) {
@@ -17,27 +17,12 @@ class StatsRepo {
   }
 
   static async GetDealStats(rest_id) {
-    const res = await Deal.aggregate([
-      {
-        $match: {
-          'restaurant.id': rest_id,
-        },
-      },
-      {
-        $addFields: {
-          views: { $size: '$views' },
-          favourites: { $size: '$favourites' },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          views_count: { $sum: '$views' },
-          favourites_count: { $sum: '$favourites' },
-        },
-      },
+    const [views_count, favourites_count] = await Promise.all([
+      DealViews.countDocuments({ restaurant_id: rest_id }),
+      DealFavourites.countDocuments({ restaurant_id: rest_id }),
     ])
-    return res[0] ? res[0] : { views_count: 0, favourites_count: 0 }
+
+    return { views_count, favourites_count }
   }
 
   static GetLocationsCount(rest_id) {
@@ -45,80 +30,82 @@ class StatsRepo {
   }
 
   static async GetLocationStats(rest_id) {
-    const res = await Location.aggregate([
-      { $match: { 'restaurant.id': rest_id } },
-      {
-        $project: {
-          followersLength: {
-            $cond: {
-              if: { $isArray: '$followers' },
-              then: { $size: '$followers' },
-              else: 0,
-            },
-          },
-          bookingClickLength: {
-            $cond: {
-              if: { $isArray: '$booking_clicks' },
-              then: { $size: '$booking_clicks' },
-              else: 0,
-            },
-          },
-          viewsLength: {
-            $cond: {
-              if: { $isArray: '$views' },
-              then: { $size: '$views' },
-              else: 0,
-            },
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          followers_count: { $sum: '$followersLength' },
-          booking_clicks_count: { $sum: '$bookingClickLength' },
-          views_count: { $sum: '$viewsLength' },
-        },
-      },
+    const [followers_count, booking_clicks_count, views_count] = await Promise.all([
+      LocationFollowers.countDocuments({ restaurant_id: rest_id }),
+      LocationBookingClicks.countDocuments({ restaurant_id: rest_id }),
+      LocationViews.countDocuments({ restaurant_id: rest_id }),
     ])
-    return res[0] ? res[0] : { views_count: 0, booking_clicks_count: 0, followers_count: 0 }
+
+    return { followers_count, booking_clicks_count, views_count }
   }
 
   static async BulkAddAppUserStats(statsMap) {
-    const dealUpdates = Object.entries(statsMap.deals).map(([deal_id, recent_views]) => {
-      return {
-        updateOne: {
-          filter: {
-            _id: deal_id,
-          },
-          update: {
-            $push: {
-              views: { $each: recent_views },
-            },
-          },
-        },
-      }
-    })
+    // Get unique location IDs from both views and booking clicks
+    const locationIds = [
+      ...new Set([
+        ...statsMap.locationViews.map((v) => v.location_id),
+        ...statsMap.locationBookingClicks.map((c) => c.location_id),
+        ...statsMap.dealViews.map((v) => v.location_id),
+      ]),
+    ]
 
-    const locationUpdates = Object.entries(statsMap.locations).map(
-      ([location_id, { views = [], booking_clicks = [] }]) => {
-        return {
-          updateOne: {
-            filter: {
-              _id: location_id,
-            },
-            update: {
-              $push: {
-                views: { $each: views },
-                booking_clicks: { $each: booking_clicks },
-              },
-            },
-          },
-        }
-      }
-    )
+    // Fetch restaurant IDs for all locations
+    const locationRestaurantMap = {}
+    if (locationIds.length > 0) {
+      const locations = await Location.find({ _id: { $in: locationIds } })
+        .select('_id restaurant.id')
+        .lean()
 
-    await Promise.all([Deal.bulkWrite(dealUpdates), Location.bulkWrite(locationUpdates)])
+      locations.forEach((loc) => {
+        locationRestaurantMap[loc._id.toString()] = loc.restaurant.id
+      })
+    }
+
+    // Add restaurant IDs to location views
+    const locationViewDocs = statsMap.locationViews
+      .map((view) => {
+        const restaurant_id = locationRestaurantMap[view.location_id]
+        if (!restaurant_id) return null
+        return { ...view, restaurant_id }
+      })
+      .filter(Boolean)
+
+    // Add restaurant IDs to location booking clicks
+    const locationBookingClickDocs = statsMap.locationBookingClicks
+      .map((click) => {
+        const restaurant_id = locationRestaurantMap[click.location_id]
+        if (!restaurant_id) return null
+        return { ...click, restaurant_id }
+      })
+      .filter(Boolean)
+
+    // Add restaurant IDs to location views
+
+    const dealViewDocs = statsMap.dealViews
+      .map((view) => {
+        const restaurant_id = locationRestaurantMap[view.location_id]
+        if (!restaurant_id) return null
+        return { ...view, restaurant_id }
+      })
+      .filter(Boolean)
+
+    // console.log({ dealViewDocs, locationBookingClickDocs, locationViewDocs })
+
+    const promises = []
+
+    if (locationViewDocs.length > 0) {
+      promises.push(LocationViews.insertMany(locationViewDocs))
+    }
+
+    if (locationBookingClickDocs.length > 0) {
+      promises.push(LocationBookingClicks.insertMany(locationBookingClickDocs))
+    }
+
+    if (dealViewDocs.length > 0) {
+      promises.push(DealViews.insertMany(dealViewDocs))
+    }
+
+    await Promise.all(promises)
   }
 }
 

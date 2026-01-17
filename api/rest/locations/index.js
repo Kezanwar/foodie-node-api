@@ -221,8 +221,6 @@ router.post(
         Err.throw('Location not found', 401)
       }
 
-      console.log(id)
-
       await LocationRepo.ArchiveOne(restaurant._id, rLocToArchive._id)
 
       const updatedLocations = locations.map((l) => {

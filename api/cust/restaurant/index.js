@@ -4,7 +4,6 @@ const router = Router()
 import { authWithCache } from '#app/middleware/auth.js'
 
 import Err from '#app/services/error/index.js'
-import Task from '#app/services/worker/index.js'
 import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
 import HttpResponse from '#app/services/response/http-response.js'
@@ -23,7 +22,6 @@ class LocationCustomerViewResponse extends HttpResponse {
 }
 
 router.get('/:id', authWithCache, async (req, res) => {
-  const user = req.user
   const id = req.params?.id
 
   try {
@@ -41,9 +39,7 @@ router.get('/:id', authWithCache, async (req, res) => {
       Err.throw(`${location.restaurant.name} isn't subscribed anymore`, 404)
     }
 
-    const resp = await Task.checkSingleRestaurantFollowAndFav(user, location)
-
-    Resp.json(req, res, new LocationCustomerViewResponse(resp))
+    Resp.json(req, res, new LocationCustomerViewResponse(location))
   } catch (error) {
     Err.send(req, res, error)
   }

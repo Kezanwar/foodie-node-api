@@ -8,10 +8,5 @@ export const followRestSchema = object({
       .test('Location ID must be a valid ID', function (val) {
         return mongoose.isValidObjectId(val)
       }),
-    rest_id: string()
-      .required('Restaurant ID is required')
-      .test('Restaurant ID must be a valid ID', function (val) {
-        return mongoose.isValidObjectId(val)
-      }),
   }),
 })

@@ -1,13 +1,6 @@
 import { define } from 'nanolith'
 
-import {
-  orderSearchDealsByTextMatchRelevance,
-  checkSingleDealFollowAndFav,
-  checkSingleRestaurantFollowAndFav,
-  buildCustomerFavouritesListFromResults,
-} from './tasks/deals.js'
-
-import { userFollowsRestaurant, userHasFavouritedDeal } from './tasks/user.js'
+import { orderSearchDealsByTextMatchRelevance } from './tasks/deals.js'
 
 import { getPopularRestaurantsAndCuisines } from './tasks/discover.js'
 
@@ -23,14 +16,9 @@ import { parseAppUserStatsForSyncing } from './tasks/stats.js'
 
 export const workerConfig = await define({
   findCountryPhoneCode,
-  checkSingleDealFollowAndFav,
-  checkSingleRestaurantFollowAndFav,
   getPopularRestaurantsAndCuisines,
   orderSearchDealsByTextMatchRelevance,
   editDealFindLocationsToAddRemoveAndUpdate,
-  buildCustomerFavouritesListFromResults,
-  userFollowsRestaurant,
-  userHasFavouritedDeal,
   createNewDealNotificationMessages,
   createCheckoutFeedNotificationMessages,
   chunkPushNotificationReceiptIds,

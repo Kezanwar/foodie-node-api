@@ -54,7 +54,7 @@ router.get('/', validate(regularFeedSchema), authWithCache, async (req, res) => 
     const LAT = Number(lat)
     const PAGE = page ? Number(page) : 0
 
-    const results = await FeedRepo.GetDealFeed(user, PAGE, LONG, LAT, cuisines, dietary_requirements)
+    const results = await FeedRepo.GetDealFeed(PAGE, LONG, LAT, cuisines, dietary_requirements)
 
     return Resp.json(req, res, new DealFeedResponse(results, PAGE))
   } catch (error) {
