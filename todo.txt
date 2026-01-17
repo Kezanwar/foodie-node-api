@@ -1,7 +1,18 @@
-1. Split DB into relative Repositories
-2. Handler util should just be defined in Handler unless needed elsewhere
-3. Statically type every Response
-4. Make every Response an object, update frontends to handle this
-5. should be able to stop nuking all of Redis User cache when deleting deals or locations as favourites/follows shouldnt live on Users...
----------
+Location Stats 
+1. getfollowing feed, follow and unfollow native app done
+2. capture views and booking_clicks from native app done
+3. get followers, views and booking_clicks dashboard done
+4. remove following and deal favs from single location view on native app
 
+Deal Stats
+1. remove favourites from deal and user - done
+2. remove views from deal - done
+2. create deal favourite stat table - done
+3. create deal view stat table - done 
+4. update capturing stat from native app 
+5. update restuarant views with stats to use new stat tables
+
+
+Native Followers and Favourite Maps
+1. send fav and follow maps with initialize?
+2. reimplement display fav/follow, no need to update all react query caches to display follows

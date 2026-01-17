@@ -47,4 +47,4 @@ export const inidividualPriceID = process.env.INDIVIDUAL_PLAN_PRICE_ID
 export const premiumPriceID = process.env.PREMIUM_PLAN_PRICE_ID
 
 export const maintenanceMode = process.env.MAINTENANCE_MODE === 'true'
-export const appVersion = '27.11.2024'
+export const appVersion = '17.01.2026'

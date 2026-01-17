@@ -29,14 +29,13 @@ class SearchFeedResponse extends HttpResponse {
 router.get('/', authWithCache, validate(searchFeedSchema), async (req, res) => {
   const {
     query: { long, lat, text },
-    user,
   } = req
 
   try {
     const LONG = Number(long)
     const LAT = Number(lat)
 
-    const results = await FeedRepo.GetSearchFeed(user, LONG, LAT, text)
+    const results = await FeedRepo.GetSearchFeed(LONG, LAT, text)
 
     const sorted = await Task.orderSearchDealsByTextMatchRelevance(results, text)
 

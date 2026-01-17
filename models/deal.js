@@ -2,21 +2,34 @@ import mongoose from 'mongoose'
 import CategorySchemaWithIndex from './schemas/category-with-index.js'
 import GeoSchema from './schemas/geo.js'
 
-const DealStatSchema = new mongoose.Schema(
+const DealStatTrackSchema = new mongoose.Schema(
   {
-    user: {
+    user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'user',
+    },
+    restaurant_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'restaurant',
+    },
+    location_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'location',
+    },
+    deal_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'deal',
     },
     user_geo: [{ type: Number }], //! [long, lat]
     //? not using 2dSphere data type here as we will never query the DB using this geometry.
     //? will be used purely for restaurant stat insights.
-    location_id: {
-      type: mongoose.Schema.Types.ObjectId,
-    },
   },
-  { timestamps: true, _id: false }
+  { timestamps: true }
 )
+
+export const DealFavourites = mongoose.model('deal_favourites', DealStatTrackSchema)
+
+export const DealViews = mongoose.model('deal_views', DealStatTrackSchema)
 
 const DealSchema = new mongoose.Schema(
   {
@@ -36,8 +49,8 @@ const DealSchema = new mongoose.Schema(
       type: Boolean,
       index: true,
     },
-    views: [DealStatSchema],
-    favourites: [DealStatSchema],
+    // views: [DealStatSchema],
+    // favourites: [DealStatSchema],
     cuisines: [CategorySchemaWithIndex],
     dietary_requirements: [CategorySchemaWithIndex],
     locations: [

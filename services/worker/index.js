@@ -27,40 +27,10 @@ class Task {
       params: [JSON.stringify(results), text],
     })
   }
-  static checkSingleDealFollowAndFav(user, deal_id, location_id) {
-    return worker.call({
-      name: 'checkSingleDealFollowAndFav',
-      params: [JSON.stringify(user), deal_id, location_id],
-    })
-  }
   static getPopularRestaurantsAndCuisines(discoverResults) {
     return worker.call({
       name: 'getPopularRestaurantsAndCuisines',
       params: [JSON.stringify(discoverResults)],
-    })
-  }
-  static checkSingleRestaurantFollowAndFav(user, location) {
-    return worker.call({
-      name: 'checkSingleRestaurantFollowAndFav',
-      params: [JSON.stringify(user), JSON.stringify(location)],
-    })
-  }
-  static buildCustomerFavouritesListFromResults(sliced, locations, deals) {
-    return worker.call({
-      name: 'buildCustomerFavouritesListFromResults',
-      params: [JSON.stringify(sliced), JSON.stringify(locations), JSON.stringify(deals)],
-    })
-  }
-  static userFollowsRestaurant(user, location_id) {
-    return worker.call({
-      name: 'userFollowsRestaurant',
-      params: [JSON.stringify(user), location_id],
-    })
-  }
-  static userHasFavouritedDeal(user, deal_id, location_id) {
-    return worker.call({
-      name: 'userHasFavouritedDeal',
-      params: [JSON.stringify(user), deal_id, location_id],
     })
   }
   static createNewDealNotificationMessages(locations, deal) {

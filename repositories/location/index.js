@@ -1,5 +1,5 @@
 import Deal from '#app/models/deal.js'
-import Location from '#app/models/location.js'
+import Location, { LocationFollowers } from '#app/models/location.js'
 import User from '#app/models/user.js'
 import RepoUtil from '../util.js'
 import Permissions from '#app/services/permissions/index.js'
@@ -125,109 +125,71 @@ class LocationRepo {
     return Location.countDocuments({ 'restaurant.id': loc_id })
   }
 
-  static async GetStats(rest_id) {
-    const res = await Location.aggregate([
-      { $match: { 'restaurant.id': rest_id } },
-      {
-        $project: {
-          followersLength: {
-            $cond: {
-              if: { $isArray: '$followers' }, // Check if the field is an array
-              then: { $size: '$followers' }, // If it's an array, get its size
-              else: 0, // If it's not an array (or doesn't exist), fallback to 0
-            },
-          },
-          bookingClickLength: {
-            $cond: {
-              if: { $isArray: '$booking_clicks' }, // Check if the field is an array
-              then: { $size: '$booking_clicks' }, // If it's an array, get its size
-              else: 0, // If it's not an array (or doesn't exist), fallback to 0
-            },
-          },
-          viewsLength: {
-            $cond: {
-              if: { $isArray: '$views' }, // Check if the field is an array
-              then: { $size: '$views' }, // If it's an array, get its size
-              else: 0, // If it's not an array (or doesn't exist), fallback to 0
-            },
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          followers_count: { $sum: '$followersLength' },
-          booking_clicks_count: { $sum: '$bookingClickLength' },
-          views_count: { $sum: '$viewsLength' },
-        },
-      },
-    ])
-    return res[0] ? res[0] : { views_count: 0, booking_clicks_count: 0, followers_count: 0 }
+  static async FollowLocation(user_id, location_id) {
+    const location = await Location.findById(location_id)
+    const follow = new LocationFollowers({
+      location_id: location_id,
+      restaurant_id: location.restaurant.id,
+      user_id: user_id,
+    })
+    await follow.save()
   }
 
-  static async FollowLocation(user, location_id) {
-    const locProm = await Location.updateOne(
-      {
-        _id: location_id,
-      },
-      { $push: { followers: { $each: [user._id], $position: 0 } } }
-    )
-
-    const userProm = User.updateOne(
-      {
-        _id: user._id,
-      },
-      { $push: { following: { $each: [location_id], $position: 0 } } }
-    )
-
-    await Promise.all([locProm, userProm])
+  static async UnfollowLocation(user_id, location_id) {
+    await LocationFollowers.deleteOne({
+      location_id: location_id,
+      user_id: user_id,
+    })
   }
 
-  static async UnfollowLocation(user, location_id) {
-    const locProm = Location.updateOne(
-      {
-        _id: location_id,
-      },
-      { $pull: { followers: user._id } }
-    )
-    const userProm = User.updateOne({ _id: user._id }, { $pull: { following: location_id } })
-
-    await Promise.all([locProm, userProm])
+  static async UserFollowsLocation(user_id, location_id) {
+    const follow = await LocationFollowers.findOne({
+      user_id: user_id,
+      location_id: location_id,
+    })
+    return !!follow
   }
 
   static async GetFollowing(user, page) {
     const pageStart = page === 0 ? page : page * FEED_LIMIT
 
-    const following = user.following.slice(pageStart, pageStart + FEED_LIMIT)
-
-    const results = await Location.aggregate([
+    const results = await LocationFollowers.aggregate([
       {
         $match: {
-          _id: { $in: following },
-          'restaurant.is_subscribed': Permissions.SUBSCRIBED,
-          archived: false,
+          user_id: user._id,
         },
       },
+      { $sort: { createdAt: -1 } },
       {
-        $addFields: {
-          index: {
-            $indexOfArray: [following, '$_id'],
-          },
+        $lookup: {
+          from: 'locations',
+          localField: 'location_id',
+          foreignField: '_id',
+          as: 'locationData',
         },
       },
-      { $sort: { index: 1 } },
+      { $unwind: '$locationData' },
+      {
+        $match: {
+          'locationData.restaurant.is_subscribed': Permissions.SUBSCRIBED,
+          'locationData.archived': false,
+          'locationData.deleted': false,
+        },
+      },
+      { $skip: pageStart },
+      { $limit: FEED_LIMIT },
       {
         $project: {
           location: {
-            nickname: '$nickname',
-            _id: '$_id',
-            coordinates: '$geometry.coordinates',
+            nickname: '$locationData.nickname',
+            _id: '$locationData._id',
+            coordinates: '$locationData.geometry.coordinates',
           },
           restaurant: {
-            id: '$restaurant.id',
-            name: '$restaurant.name',
-            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.avatar'] },
-            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$restaurant.cover_photo'] },
+            id: '$locationData.restaurant.id',
+            name: '$locationData.restaurant.name',
+            avatar: { $concat: [AWS.USER_IMAGE_PREFIX, '$locationData.restaurant.avatar'] },
+            cover_photo: { $concat: [AWS.USER_IMAGE_PREFIX, '$locationData.restaurant.cover_photo'] },
           },
         },
       },

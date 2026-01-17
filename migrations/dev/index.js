@@ -116,6 +116,11 @@ class DevMigrations {
       await SubscriptionRepo.UnsubscribeRestaurant(u._id, u.restaurant.id)
     }
   }
+
+  async nukeOldFollowerPattern() {
+    await Location.updateMany({}, { followers: [] })
+    await User.updateMany({}, { following: [] })
+  }
 }
 
 const devMigrations = isDev ? new DevMigrations() : null

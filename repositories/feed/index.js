@@ -5,7 +5,7 @@ import { FEED_LIMIT, METER_TO_MILE_CONVERSION, RADIUS_METRES } from '#app/consta
 import { calculateDistancePipeline } from '#app/utilities/distance-pipeline.js'
 
 class FeedRepo {
-  static GetDealFeed(user, page, long, lat, cuisines, dietary_requirements) {
+  static GetDealFeed(page, long, lat, cuisines, dietary_requirements) {
     const query = {
       'restaurant.is_subscribed': Permissions.SUBSCRIBED,
       active_deals: { $ne: [], $exists: true },
@@ -53,16 +53,6 @@ class FeedRepo {
           pipeline: [
             {
               $project: {
-                match_fav: {
-                  $filter: {
-                    input: '$favourites',
-                    as: 'fav',
-                    cond: {
-                      $and: [{ $eq: ['$$fav.user', user._id] }, { $eq: ['$$fav.location_id', '$$locationId'] }],
-                    },
-                    limit: 1,
-                  },
-                },
                 name: 1,
                 start_date: 1,
                 end_date: 1,
@@ -78,13 +68,6 @@ class FeedRepo {
           deal: {
             name: '$deals.name',
             _id: '$deals._id',
-            is_favourited: {
-              $cond: {
-                if: { $eq: [{ $size: { $ifNull: ['$deals.match_fav', []] } }, 1] },
-                then: true,
-                else: false,
-              },
-            },
           },
           restaurant: {
             _id: '$restaurant.id',
@@ -169,7 +152,7 @@ class FeedRepo {
     ]).sort({ 'location.distance_miles': 1 })
   }
 
-  static GetSearchFeed(user, long, lat, text) {
+  static GetSearchFeed(long, lat, text) {
     return Location.aggregate([
       {
         $search: {
@@ -219,16 +202,6 @@ class FeedRepo {
           pipeline: [
             {
               $project: {
-                match_fav: {
-                  $filter: {
-                    input: '$favourites',
-                    as: 'fav',
-                    cond: {
-                      $and: [{ $eq: ['$$fav.user', user._id] }, { $eq: ['$$fav.location_id', '$$locationId'] }],
-                    },
-                    limit: 1,
-                  },
-                },
                 name: 1,
                 description: 1,
                 start_date: 1,
@@ -246,13 +219,6 @@ class FeedRepo {
             name: '$deals.name',
             description: '$deals.description',
             _id: '$deals._id',
-            is_favourited: {
-              $cond: {
-                if: { $eq: [{ $size: { $ifNull: ['$deals.match_fav', []] } }, 1] },
-                then: true,
-                else: false,
-              },
-            },
           },
           restaurant: {
             _id: '$restaurant.id',
@@ -291,8 +257,16 @@ class FeedRepo {
         },
       },
       {
+        $lookup: {
+          from: 'location_followers',
+          let: { locationId: '$_id' },
+          pipeline: [{ $match: { $expr: { $eq: ['$location_id', '$$locationId'] } } }, { $count: 'count' }],
+          as: 'followerCount',
+        },
+      },
+      {
         $addFields: {
-          followCount: { $size: '$followers' },
+          followCount: { $ifNull: [{ $arrayElemAt: ['$followerCount.count', 0] }, 0] },
         },
       },
       {

@@ -1,5 +1,4 @@
 import levenshtein from '#app/utilities/levenshtein.js'
-import AWS from '../../aws/index.js'
 
 //UTILS
 const getOptionMatch = (search, arr) => {
@@ -20,6 +19,7 @@ const expAsPerc = (...args) => {
   return sum / args.length
 }
 
+// eslint-disable-next-line no-unused-vars
 const buildMapFromDocArray = (arr) =>
   arr.reduce((map, obj) => {
     if (!map[obj._id]) {
@@ -29,36 +29,6 @@ const buildMapFromDocArray = (arr) =>
   }, {})
 
 //TASKS
-export const checkSingleDealFollowAndFav = (user, deal_id, location_id) => {
-  const u = JSON.parse(user)
-  const is_following = !!u.following.find((follow) => follow === location_id)
-
-  const is_favourited = !!u.favourites.find(
-    (favourite) => favourite.deal === deal_id && favourite.location_id === location_id
-  )
-
-  return { is_favourited, is_following }
-}
-
-export const checkSingleRestaurantFollowAndFav = (user, location) => {
-  const u = JSON.parse(user)
-  const l = JSON.parse(location)
-
-  if (l?.active_deals) {
-    l.active_deals = l.active_deals.map((deal) => {
-      return {
-        ...deal,
-        is_favourited: !!u.favourites.find(
-          (favourite) => favourite.deal === deal._id && favourite.location_id === l._id
-        ),
-      }
-    })
-  }
-
-  l.is_following = !!u.following.find((follow) => follow === l._id)
-
-  return l
-}
 
 export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
   const parsedDeals = JSON.parse(deals)
@@ -107,49 +77,4 @@ export const orderSearchDealsByTextMatchRelevance = (deals, search) => {
   }
 
   return sorted
-}
-
-export const buildCustomerFavouritesListFromResults = (slice, locations, deals) => {
-  let l = JSON.parse(locations)
-  l = l.filter((item) => {
-    return item && !!item.location.restaurant?.is_subscribed
-  })
-  l = buildMapFromDocArray(l)
-
-  let d = JSON.parse(deals)
-  d = d.filter(Boolean)
-
-  for (let item of d) {
-    item.restaurant.cover_photo = `${AWS.USER_IMAGE_PREFIX}${item.restaurant.cover_photo}`
-    item.restaurant.avatar = `${AWS.USER_IMAGE_PREFIX}${item.restaurant.avatar}`
-  }
-
-  d = buildMapFromDocArray(d)
-
-  const s = JSON.parse(slice)
-
-  const results = s.map(({ deal, location_id }) => {
-    if (!l[location_id]) {
-      return false
-    }
-
-    if (!d[deal]) {
-      return false
-    }
-
-    const r = {
-      restaurant: d[deal].restaurant,
-      deal: {
-        _id: d[deal]._id,
-        name: d[deal].name,
-        is_expired: d[deal].is_expired,
-      },
-      location: l[location_id].location,
-    }
-    r.restaurant._id = r.restaurant.id
-    delete r.restaurant.id
-    return r
-  })
-
-  return results.filter(Boolean)
 }

@@ -1,6 +1,6 @@
 import User from '#app/models/user.js'
-import Location from '#app/models/location.js'
-import Deal from '#app/models/deal.js'
+import Location, { LocationFollowers } from '#app/models/location.js'
+import Deal, { DealFavourites } from '#app/models/deal.js'
 
 class AuthRepo {
   static GetUserByID(id) {
@@ -51,6 +51,15 @@ class AuthRepo {
 
   static GetAllUsersWithPushTokens() {
     return User.find({ push_tokens: { $exists: true, $not: { $size: 0 } } }).select('push_tokens first_name email')
+  }
+
+  static async GetFavouritesAndFollowsStateMapDatasource(user_id) {
+    const res = await Promise.all([
+      DealFavourites.find({ user_id: user_id }).select('deal_id location_id').lean(),
+      LocationFollowers.find({ user_id: user_id }).select('location_id').lean(),
+    ])
+
+    return res
   }
 }
 
