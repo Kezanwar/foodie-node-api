@@ -117,9 +117,31 @@ class DevMigrations {
     }
   }
 
-  async nukeOldFollowerPattern() {
-    await Location.updateMany({}, { followers: [] })
-    await User.updateMany({}, { following: [] })
+  async nukeOldStatsPattern() {
+    console.log('Starting nukeOldStatsPattern migration...')
+
+    const locResult = await Location.updateMany(
+      {},
+      { $unset: { followers: 1, views: 1, booking_clicks: 1 } },
+      { strict: false }
+    )
+    console.log(`Updated ${locResult.modifiedCount} locations`)
+
+    const userResult = await User.updateMany(
+      {},
+      { $unset: { following: 1, favourites: 1 } },
+      { strict: false }
+    )
+    console.log(`Updated ${userResult.modifiedCount} users`)
+
+    const dealResult = await Deal.updateMany(
+      {},
+      { $unset: { favourites: 1, views: 1 } },
+      { strict: false }
+    )
+    console.log(`Updated ${dealResult.modifiedCount} deals`)
+
+    console.log('Migration complete!')
   }
 }
 
