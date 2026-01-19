@@ -38,8 +38,8 @@ export const isProd = APP_ENV === 'production'
 export const dashboardUrl = isStaging
   ? 'https://dashboard.thefoodiestaging.app'
   : isProd
-  ? 'https://dashboard.thefoodie.app'
-  : 'http://localhost:3033'
+    ? 'https://dashboard.thefoodie.app'
+    : 'http://localhost:3033'
 
 export const landingUrl = isDev || isStaging ? 'https://thefoodiestaging.app' : isProd ? 'https://thefoodie.app' : null
 
@@ -47,4 +47,4 @@ export const inidividualPriceID = process.env.INDIVIDUAL_PLAN_PRICE_ID
 export const premiumPriceID = process.env.PREMIUM_PLAN_PRICE_ID
 
 export const maintenanceMode = process.env.MAINTENANCE_MODE === 'true'
-export const appVersion = '17.01.2026'
+export const appVersion = '19.01.2026'
