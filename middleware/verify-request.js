@@ -7,12 +7,12 @@ const verifyRequest = (req, res, next) => {
     const is_native_app = req.header('x-native')
     req.is_native_app = is_native_app
 
-    if (is_native_app && client_version !== appVersion) {
-      Err.throw(`App version is out of date, please go to the App Store an update.`, Err.CODES.APP_UPDATE_REQUIRED)
-    }
-
     if (maintenanceMode) {
       Err.throw('Foodie is in maintenance mode', Err.CODES.MAINTENANCE_MODE)
+    }
+
+    if (is_native_app && client_version !== appVersion) {
+      Err.throw(`App version is out of date, please go to the App Store an update.`, Err.CODES.APP_UPDATE_REQUIRED)
     }
 
     next()
