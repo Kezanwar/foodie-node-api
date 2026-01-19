@@ -96,12 +96,12 @@ class WebhookHandler {
       this.throw('cant find user with that customer ID', 'invoice.paid', 404)
     }
 
-    const { user, restaurant } = res
+    // const { user, restaurant } = res
 
-    //email user with invoice
-    const proms = [Email.sendSuccessfulInvoicePaidEmail(user, restaurant, event)]
+    // //email user with invoice
+    // const proms = [Email.sendSuccessfulInvoicePaidEmail(user, restaurant, event)]
 
-    await Promise.all(proms)
+    // await Promise.all(proms)
   }
 
   static async handleInvoicePaymentActionRequired(event) {
