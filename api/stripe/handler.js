@@ -98,7 +98,7 @@ class WebhookHandler {
 
     // const { user, restaurant } = res
 
-    // //email user with invoice
+    //email user with invoice
     // const proms = [Email.sendSuccessfulInvoicePaidEmail(user, restaurant, event)]
 
     // await Promise.all(proms)
