@@ -7,11 +7,23 @@ import validate from '#app/middleware/validate.js'
 import Err from '#app/services/error/index.js'
 import Task from '#app/services/worker/index.js'
 import Memory from '#app/services/cache/memory.js'
-import DB from '#app/services/db/index.js'
 
 import { discoverSchema } from '#app/validation/customer/deal.js'
 import { fetchBlogs } from '#app/utilities/blogs.js'
 import Resp from '#app/services/response/index.js'
+import HttpResponse from '#app/services/response/http-response.js'
+import FeedRepo from '#app/repositories/feed/index.js'
+
+class DiscoverResponse extends HttpResponse {
+  constructor(data) {
+    super()
+    this.data = data
+  }
+
+  buildResponse() {
+    return this.data
+  }
+}
 
 router.get('/', authWithCache, validate(discoverSchema), async (req, res) => {
   const {
@@ -24,7 +36,7 @@ router.get('/', authWithCache, validate(discoverSchema), async (req, res) => {
 
     let blogs = Memory.getRecentBlogs()
 
-    const request = [DB.CGetDiscover(LONG, LAT)]
+    const request = [FeedRepo.GetDiscover(LONG, LAT)]
 
     if (!blogs) {
       request.push(fetchBlogs())
@@ -45,7 +57,7 @@ router.get('/', authWithCache, validate(discoverSchema), async (req, res) => {
       }
     }
 
-    return Resp.json(req, res, resp)
+    return Resp.json(req, res, new DiscoverResponse(resp))
   } catch (error) {
     Err.send(req, res, error)
   }

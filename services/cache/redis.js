@@ -1,6 +1,6 @@
 import { createClient } from 'redis'
 
-import User from '#app/models/User.js'
+import User from '#app/models/user.js'
 import { REDIS_URL } from '#app/config/config.js'
 
 class Redis {
@@ -77,7 +77,6 @@ class Redis {
     if (keysToDelete.length) {
       // Delete the matching keys
       await Promise.all(keysToDelete.map((key) => this.#client.del(key)))
-      console.log(`Deleted ${keysToDelete.length} keys`)
     }
   }
 }

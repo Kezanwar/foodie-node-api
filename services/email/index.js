@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer'
 import { renderFile } from 'ejs'
 import fs from 'node:fs/promises'
 
-import { baseUrl, dashboardUrl, SENDGRID_API_KEY } from '#app/config/config.js'
+import { APP_ENV, baseUrl, dashboardUrl, SENDGRID_API_KEY } from '#app/config/config.js'
 import Permissions from '../permissions/index.js'
 import EventEmitter from 'node:events'
 import Stripe from '../stripe/index.js'
@@ -140,6 +140,7 @@ class Email {
         `Dietary requirements: ${dietText}`,
         `Company name: ${restaurant.company_info.company_name}`,
         `Locations: ${locationsText}`,
+        `App Environemnt: ${APP_ENV}`,
       ],
       action_primary: {
         text: 'Accept',

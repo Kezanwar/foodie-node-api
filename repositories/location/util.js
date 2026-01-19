@@ -1,12 +1,27 @@
 import pkg from 'lodash'
 import axios from 'axios'
-
-import { getDistanceInMiles } from './util.js'
+const { upperCase, capitalize } = pkg
 import { RAPID_API_KEY } from '#app/config/config.js'
 
-const { upperCase, omit, capitalize } = pkg
+export function getDistanceInMiles(coord1, coord2) {
+  const [lon1, lat1] = coord1
+  const [lon2, lat2] = coord2
+  const R = 6371 // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1) // deg2rad below
+  const dLon = deg2rad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  const d = R * c // Distance in km
+  return d * 0.621371 // Converted to Miles
+}
 
-class Loc {
+function deg2rad(deg) {
+  return deg * (Math.PI / 180)
+}
+
+class LocationUtil {
   static getID(doc) {
     if (doc._id) return doc._id.toHexString()
     if (doc.id) return doc?.id?.toHexString ? doc?.id?.toHexString() : doc.id
@@ -18,30 +33,6 @@ class Loc {
 
   static shortPostocde(postcode) {
     return upperCase(postcode).split(' ').join('')
-  }
-
-  static createAddDealLocations(restaurantLocations, newDealLocationsIds) {
-    return newDealLocationsIds.reduce((acc, curr) => {
-      const location = restaurantLocations.find((rL) => this.getID(rL) === curr)
-      if (location) {
-        acc.push({ location_id: curr, geometry: location.geometry, nickname: location.nickname })
-      }
-      return acc
-    }, [])
-  }
-
-  static checkIfAddLocationAlreadyExists(locations, address) {
-    return locations.some((l) => this.shortPostocde(l.address.postcode) === this.shortPostocde(address.postcode))
-  }
-
-  static checkIfEditLocationAlreadyExists(locations, id, address) {
-    return locations.some(
-      (l) => this.getID(l) !== id && this.shortPostocde(l.address.postcode) === this.shortPostocde(address.postcode)
-    )
-  }
-
-  static findLocationToEdit(locations, id) {
-    return locations.find((l) => this.getID(l) === id)
   }
 
   static async getTimezone({ lat, long }) {
@@ -125,32 +116,6 @@ class Loc {
       return undefined
     }
   }
-
-  static pruneLocationForNewLocationResponse(location) {
-    const obj = location.toObject()
-    return omit(obj, [
-      'cuisines',
-      'dietary_requirements',
-      'restaurant',
-      'active_deals',
-      'followers',
-      'booking_clicks',
-      'views',
-    ])
-  }
-
-  static pruneLocationsListForDeleteLocationResponse(locations, deletedID) {
-    return [...locations.filter((rl) => this.getID(rl) !== deletedID)]
-  }
-
-  static pruneLocationsListForArchiveLocationResponse(locations, archiveID) {
-    locations.forEach((l) => {
-      if (this.getID(l) === archiveID) {
-        l.archived = !l.archived
-      }
-    })
-    return locations
-  }
 }
 
-export default Loc
+export default LocationUtil

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events'
 
 import Task from '../worker/index.js'
-import DB from '../db/index.js'
+import StatsRepo from '#app/repositories/stats/index.js'
 
 const EVENTS = {
   SYNC_APP_USER_STATS: 'SYNC_APP_USER_STATS',
@@ -16,8 +16,12 @@ class Stats {
 
   static async handleSyncAppUserStatsEvent(data, user) {
     try {
+      // console.log('-----')
+      // console.log('data', data)
       const stats = await Task.parseAppUserStatsForSyncing(data, user)
-      await DB.RBulkAddAppUserStats(stats)
+      // console.log('stats', stats)
+      // console.log('-----')
+      await StatsRepo.BulkAddAppUserStats(stats)
     } catch (error) {
       console.log(error)
     }

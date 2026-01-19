@@ -1,6 +1,7 @@
 import Err from '#app/services/error/index.js'
-import DB from '#app/services/db/index.js'
 import Permissions from '#app/services/permissions/index.js'
+import LocationRepo from '#app/repositories/location/index.js'
+import RestaurantRepo from '#app/repositories/restaurant/index.js'
 
 const restRoleGuard =
   (permissionLevel, options = {}) =>
@@ -28,11 +29,11 @@ const restRoleGuard =
         Err.throw('Access denied - User has no role on this restaurant', 403)
       }
 
-      const restaurantProm = DB.RGetRestaurantByIDWithSuperAdmin(uRestID)
+      const restaurantProm = RestaurantRepo.GetByIDWithSuperAdmin(uRestID)
 
       const proms = [restaurantProm]
 
-      const locationProm = getLocations ? DB.RGetRestaurantLocations(uRestID) : null
+      const locationProm = getLocations ? LocationRepo.GetAll(uRestID) : null
 
       if (locationProm) {
         proms.push(locationProm)

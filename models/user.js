@@ -1,7 +1,6 @@
 import mongoose, { Schema, model } from 'mongoose'
-import CategorySchemaWithIndex from './schemas/CategorySchemaWithIndex.js'
-import { FavouriteSchemaUser } from './schemas/FavouriteSchema.js'
-import GeoSchema from './schemas/GeoSchema.js'
+import CategorySchemaWithIndex from './schemas/category-with-index.js'
+import GeoSchema from './schemas/geo.js'
 import Permissions from '#app/services/permissions/index.js'
 
 const SubscriptionSchema = new mongoose.Schema(
@@ -75,13 +74,13 @@ const UserSchema = new Schema(
       cuisines: [CategorySchemaWithIndex],
       dietary_requirements: [CategorySchemaWithIndex],
     },
-    favourites: [FavouriteSchemaUser],
-    following: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'location',
-      },
-    ],
+    // favourites: [FavouriteSchemaUser],
+    // following: [
+    //   {
+    //     type: Schema.Types.ObjectId,
+    //     ref: 'location',
+    //   },
+    // ],
     push_tokens: [
       {
         type: String,

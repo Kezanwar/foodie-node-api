@@ -25,6 +25,7 @@ import verifyRequest from './middleware/verify-request.js'
 //api
 import api from './api/index.js'
 import { PORT } from './config/config.js'
+import devMigrations from './migrations/dev/index.js'
 
 await DB.connect()
 await Redis.connect()

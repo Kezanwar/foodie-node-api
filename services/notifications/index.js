@@ -1,8 +1,9 @@
 import { EventEmitter } from 'node:events'
 import { Expo } from 'expo-server-sdk'
 
-import DB from '../db/index.js'
 import Task from '../worker/index.js'
+import DealRepo from '#app/repositories/deal/index.js'
+import AuthRepo from '#app/repositories/auth/index.js'
 
 import { NOTIFICATION_EVENT_TYPES } from './types.js'
 
@@ -80,7 +81,7 @@ class Notifications {
   }
 
   static async handleNewDealNotification(deal) {
-    const locations = await DB.getAllDealsLocationFollowersWithPushtokens(deal)
+    const locations = await DealRepo.GetAllDealsLocationFollowersWithPushtokens(deal)
     if (!locations.length) {
       return
     }
@@ -95,7 +96,7 @@ class Notifications {
   }
 
   static async handleCheckoutFeedNotification() {
-    const users = await DB.getAllUsersWithPushTokens()
+    const users = await AuthRepo.GetAllUsersWithPushTokens()
     if (!users.length) {
       return
     }

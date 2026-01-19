@@ -9,14 +9,11 @@ const upload = multer({ storage: storage })
 import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 import restRoleGuard from '#app/middleware/rest-role-guard.js'
 
-import { isDev, isStaging } from '#app/config/config.js'
-
 import Email from '#app/services/email/index.js'
 import IMG from '#app/services/image/index.js'
 import AWS from '#app/services/aws/index.js'
 import Err from '#app/services/error/index.js'
 import Redis from '#app/services/cache/redis.js'
-import DB from '#app/services/db/index.js'
 
 import validate from '#app/middleware/validate.js'
 
@@ -27,6 +24,31 @@ import {
 } from '#app/validation/restaurant/create-restaurant.js'
 import Permissions from '#app/services/permissions/index.js'
 import Resp from '#app/services/response/index.js'
+import HttpResponse from '#app/services/response/http-response.js'
+import RestaurantRepo from '#app/repositories/restaurant/index.js'
+import AuthRepo from '#app/repositories/auth/index.js'
+
+class RestaurantResponse extends HttpResponse {
+  constructor(restaurant) {
+    super()
+    this.restaurant = restaurant
+  }
+
+  buildResponse() {
+    return { restaurant: this.restaurant.toClient() }
+  }
+}
+
+class RestaurantMessageResponse extends HttpResponse {
+  constructor(message) {
+    super()
+    this.message = message
+  }
+
+  buildResponse() {
+    return this.message
+  }
+}
 
 //* route POST api/create-restaurant/company-info (STEP 1)
 //? @desc STEP 1 either create a new restaurant and set the company info, reg step, super admin and status, or update existing stores company info and leave rest unchanged
@@ -53,11 +75,11 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
 
     if (!uRestID) {
       // user has no restaurant yet, first time hitting this step
-      const created = await DB.RCreateNewRestaurant(company_info, user)
+      const created = await RestaurantRepo.CreateNew(company_info, user)
 
       await Redis.setUserByID(created.user)
 
-      return Resp.json(req, res, created.restaurant.toClient())
+      return Resp.json(req, res, new RestaurantResponse(created.restaurant))
     } else {
       // user has a restaurant
       if (!uRole) {
@@ -68,7 +90,7 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
         Err.throw('Access denied - user permissions', 400)
       }
 
-      const currentRest = await DB.RGetRestaurantByID(uRestID)
+      const currentRest = await RestaurantRepo.GetByID(uRestID)
 
       if (!currentRest) {
         Err.throw('Restaurant doesnt exist', 400)
@@ -81,9 +103,9 @@ router.post('/company-info', authNoCache, validate(companyInfoSchema), async (re
         )
       }
 
-      await DB.RUpdateApplicationRestaurant(currentRest, { company_info })
+      await RestaurantRepo.UpdateApplication(currentRest, { company_info })
 
-      return Resp.json(req, res, currentRest.toClient())
+      return Resp.json(req, res, new RestaurantResponse(currentRest))
     }
   } catch (error) {
     Err.send(req, res, error)
@@ -183,13 +205,13 @@ router.post(
         newData.registration_step = Permissions.REG_STEP_2_COMPLETE
       }
 
-      await DB.RUpdateApplicationRestaurant(restaurant, newData)
+      await RestaurantRepo.UpdateApplication(restaurant, newData)
 
       if (!restaurant.cover_photo || !restaurant.avatar) {
         Err.throw('Must provide an Avatar and Cover Photo')
       }
 
-      return Resp.json(req, res, restaurant.toClient())
+      return Resp.json(req, res, new RestaurantResponse(restaurant))
     } catch (error) {
       console.log(error)
       Err.send(req, res, error)
@@ -221,7 +243,7 @@ router.post(
         return
       }
 
-      const locations = await DB.RGetRestaurantLocations(restaurant._id)
+      const locations = await RestaurantRepo.GetLocations(restaurant._id)
 
       if (!locations || locations.length === 0) {
         Err.throw('Error: A minimum of 1 locations is required')
@@ -229,10 +251,10 @@ router.post(
       }
 
       if (Permissions.isStep2Complete(restaurant.registration_step)) {
-        await DB.RUpdateApplicationRestaurant(restaurant, { registration_step: Permissions.REG_STEP_3_COMPLETE })
+        await RestaurantRepo.UpdateApplication(restaurant, { registration_step: Permissions.REG_STEP_3_COMPLETE })
       }
 
-      return Resp.json(req, res, restaurant.toClient())
+      return Resp.json(req, res, new RestaurantResponse(restaurant))
     } catch (error) {
       console.log(error)
       Err.send(req, res, error)
@@ -268,7 +290,7 @@ router.post(
         return
       }
 
-      const locations = await DB.RGetRestaurantLocations(restaurant._id)
+      const locations = await RestaurantRepo.GetLocations(restaurant._id)
 
       if (!locations || locations.length === 0) {
         Err.throw('Error: A minimum of 1 locations is required')
@@ -283,11 +305,11 @@ router.post(
       }
 
       await Promise.all([
-        DB.RUpdateApplicationRestaurant(restaurant, newData),
+        RestaurantRepo.UpdateApplication(restaurant, newData),
         Email.sendAdminReviewApplicationEmail({ restaurant, locations }),
       ])
 
-      return Resp.json(req, res, restaurant.toClient())
+      return Resp.json(req, res, new RestaurantResponse(restaurant))
     } catch (error) {
       Err.send(req, res, error)
     }
@@ -301,26 +323,28 @@ router.get('/accept-application/:id', async (req, res) => {
   } = req
 
   try {
-    const restaurant = await DB.RGetRestaurantByIDWithSuperAdmin(id)
+    const restaurant = await RestaurantRepo.GetByIDWithSuperAdmin(id)
 
     if (!restaurant) {
       Err.throw('No restaurant found', 401)
     }
 
-    const user = await DB.getUserByID(restaurant.super_admin)
+    const user = await AuthRepo.GetUserByID(restaurant.super_admin)
 
     if (!user) {
       Err.throw('No user found', 401)
     }
 
-    await DB.RUpdateApplicationRestaurant(restaurant, { status: Permissions.STATUS_LIVE })
+    await RestaurantRepo.UpdateApplication(restaurant, { status: Permissions.STATUS_LIVE })
 
     await Email.sendSuccessfulApplicationEmail(user, restaurant)
 
     Resp.json(
       req,
       res,
-      `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
+      new RestaurantMessageResponse(
+        `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
+      )
     )
   } catch (error) {
     Err.send(req, res, error)
@@ -335,26 +359,28 @@ router.get('/decline-application/:id', async (req, res) => {
   } = req
 
   try {
-    const restaurant = await DB.RGetRestaurantByIDWithSuperAdmin(id)
+    const restaurant = await RestaurantRepo.GetByIDWithSuperAdmin(id)
 
     if (!restaurant) {
       Err.throw('No restaurant found', 401)
     }
 
-    const user = await DB.getUserByID(restaurant.super_admin)
+    const user = await AuthRepo.GetUserByID(restaurant.super_admin)
 
     if (!user) {
       Err.throw('No user found', 401)
     }
 
-    await DB.RUpdateApplicationRestaurant(restaurant, { status: Permissions.STATUS_APPLICATION_REJECTED })
+    await RestaurantRepo.UpdateApplication(restaurant, { status: Permissions.STATUS_APPLICATION_REJECTED })
 
     await Email.sendRejectedApplicationEmail(user, restaurant)
 
     Resp.json(
       req,
       res,
-      `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
+      new RestaurantMessageResponse(
+        `Restaurant: ${restaurant.name} status is ${restaurant.status}, success email sent to ${user.email}!`
+      )
     )
   } catch (error) {
     Err.send(req, res, error)

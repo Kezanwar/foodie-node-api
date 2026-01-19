@@ -1,16 +1,27 @@
 import { Router } from 'express'
-
 import { authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validate.js'
-
 import { favouriteDealSchema, favouriteFollowSchema } from '#app/validation/customer/deal.js'
-
 import Err from '#app/services/error/index.js'
-import Redis from '#app/services/cache/redis.js'
-import DB from '#app/services/db/index.js'
 import { FEED_LIMIT } from '#app/constants/deals.js'
-import Task from '#app/services/worker/index.js'
 import Resp from '#app/services/response/index.js'
+import HttpResponse, { SuccessResponse } from '#app/services/response/http-response.js'
+import DealRepo from '#app/repositories/deal/index.js'
+
+class FavouritesListResponse extends HttpResponse {
+  constructor(favourites, page) {
+    super()
+    this.favourites = favourites
+    this.page = page
+  }
+
+  buildResponse() {
+    return {
+      nextCursor: this.favourites.length < FEED_LIMIT ? null : this.page + 1,
+      deals: this.favourites,
+    }
+  }
+}
 
 const router = Router()
 
@@ -21,13 +32,15 @@ router.post('/', authWithCache, validate(favouriteDealSchema), async (req, res) 
   } = req
 
   try {
-    if (await Task.userHasFavouritedDeal(user, deal_id, location_id)) {
+    const hasFavourited = await DealRepo.DoesFavouriteExist(user, deal_id, location_id)
+
+    if (hasFavourited) {
       Err.throw('You already favourited this deal', 401)
     }
 
-    await Promise.all([DB.CFavouriteOneDeal(user, deal_id, location_id), Redis.removeUserByID(user)])
+    await DealRepo.FavouriteOneDeal(user, deal_id, location_id)
 
-    return Resp.json(req, res, { deal_id, location_id, is_favourited: true })
+    return Resp.json(req, res, SuccessResponse)
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -39,13 +52,15 @@ router.patch('/', authWithCache, validate(favouriteDealSchema), async (req, res)
     user,
   } = req
   try {
-    if (!(await Task.userHasFavouritedDeal(user, deal_id, location_id))) {
+    const hasFavourited = await DealRepo.DoesFavouriteExist(user, deal_id, location_id)
+
+    if (!hasFavourited) {
       Err.throw('You already dont have this deal favourited', 401)
     }
 
-    await Promise.all([DB.CUnfavouriteOneDeal(user, deal_id, location_id), Redis.removeUserByID(user)])
+    await DealRepo.UnfavouriteOneDeal(user, deal_id, location_id)
 
-    return Resp.json(req, res, { deal_id, location_id, is_favourited: false })
+    return Resp.json(req, res, SuccessResponse)
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -58,8 +73,9 @@ router.get('/', authWithCache, validate(favouriteFollowSchema), async (req, res)
   const PAGE = Number(page)
 
   try {
-    const favourites = await DB.CGetFavourites(user, PAGE)
-    return Resp.json(req, res, { nextCursor: favourites.length < FEED_LIMIT ? null : PAGE + 1, deals: favourites })
+    const favourites = await DealRepo.GetFavourites(user, PAGE)
+    console.log(favourites.length)
+    return Resp.json(req, res, new FavouritesListResponse(favourites, PAGE))
   } catch (error) {
     Err.send(req, res, error)
   }

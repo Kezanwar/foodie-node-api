@@ -3,21 +3,64 @@ import { Router } from 'express'
 const router = Router()
 
 import Redis from '#app/services/cache/redis.js'
-import Auth from '#app/services/auth/index.js'
+
 import Email from '#app/services/email/index.js'
 import Err from '#app/services/error/index.js'
-import DB from '#app/services/db/index.js'
 import Str from '#app/services/string/index.js'
 
-import User from '#app/models/User.js'
+import User from '#app/models/user.js'
 
-import { authNoCache, authWithCache } from '#app/middleware/auth.js'
 import validate from '#app/middleware/validate.js'
 import { loginUserSchema, registerUserSchema } from '#app/validation/auth/auth.js'
 
 import { dashboardUrl } from '#app/config/config.js'
 import Notifications from '#app/services/notifications/index.js'
 import Resp from '#app/services/response/index.js'
+import HttpResponse, { SuccessResponse } from '#app/services/response/http-response.js'
+import AuthRepo from '#app/repositories/auth/index.js'
+import AuthUtil from '#app/repositories/auth/util.js'
+import { authNoCache, authWithCache } from '#app/middleware/auth.js'
+
+class InitializeResponse extends HttpResponse {
+  constructor(user, datasource) {
+    super()
+    this.user = user
+    this.datasource = datasource
+  }
+
+  buildResponse() {
+    const r = { user: this.user.toClient() }
+    if (this.datasource) {
+      r.datasource = this.datasource
+    }
+    return r
+  }
+}
+
+class AuthResponse extends HttpResponse {
+  constructor(accessToken, user, datasource) {
+    super()
+    this.accessToken = accessToken
+    this.user = user
+    this.datasource = datasource
+  }
+
+  buildResponse() {
+    const r = {
+      accessToken: this.accessToken,
+      user: this.user.toClient(),
+    }
+    if (this.datasource) {
+      r.datasource = this.datasource
+    }
+    return r
+  }
+}
+
+const getAppInitDatasources = async (user) => {
+  const [deal_favourites, location_follows] = await AuthRepo.GetFavouritesAndFollowsStateMapDatasource(user._id)
+  return { deal_favourites, location_follows }
+}
 
 //* route GET api/auth/initialize
 //? @desc GET A LOGGED IN USER WITH JWT
@@ -31,7 +74,12 @@ router.get('/initialize', authWithCache, async (req, res) => {
       Err.throw('User doesnt exist')
     }
 
-    Resp.json(req, res, { user: user.toClient() })
+    if (req.is_native_app) {
+      const datasources = await getAppInitDatasources(user)
+      Resp.json(req, res, new InitializeResponse(user, datasources))
+    } else {
+      Resp.json(req, res, new InitializeResponse(user))
+    }
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -45,17 +93,17 @@ router.post('/login', validate(loginUserSchema), async (req, res) => {
   try {
     const { email, password, pushToken } = req.body
 
-    let user = await DB.getUserByEmailWithPassword(email)
+    let user = await AuthRepo.GetUserByEmailWithPassword(email)
 
     if (!user) {
       Err.throw('Invalid credentials', 400)
     }
 
-    if (!Auth.isJWTAuthMethod(user?.auth_method)) {
+    if (!AuthUtil.isJWTAuthMethod(user?.auth_method)) {
       Err.throw('User signed up using a different sign in method.')
     }
 
-    const isMatch = await Auth.comparePasswordToHash(password, user.password)
+    const isMatch = await AuthUtil.comparePasswordToHash(password, user.password)
 
     if (!isMatch) {
       Err.throw('Invalid credentials', 400)
@@ -66,10 +114,10 @@ router.post('/login', validate(loginUserSchema), async (req, res) => {
         Err.throw('Invalid push token', 400)
       }
 
-      await DB.clearPushTokenFromOtherUsers(pushToken, user._id)
+      await AuthRepo.ClearPushTokenFromOtherUsers(pushToken, user._id)
 
       if (!user.push_tokens.includes(pushToken)) {
-        await DB.saveNewUserPushToken(user, pushToken)
+        await AuthRepo.SaveNewUserPushToken(user, pushToken)
       }
     }
 
@@ -79,14 +127,14 @@ router.post('/login', validate(loginUserSchema), async (req, res) => {
       },
     }
 
-    const token = Auth.jwtSign30Days(payload)
+    const token = AuthUtil.jwtSign30Days(payload)
 
-    const userResponse = user.toClient()
-
-    Resp.json(req, res, {
-      accessToken: token,
-      user: userResponse,
-    })
+    if (req.is_native_app) {
+      const datasources = await getAppInitDatasources(user)
+      Resp.json(req, res, new AuthResponse(token, user, datasources))
+    } else {
+      Resp.json(req, res, new AuthResponse(token, user))
+    }
   } catch (err) {
     Err.send(req, res, err)
   }
@@ -100,17 +148,17 @@ router.post('/login-google', async (req, res) => {
       Err.throw('No token authentication error', 500)
     }
 
-    const userRequested = await Auth.fetchGoogleOAuthUser(token)
+    const userRequested = await AuthUtil.fetchGoogleOAuthUser(token)
 
     const { email } = userRequested.data
 
-    const user = await DB.getUserByEmail(email)
+    const user = await AuthRepo.GetUserByEmail(email)
 
     if (!user) {
       Err.throw('Invalid credentials', 400)
     }
 
-    if (!Auth.isGoogleAuthMethod(user?.auth_method)) {
+    if (!AuthUtil.isGoogleAuthMethod(user?.auth_method)) {
       Err.throw('User didnt sign up with google, please sign in with original sign in method')
     }
 
@@ -119,10 +167,10 @@ router.post('/login-google', async (req, res) => {
         Err.throw('Invalid push token', 400)
       }
 
-      await DB.clearPushTokenFromOtherUsers(pushToken, user._id)
+      await AuthRepo.ClearPushTokenFromOtherUsers(pushToken, user._id)
 
       if (!user.push_tokens.includes(pushToken)) {
-        await DB.saveNewUserPushToken(user, pushToken)
+        await AuthRepo.SaveNewUserPushToken(user, pushToken)
       }
     }
 
@@ -134,14 +182,14 @@ router.post('/login-google', async (req, res) => {
       },
     }
 
-    const access_token = Auth.jwtSign30Days(payload)
+    const access_token = AuthUtil.jwtSign30Days(payload)
 
-    const userResponse = user.toClient()
-
-    Resp.json(req, res, {
-      accessToken: access_token,
-      user: userResponse,
-    })
+    if (req.is_native_app) {
+      const datasources = await getAppInitDatasources(user)
+      Resp.json(req, res, new AuthResponse(access_token, user, datasources))
+    } else {
+      Resp.json(req, res, new AuthResponse(access_token, user))
+    }
   } catch (err) {
     Err.send(req, res, err)
   }
@@ -154,17 +202,17 @@ router.post('/login-apple', async (req, res) => {
 
     if (!credential.identityToken) Err.throw('No credential error', 500)
 
-    const userRequested = await Auth.verifyAppleIdToken(credential.identityToken)
+    const userRequested = await AuthUtil.verifyAppleIdToken(credential.identityToken)
 
     const { email } = userRequested
 
-    const user = await DB.getUserByEmail(email)
+    const user = await AuthRepo.GetUserByEmail(email)
 
     if (!user) {
       Err.throw('Invalid credentials', 400)
     }
 
-    if (!Auth.isAppleAuthMethod(user?.auth_method)) {
+    if (!AuthUtil.isAppleAuthMethod(user?.auth_method)) {
       Err.throw('User didnt sign up with apple, please sign in with original sign in method')
     }
 
@@ -173,10 +221,10 @@ router.post('/login-apple', async (req, res) => {
         Err.throw('Invalid push token', 400)
       }
 
-      await DB.clearPushTokenFromOtherUsers(pushToken, user._id)
+      await AuthRepo.ClearPushTokenFromOtherUsers(pushToken, user._id)
 
       if (!user.push_tokens.includes(pushToken)) {
-        await DB.saveNewUserPushToken(user, pushToken)
+        await AuthRepo.SaveNewUserPushToken(user, pushToken)
       }
     }
 
@@ -188,14 +236,14 @@ router.post('/login-apple', async (req, res) => {
       },
     }
 
-    const access_token = Auth.jwtSign30Days(payload)
+    const access_token = AuthUtil.jwtSign30Days(payload)
 
-    const userResponse = user.toClient()
-
-    Resp.json(req, res, {
-      accessToken: access_token,
-      user: userResponse,
-    })
+    if (req.is_native_app) {
+      const datasources = await getAppInitDatasources(user)
+      Resp.json(req, res, new AuthResponse(access_token, user, datasources))
+    } else {
+      Resp.json(req, res, new AuthResponse(access_token, user))
+    }
   } catch (err) {
     Err.send(req, res, err)
   }
@@ -215,7 +263,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
     const { first_name, last_name, email, password, pushToken } = req.body
 
     // checking if user exists, if they do then send err
-    let user = await DB.getUserByEmail(email)
+    let user = await AuthRepo.GetUserByEmail(email)
 
     if (user) {
       Err.throw('User aleady exists', 400)
@@ -225,7 +273,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       if (!Notifications.isValidPushToken(pushToken)) {
         Err.throw('Invalid push token', 400)
       }
-      await DB.clearPushTokenFromOtherUsers(pushToken)
+      await AuthRepo.ClearPushTokenFromOtherUsers(pushToken)
     }
 
     // create a new user with our schema and users details from req
@@ -235,13 +283,13 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       email: email.toLowerCase(),
       email_private: false,
       password,
-      auth_method: Auth.jwtAuthMethod,
-      auth_otp: Auth.createOTP(),
+      auth_method: AuthUtil.jwtAuthMethod,
+      auth_otp: AuthUtil.createOTP(),
       email_confirmed: false,
       push_tokens: pushToken ? [pushToken] : [],
     })
 
-    user.password = await Auth.hashUserGeneratedPW(password)
+    user.password = await AuthUtil.hashUserGeneratedPW(password)
 
     // save the new user to DB using mongoose and send OTP email
     await Promise.all([user.save(), Redis.setUserByID(user)])
@@ -254,16 +302,11 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       },
     }
 
-    const access_token = Auth.jwtSign365Days(payload)
-
-    const userResponse = user.toClient()
+    const access_token = AuthUtil.jwtSign365Days(payload)
 
     await Email.sendOTPEmail(sendEmail)
 
-    Resp.json(req, res, {
-      accessToken: access_token,
-      user: userResponse,
-    })
+    Resp.json(req, res, new AuthResponse(access_token, user))
   } catch (err) {
     Err.send(req, res, err)
   }
@@ -279,16 +322,16 @@ router.post('/register-google', async (req, res) => {
     const { token, pushToken } = req.body
     if (!token) Err.throw('No token authentication error', 500)
 
-    const userRequested = await Auth.fetchGoogleOAuthUser(token)
+    const userRequested = await AuthUtil.fetchGoogleOAuthUser(token)
 
     const { given_name, family_name, picture, email } = userRequested.data
 
-    let user = await DB.getUserByEmail(email)
+    let user = await AuthRepo.GetUserByEmail(email)
 
     if (user) {
       //USER ALREADY EXISTS, JUST LOG THEM IN
 
-      if (!Auth.isGoogleAuthMethod(user?.auth_method)) {
+      if (!AuthUtil.isGoogleAuthMethod(user?.auth_method)) {
         Err.throw('User didnt sign up with google, please sign in with original Sign in method')
       }
 
@@ -297,10 +340,10 @@ router.post('/register-google', async (req, res) => {
           Err.throw('Invalid push token', 400)
         }
 
-        await DB.clearPushTokenFromOtherUsers(pushToken, user._id)
+        await AuthRepo.ClearPushTokenFromOtherUsers(pushToken, user._id)
 
         if (!user.push_tokens.includes(pushToken)) {
-          await DB.saveNewUserPushToken(user, pushToken)
+          await AuthRepo.SaveNewUserPushToken(user, pushToken)
         }
       }
 
@@ -312,21 +355,16 @@ router.post('/register-google', async (req, res) => {
         },
       }
 
-      const access_token = Auth.jwtSign30Days(payload)
+      const access_token = AuthUtil.jwtSign30Days(payload)
 
-      const userResponse = user.toClient()
-
-      Resp.json(req, res, {
-        accessToken: access_token,
-        user: userResponse,
-      })
+      Resp.json(req, res, new AuthResponse(access_token, user))
     } else {
       //NEW USER - REGISTER A NEW USER
       if (pushToken) {
         if (!Notifications.isValidPushToken(pushToken)) {
           Err.throw('Invalid push token', 400)
         }
-        await DB.clearPushTokenFromOtherUsers(pushToken)
+        await AuthRepo.ClearPushTokenFromOtherUsers(pushToken)
       }
 
       // create a new user with our schema and users details from req
@@ -337,11 +375,11 @@ router.post('/register-google', async (req, res) => {
         email_confirmed: true,
         email_private: false,
         avatar: picture,
-        auth_method: Auth.googleAuthMethod,
+        auth_method: AuthUtil.googleAuthMethod,
         push_tokens: pushToken ? [pushToken] : [],
       })
 
-      user.password = await Auth.hashServerGeneratedPW(email)
+      user.password = await AuthUtil.hashServerGeneratedPW(email)
 
       // save the new user to DB using mongoose
       await Promise.all([user.save(), Redis.setUserByID(user)])
@@ -352,14 +390,9 @@ router.post('/register-google', async (req, res) => {
         },
       }
 
-      const access_token = Auth.jwtSign365Days(payload)
+      const access_token = AuthUtil.jwtSign365Days(payload)
 
-      const userResponse = user.toClient()
-
-      Resp.json(req, res, {
-        accessToken: access_token,
-        user: userResponse,
-      })
+      Resp.json(req, res, new AuthResponse(access_token, user))
     }
   } catch (err) {
     Err.send(req, res, err)
@@ -373,16 +406,16 @@ router.post('/register-apple', async (req, res) => {
 
     if (!credential.identityToken) Err.throw('No credential error', 500)
 
-    const userRequested = await Auth.verifyAppleIdToken(credential.identityToken)
+    const userRequested = await AuthUtil.verifyAppleIdToken(credential.identityToken)
 
     const { email, is_private_email } = userRequested
 
-    let user = await DB.getUserByEmail(email)
+    let user = await AuthRepo.GetUserByEmail(email)
 
     if (user) {
       //USER ALREADY EXISTS, JUST LOG THEM IN
 
-      if (!Auth.isAppleAuthMethod(user?.auth_method)) {
+      if (!AuthUtil.isAppleAuthMethod(user?.auth_method)) {
         Err.throw('User didnt sign up with apple, please sign in with original Sign in method')
       }
 
@@ -391,10 +424,10 @@ router.post('/register-apple', async (req, res) => {
           Err.throw('Invalid push token', 400)
         }
 
-        await DB.clearPushTokenFromOtherUsers(pushToken, user._id)
+        await AuthRepo.ClearPushTokenFromOtherUsers(pushToken, user._id)
 
         if (!user.push_tokens.includes(pushToken)) {
-          await DB.saveNewUserPushToken(user, pushToken)
+          await AuthRepo.SaveNewUserPushToken(user, pushToken)
         }
       }
 
@@ -406,21 +439,16 @@ router.post('/register-apple', async (req, res) => {
         },
       }
 
-      const access_token = Auth.jwtSign30Days(payload)
+      const access_token = AuthUtil.jwtSign30Days(payload)
 
-      const userResponse = user.toClient()
-
-      Resp.json(req, res, {
-        accessToken: access_token,
-        user: userResponse,
-      })
+      Resp.json(req, res, new AuthResponse(access_token, user))
     } else {
       //NEW USER - REGISTER A NEW USER
       if (pushToken) {
         if (!Notifications.isValidPushToken(pushToken)) {
           Err.throw('Invalid push token', 400)
         }
-        await DB.clearPushTokenFromOtherUsers(pushToken)
+        await AuthRepo.ClearPushTokenFromOtherUsers(pushToken)
       }
 
       // create a new user with our schema and users details from req
@@ -430,11 +458,11 @@ router.post('/register-apple', async (req, res) => {
         email: email.toLowerCase(),
         email_confirmed: true,
         email_private: is_private_email,
-        auth_method: Auth.appleAuthMethod,
+        auth_method: AuthUtil.appleAuthMethod,
         push_tokens: pushToken ? [pushToken] : [],
       })
 
-      user.password = await Auth.hashServerGeneratedPW(email)
+      user.password = await AuthUtil.hashServerGeneratedPW(email)
 
       // save the new user to DB using mongoose
       await Promise.all([user.save(), Redis.setUserByID(user)])
@@ -445,14 +473,9 @@ router.post('/register-apple', async (req, res) => {
         },
       }
 
-      const access_token = Auth.jwtSign365Days(payload)
+      const access_token = AuthUtil.jwtSign365Days(payload)
 
-      const userResponse = user.toClient()
-
-      Resp.json(req, res, {
-        accessToken: access_token,
-        user: userResponse,
-      })
+      Resp.json(req, res, new AuthResponse(access_token, user))
     }
   } catch (err) {
     Err.send(req, res, err)
@@ -476,7 +499,7 @@ router.post('/confirm-email/:otp', authNoCache, async (req, res) => {
       Err.throw('Incorrect OTP please try again', 401)
     }
 
-    return Resp.json(req, res, 'success')
+    return Resp.json(req, res, SuccessResponse)
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -489,9 +512,9 @@ router.post('/confirm-email/:otp', authNoCache, async (req, res) => {
 router.patch('/confirm-email/resend-otp', authNoCache, async (req, res) => {
   const user = req.user
   try {
-    user.auth_otp = Auth.createOTP()
+    user.auth_otp = AuthUtil.createOTP()
     await Promise.all([user.save(), Redis.setUserByID(user), Email.sendOTPEmail(user)])
-    Resp.json(req, res, { message: 'success' })
+    Resp.json(req, res, SuccessResponse)
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -509,23 +532,23 @@ router.post('/forgot-password', async (req, res) => {
       Err.throw('No email attached', 400)
     }
 
-    const user = await DB.getUserByEmail(email)
+    const user = await AuthRepo.GetUserByEmail(email)
 
     if (!user) {
       Err.throw("Sorry, we can't locate a user with this email.", 400)
     }
-    if (Auth.isGoogleAuthMethod(user.auth_method))
+    if (AuthUtil.isGoogleAuthMethod(user.auth_method))
       Err.throw('This email address signed up with Google, please login via Google.', 400)
 
     const confirmEmailPayload = {
       email: user.email,
     }
 
-    const token = Auth.jwtSign15Mins(confirmEmailPayload)
+    const token = AuthUtil.jwtSign15Mins(confirmEmailPayload)
 
     await Email.sendChangePasswordEmail(user, token)
 
-    Resp.json(req, res, 'success')
+    Resp.json(req, res, SuccessResponse)
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -540,7 +563,7 @@ router.get('/change-password/:token', async (req, res) => {
       Err.throw('No token provided')
     }
 
-    const decoded = Auth.jwtVerify(token)
+    const decoded = AuthUtil.jwtVerify(token)
 
     if (!decoded?.email) {
       Err.throw('Token expired', 400)
@@ -550,9 +573,9 @@ router.get('/change-password/:token', async (req, res) => {
       email: decoded.email,
     }
 
-    const forward_token = Auth.jwtSign15Mins(payload)
+    const forward_token = AuthUtil.jwtSign15Mins(payload)
 
-    const expires = Auth.createChangePWExpiryDate()
+    const expires = AuthUtil.createChangePWExpiryDate()
 
     return res.redirect(`${dashboardUrl}/change-password?token=${forward_token}&expires=${expires}`)
   } catch (error) {
@@ -571,23 +594,23 @@ router.patch('/change-password/:token', async (req, res) => {
       Err.throw('No token provided')
     }
 
-    const decoded = Auth.jwtVerify(token)
+    const decoded = AuthUtil.jwtVerify(token)
 
     if (!decoded?.email) {
       Err.throw('Token expired', 400)
     }
 
-    const user = await DB.getUserByEmail(decoded.email)
+    const user = await AuthRepo.GetUserByEmail(decoded.email)
 
     if (!user) {
       Err.throw('User doesnt exist', 400)
     }
 
-    user.password = await Auth.hashUserGeneratedPW(password)
+    user.password = await AuthUtil.hashUserGeneratedPW(password)
 
     await Promise.all([user.save(), Redis.setUserByID(user)])
 
-    Resp.json(req, res, 'success')
+    Resp.json(req, res, SuccessResponse)
   } catch (error) {
     Err.send(req, res, error)
   }
@@ -605,8 +628,8 @@ router.post('/delete', authNoCache, async (req, res) => {
     }
 
     await Redis.removeUserByID(user._id)
-    await DB.deleteUserByID(user._id)
-    return Resp.json(req, res, 'success')
+    await AuthRepo.DeleteUserByID(user._id)
+    return Resp.json(req, res, SuccessResponse)
   } catch (error) {
     Err.send(req, res, error)
   }

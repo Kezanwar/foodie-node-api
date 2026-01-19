@@ -4,13 +4,14 @@ const router = Router()
 import { authWithCache } from '#app/middleware/auth.js'
 
 import Err from '#app/services/error/index.js'
-import DB from '#app/services/db/index.js'
-import Loc from '#app/services/location/index.js'
 
 import validate from '#app/middleware/validate.js'
 import { geoSchema } from '#app/validation/customer/geo.js'
 import Redis from '#app/services/cache/redis.js'
 import Resp from '#app/services/response/index.js'
+import { SuccessResponse } from '#app/services/response/http-response.js'
+import LocationUtil from '#app/repositories/location/util.js'
+import AuthRepo from '#app/repositories/auth/index.js'
 
 router.post('/', validate(geoSchema), authWithCache, async (req, res) => {
   const {
@@ -20,13 +21,13 @@ router.post('/', validate(geoSchema), authWithCache, async (req, res) => {
 
   try {
     if (user?.geometry?.coordinates) {
-      if (Loc.getDistanceInMiles(user.geometry.coordinates, [long, lat]) < 1) {
-        return Resp.json(req, res, { message: 'success' })
+      if (LocationUtil.getDistanceInMiles(user.geometry.coordinates, [long, lat]) < 1) {
+        return Resp.json(req, res, SuccessResponse)
       }
     }
 
-    await Promise.all([DB.setUserGeometry(user, long, lat), Redis.removeUserByID(user)])
-    return Resp.json(req, res, { message: 'success' })
+    await Promise.all([AuthRepo.SetUserGeometry(user, long, lat), Redis.removeUserByID(user)])
+    return Resp.json(req, res, SuccessResponse)
   } catch (error) {
     Err.send(req, res, error)
   }
