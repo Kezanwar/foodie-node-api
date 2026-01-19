@@ -3,7 +3,8 @@ import Email from '#app/services/email/index.js'
 import WebhookError from './error.js'
 import SubscriptionRepo from '#app/repositories/subscription/index.js'
 
-export const TEST_CUST_ID = 'cus_QxoeV3ueAWMCDf'
+// eslint-disable-next-line no-unused-vars
+const TEST_CUST_ID = 'cus_QxoeV3ueAWMCDf'
 
 // https://docs.stripe.com/billing/subscriptions/webhooks?locale=en-GB#events
 
