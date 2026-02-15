@@ -91,7 +91,7 @@ router.get('/initialize', authWithCache, async (req, res) => {
 
 router.post('/login', validate(loginUserSchema), async (req, res) => {
   try {
-    const { email, password, pushToken } = req.body
+    const { email, password } = req.body
 
     let user = await AuthRepo.GetUserByEmailWithPassword(email)
 
@@ -107,18 +107,6 @@ router.post('/login', validate(loginUserSchema), async (req, res) => {
 
     if (!isMatch) {
       Err.throw('Invalid credentials', 400)
-    }
-
-    if (pushToken) {
-      if (!Notifications.isValidPushToken(pushToken)) {
-        Err.throw('Invalid push token', 400)
-      }
-
-      await AuthRepo.ClearPushTokenFromOtherUsers(pushToken, user._id)
-
-      if (!user.push_tokens.includes(pushToken)) {
-        await AuthRepo.SaveNewUserPushToken(user, pushToken)
-      }
     }
 
     const payload = {
@@ -142,7 +130,7 @@ router.post('/login', validate(loginUserSchema), async (req, res) => {
 
 router.post('/login-google', async (req, res) => {
   try {
-    const { token, pushToken } = req.body
+    const { token } = req.body
 
     if (!token) {
       Err.throw('No token authentication error', 500)
@@ -160,18 +148,6 @@ router.post('/login-google', async (req, res) => {
 
     if (!AuthUtil.isGoogleAuthMethod(user?.auth_method)) {
       Err.throw('User didnt sign up with google, please sign in with original sign in method')
-    }
-
-    if (pushToken) {
-      if (!Notifications.isValidPushToken(pushToken)) {
-        Err.throw('Invalid push token', 400)
-      }
-
-      await AuthRepo.ClearPushTokenFromOtherUsers(pushToken, user._id)
-
-      if (!user.push_tokens.includes(pushToken)) {
-        await AuthRepo.SaveNewUserPushToken(user, pushToken)
-      }
     }
 
     await Redis.setUserByID(user)
@@ -198,7 +174,7 @@ router.post('/login-google', async (req, res) => {
 router.post('/login-apple', async (req, res) => {
   try {
     // destructuring from req.body
-    const { credential, pushToken } = req.body
+    const { credential } = req.body
 
     if (!credential.identityToken) Err.throw('No credential error', 500)
 
@@ -214,18 +190,6 @@ router.post('/login-apple', async (req, res) => {
 
     if (!AuthUtil.isAppleAuthMethod(user?.auth_method)) {
       Err.throw('User didnt sign up with apple, please sign in with original sign in method')
-    }
-
-    if (pushToken) {
-      if (!Notifications.isValidPushToken(pushToken)) {
-        Err.throw('Invalid push token', 400)
-      }
-
-      await AuthRepo.ClearPushTokenFromOtherUsers(pushToken, user._id)
-
-      if (!user.push_tokens.includes(pushToken)) {
-        await AuthRepo.SaveNewUserPushToken(user, pushToken)
-      }
     }
 
     await Redis.setUserByID(user)
@@ -260,20 +224,13 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 
   try {
     // destructuring from req.body
-    const { first_name, last_name, email, password, pushToken } = req.body
+    const { first_name, last_name, email, password } = req.body
 
     // checking if user exists, if they do then send err
     let user = await AuthRepo.GetUserByEmail(email)
 
     if (user) {
       Err.throw('User aleady exists', 400)
-    }
-
-    if (pushToken) {
-      if (!Notifications.isValidPushToken(pushToken)) {
-        Err.throw('Invalid push token', 400)
-      }
-      await AuthRepo.ClearPushTokenFromOtherUsers(pushToken)
     }
 
     // create a new user with our schema and users details from req
@@ -286,7 +243,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
       auth_method: AuthUtil.jwtAuthMethod,
       auth_otp: AuthUtil.createOTP(),
       email_confirmed: false,
-      push_tokens: pushToken ? [pushToken] : [],
+      push_tokens: [],
     })
 
     user.password = await AuthUtil.hashUserGeneratedPW(password)
@@ -319,7 +276,7 @@ router.post('/register', validate(registerUserSchema), async (req, res) => {
 router.post('/register-google', async (req, res) => {
   try {
     // destructuring from req.body
-    const { token, pushToken } = req.body
+    const { token } = req.body
     if (!token) Err.throw('No token authentication error', 500)
 
     const userRequested = await AuthUtil.fetchGoogleOAuthUser(token)
@@ -335,18 +292,6 @@ router.post('/register-google', async (req, res) => {
         Err.throw('User didnt sign up with google, please sign in with original Sign in method')
       }
 
-      if (pushToken) {
-        if (!Notifications.isValidPushToken(pushToken)) {
-          Err.throw('Invalid push token', 400)
-        }
-
-        await AuthRepo.ClearPushTokenFromOtherUsers(pushToken, user._id)
-
-        if (!user.push_tokens.includes(pushToken)) {
-          await AuthRepo.SaveNewUserPushToken(user, pushToken)
-        }
-      }
-
       await Redis.setUserByID(user)
 
       const payload = {
@@ -360,12 +305,6 @@ router.post('/register-google', async (req, res) => {
       Resp.json(req, res, new AuthResponse(access_token, user))
     } else {
       //NEW USER - REGISTER A NEW USER
-      if (pushToken) {
-        if (!Notifications.isValidPushToken(pushToken)) {
-          Err.throw('Invalid push token', 400)
-        }
-        await AuthRepo.ClearPushTokenFromOtherUsers(pushToken)
-      }
 
       // create a new user with our schema and users details from req
       user = new User({
@@ -376,7 +315,7 @@ router.post('/register-google', async (req, res) => {
         email_private: false,
         avatar: picture,
         auth_method: AuthUtil.googleAuthMethod,
-        push_tokens: pushToken ? [pushToken] : [],
+        push_tokens: [],
       })
 
       user.password = await AuthUtil.hashServerGeneratedPW(email)
@@ -402,7 +341,7 @@ router.post('/register-google', async (req, res) => {
 router.post('/register-apple', async (req, res) => {
   try {
     // destructuring from req.body
-    const { credential, pushToken } = req.body
+    const { credential } = req.body
 
     if (!credential.identityToken) Err.throw('No credential error', 500)
 
@@ -419,18 +358,6 @@ router.post('/register-apple', async (req, res) => {
         Err.throw('User didnt sign up with apple, please sign in with original Sign in method')
       }
 
-      if (pushToken) {
-        if (!Notifications.isValidPushToken(pushToken)) {
-          Err.throw('Invalid push token', 400)
-        }
-
-        await AuthRepo.ClearPushTokenFromOtherUsers(pushToken, user._id)
-
-        if (!user.push_tokens.includes(pushToken)) {
-          await AuthRepo.SaveNewUserPushToken(user, pushToken)
-        }
-      }
-
       await Redis.setUserByID(user)
 
       const payload = {
@@ -444,12 +371,6 @@ router.post('/register-apple', async (req, res) => {
       Resp.json(req, res, new AuthResponse(access_token, user))
     } else {
       //NEW USER - REGISTER A NEW USER
-      if (pushToken) {
-        if (!Notifications.isValidPushToken(pushToken)) {
-          Err.throw('Invalid push token', 400)
-        }
-        await AuthRepo.ClearPushTokenFromOtherUsers(pushToken)
-      }
 
       // create a new user with our schema and users details from req
       user = new User({
@@ -459,7 +380,7 @@ router.post('/register-apple', async (req, res) => {
         email_confirmed: true,
         email_private: is_private_email,
         auth_method: AuthUtil.appleAuthMethod,
-        push_tokens: pushToken ? [pushToken] : [],
+        push_tokens: [],
       })
 
       user.password = await AuthUtil.hashServerGeneratedPW(email)
