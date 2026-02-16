@@ -302,7 +302,12 @@ router.post('/register-google', async (req, res) => {
 
       const access_token = AuthUtil.jwtSign30Days(payload)
 
-      Resp.json(req, res, new AuthResponse(access_token, user))
+      if (req.is_native_app) {
+        const datasources = await getAppInitDatasources(user)
+        Resp.json(req, res, new AuthResponse(access_token, user, datasources))
+      } else {
+        Resp.json(req, res, new AuthResponse(access_token, user))
+      }
     } else {
       //NEW USER - REGISTER A NEW USER
 
@@ -368,7 +373,12 @@ router.post('/register-apple', async (req, res) => {
 
       const access_token = AuthUtil.jwtSign30Days(payload)
 
-      Resp.json(req, res, new AuthResponse(access_token, user))
+      if (req.is_native_app) {
+        const datasources = await getAppInitDatasources(user)
+        Resp.json(req, res, new AuthResponse(access_token, user, datasources))
+      } else {
+        Resp.json(req, res, new AuthResponse(access_token, user))
+      }
     } else {
       //NEW USER - REGISTER A NEW USER
 
