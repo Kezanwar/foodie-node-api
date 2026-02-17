@@ -14,7 +14,6 @@ import validate from '#app/middleware/validate.js'
 import { loginUserSchema, registerUserSchema } from '#app/validation/auth/auth.js'
 
 import { dashboardUrl } from '#app/config/config.js'
-import Notifications from '#app/services/notifications/index.js'
 import Resp from '#app/services/response/index.js'
 import HttpResponse, { SuccessResponse } from '#app/services/response/http-response.js'
 import AuthRepo from '#app/repositories/auth/index.js'
