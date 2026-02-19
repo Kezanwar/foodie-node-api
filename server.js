@@ -24,7 +24,7 @@ import verifyRequest from './middleware/verify-request.js'
 
 //api
 import api from './api/index.js'
-import { PORT } from './config/config.js'
+import { appVersion, PORT } from './config/config.js'
 import devMigrations from './migrations/dev/index.js'
 
 await DB.connect()
@@ -51,7 +51,7 @@ app.use(mongoSanitize)
 app.use(verifyRequest)
 
 //initialize api
-app.get('/', (req, res) => res.send('Foodie API Running'))
+app.get('/', (req, res) => res.send({ message: 'Foodie API running', appVersion }))
 app.use('/api', api)
 
 //start server
